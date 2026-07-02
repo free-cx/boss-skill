@@ -1,7 +1,7 @@
 ---
 name: boss
 description: |
-  BMAD 全自动研发流水线编排器。编排 9 个专业 Agent（PM、架构师、UI Designer、Tech Lead、Scrum Master、Frontend、Backend、QA、DevOps）从需求到部署。
+  可审计的 agent 团队：BMAD 全自动研发流水线编排器。编排 9 个专业 Agent（PM、架构师、UI Designer、Tech Lead、Scrum Master、Frontend、Backend、QA、DevOps）从需求到部署，每一步都有事件溯源 + 不可绕过门禁 + 确定性 eval——可验证测试真跑、门禁真过。支持单环节切片命令（/boss:plan /review /qa /ship）与无 CLI 纯 Markdown 降级。
 
   Triggers: 'boss mode', '/boss', '全自动开发', '从需求到部署', '帮我做一个', 'build this', 'ship it', '全流程', '自动化开发', '一键开发', 'start a project', 'new feature'
 
@@ -44,6 +44,8 @@ user-invocable: true
 | 需要质量门禁细节 | `references/quality-gate.md` |
 | 需要测试证据要求 | `references/testing-standards.md` |
 | 需要 BMAD 背景或历史设计说明 | `references/bmad-methodology.md` |
+| 未检测到 `boss` CLI，需要纯 Markdown 降级运行 | `references/no-cli-fallback.md` |
+| 需要扩展 Boss（自定义 Agent / pack / gate 插件） | `references/extending-boss.md` |
 | 派发子 Agent 前建立公共协议 prefix 缓存 | `agents/shared/protocol-manifest.md` |
 | 子 Agent 状态格式、会话原语、REVISION_NEEDED | `agents/prompts/subagent-protocol.md` |
 | 需要技术栈探测协议 | `agents/shared/tech-detection.md` |
@@ -51,15 +53,16 @@ user-invocable: true
 ## 快速入口
 
 1. 判断用户输入是否是可执行任务。约束类输入不要新建 `.boss/<feature>/`；按 `references/orchestration-loop.md` 的 Feature Slug 归一化处理。
-2. 除非 `--quick`，先确认“做什么 + 给谁用 + 核心场景”。缺失时读取 `skills/brainstorming/SKILL.md`。
-3. 初始化或恢复项目：
+2. **CLI 探测**：派发前运行 `boss --version`。失败则进入降级模式，读取 `references/no-cli-fallback.md`，用 `.boss/<feature>/STATE.md` 承载状态（CLI 是可审计性增强，不是准入条件）。
+3. 除非 `--quick`，先确认”做什么 + 给谁用 + 核心场景”。缺失时读取 `skills/brainstorming/SKILL.md`。
+4. 初始化或恢复项目：
    - 新 feature：`boss project init <feature-name>`
    - 低阶 runtime 初始化：`boss runtime init-pipeline <feature>`
    - 继续执行图：`boss runtime resume <feature> --from-run <run-id>`
-4. 调用 `boss packs detect <project-dir> --json`，再根据 ready artifacts 循环派发 Agent。
-5. 每个产物完成后调用 `boss runtime record-artifact <feature> <artifact-name> <N>`。
-6. code 阶段前必须读取 `references/evidence-waves.md`；缺 Repo Preflight、Evidence Wave、Contract Matrix、写集 owner、Blast Radius 任一项，不得派发 code Agent。
-7. 收尾前运行适用测试、门禁和 `boss runtime generate-summary <feature>`。
+5. 调用 `boss packs detect <project-dir> --json`，再根据 ready artifacts 循环派发 Agent。
+6. 每个产物完成后调用 `boss runtime record-artifact <feature> <artifact-name> <N>`。
+7. code 阶段前必须读取 `references/evidence-waves.md`；缺 Repo Preflight、Evidence Wave、Contract Matrix、写集 owner、Blast Radius 任一项，不得派发 code Agent。
+8. 收尾前运行适用测试、门禁和 `boss runtime generate-summary <feature>`。
 
 ## Agent 路由
 
@@ -81,6 +84,23 @@ user-invocable: true
 - 只有状态格式或会话升级不清楚时，再读取 `agents/shared/agent-protocol.md` 或 `agents/prompts/subagent-protocol.md`。
 - 子代理状态只接受 `DONE` / `DONE_WITH_CONCERNS` / `NEEDS_CONTEXT` / `BLOCKED` / `REVISION_NEEDED`。
 - 子代理自报 `DONE` 不等于验收通过；必须跑 Wave 边界校验或对应门禁。
+
+## 命令入口地图
+
+`/boss` 是完整流水线；下列切片命令是同一底层的**单环节独立入口**，复用相同 agent prompt、runtime 与 `.boss/<feature>/` 产物，适合只想用其中一环或对已有项目单点介入的场景。
+
+| 命令 | 环节 | 底层 |
+|------|------|------|
+| `/boss` | 完整 4 阶段流水线 | `references/orchestration-loop.md` |
+| `/boss:plan` | 规划（PM + Architect） | `agents/boss-pm.md`、`agents/boss-architect.md` |
+| `/boss:review` | 技术评审（Tech Lead，只读） | `agents/boss-tech-lead.md` |
+| `/boss:qa` | 测试 + 门禁（QA） | `agents/boss-qa.md`、`references/quality-gate.md` |
+| `/boss:ship` | 构建部署（DevOps + Gate 2） | `agents/boss-devops.md` |
+| `/boss:extend` | 引导式扩展自定义 agent / pack | `references/extending-boss.md` |
+
+## 语言参数
+
+所有命令支持 `--lang <zh|en>` 控制 `.boss/<feature>/` 产物语言。未显式指定时默认 `zh`（不变量 7）。切片命令与 `/boss` 共享该参数语义。
 
 ## 项目扩展点
 

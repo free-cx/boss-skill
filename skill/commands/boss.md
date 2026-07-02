@@ -56,3 +56,16 @@ allowed-tools: Task, Read, Write, Edit, Bash, Glob, Grep
 | `--continue-from <1-4>` | 从指定阶段继续 |
 | `--hitl-level <level>` | 人机协作级别：`auto`（关键节点 + 风险触发）/ `interactive` / `off` |
 | `--roles <preset>` | 角色预设：`full`（默认）/ `core` |
+| `--lang <zh\|en>` | 交付文档语言（默认 `zh`） |
+
+## 单环节切片命令
+
+不需要跑完整流水线时，可用以下独立入口（同一底层，可对已有项目单点介入）：
+
+| 命令 | 用途 |
+|------|------|
+| `/boss:plan` | 只做规划：PM + Architect → PRD + 架构 |
+| `/boss:review` | 只做技术评审：Tech Lead 只读评审 |
+| `/boss:qa` | 只做测试 + 门禁：QA 证据链 |
+| `/boss:ship` | 只做构建部署：DevOps + Gate 2 |
+| `/boss:extend` | 引导式扩展自定义 agent / pipeline pack |

@@ -5,9 +5,30 @@
 
 ![boss-skill 宣传图](boss-skill-promo.png)
 
-BMAD Harness Engineer — 全自动研发流水线编排 Skill，兼容 Claude Code、OpenClaw、Codex、Antigravity、Hermes。
+**The auditable agent team.** Boss turns your coding agent into a 9-role engineering team (PM → Architect → UI → Tech Lead → Scrum Master → Frontend/Backend → QA → DevOps) — and unlike prompt-only agent squads, **every step is verifiable**: an append-only event log, gates that can't be bypassed, and deterministic evals that prove the tests actually ran.
 
-从需求到部署的完整研发流水线，编排 9 个专业 Agent 自动完成完整研发周期。
+> **Why Boss vs. other agent-team setups?** Prompt-only orchestrators can't prove the tests ran, the gates passed, or the state wasn't hallucinated. Boss can — it's the only agent pipeline with event-sourced state, non-bypassable quality gates, and replayable deterministic evals. Compatible with Claude Code, OpenClaw, Codex, Antigravity, Hermes.
+
+> **中文简介**：BMAD 全自动研发流水线编排 Skill —— 唯一「可审计」的 agent 团队：事件溯源 + 不可绕过门禁 + 确定性 eval。从需求到部署，编排 9 个专业 Agent 自动完成完整研发周期。
+
+## Use one role, or the whole team
+
+Boss is not one monolithic command. Each pipeline stage is its own slash command you can run standalone against an existing project:
+
+| Command | What it does | Use when |
+|---------|--------------|----------|
+| `/boss` | Full 4-stage pipeline | Need to go from idea to shippable |
+| `/boss:plan` | PM + Architect → PRD + architecture | Want a plan before committing |
+| `/boss:review` | Tech Lead review (read-only) | Reviewing code / a PR / a design |
+| `/boss:qa` | QA tests + non-bypassable gates | Need verifiable test evidence |
+| `/boss:ship` | DevOps build + deploy + Gate 2 | Ready to ship, want an audit trail |
+| `/boss:extend` | Add a custom agent / pack / gate | Grow Boss for your team |
+
+Start with one command, adopt the whole pipeline when you're ready.
+
+## No CLI? Still works
+
+Boss detects the `boss` CLI at runtime. Without it, the pipeline **degrades to pure Markdown** — state lives in `.boss/<feature>/STATE.md` instead of the event stream. The CLI is an **auditability upgrade** (event sourcing, replayable resume, deterministic evals), not an entry barrier. Install it when you want the guarantees; run without it when you just want the team.
 
 > **定位说明**：Boss 提供可审计的 runtime 工作流与质量门禁；子 Agent 仍需按协议配合。门禁与 DAG 由 CLI/hooks 约束，**不能**等同于「装了就 100% 自动交付」——见下方 [质量与评测](#质量与评测)。
 
