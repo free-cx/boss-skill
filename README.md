@@ -169,6 +169,17 @@ boss runtime inspect-pipeline FEATURE
 boss runtime generate-summary FEATURE
 ```
 
+Agent-facing `boss` commands use these common options where applicable; run `--describe` on a command for its exact JSON schema:
+
+- `--json`: structured output; non-TTY stdout defaults to JSON
+- `--describe`: JSON command schema
+- `--dry-run`: structured action plan for writes or risky operations
+- `--json-input=<json|->`: JSON input payload
+- `--fields=<a,b>` and `--limit=<n>`: bounded output
+- `--yes`: required only for high-risk non-interactive commands that need an extra confirmation
+
+Structured errors are written to stderr as `{"error":{...}}` and include `code`, `message`, `input`, `retryable`, and `suggestion`.
+
 ## Workflow
 
 Boss follows a four-stage workflow:
@@ -217,6 +228,8 @@ Hooks are controlled by environment variables:
 | --- | --- |
 | `BOSS_HOOK_PROFILE` | `minimal`, `standard`, `strict` |
 | `BOSS_DISABLED_HOOKS` | Comma-separated hook IDs |
+
+Runtime state is backed by `.boss/<feature>/.meta/workflow-plan.json` and `.boss/<feature>/.meta/execution.json`. The workflow definition records `workflowHash`, `packHash`, and artifact DAG hashes. Runtime resume uses `boss runtime resume <feature> --from-run <run-id>` to reload the plan, compare node inputs, and materialize `execution.workflow.nextNodeIds` for the next schedulable nodes. `GateEvaluated` / `WaveVerified` events update workflow node status when gates and evidence waves complete.
 
 ## Security-Sensitive Surfaces
 
@@ -327,6 +340,7 @@ boss-skill/
 Important source areas:
 
 - `packages/boss-cli/src/` contains CLI and runtime TypeScript source.
+- `packages/boss-cli/dist/` contains generated CLI output used by the published npm bin; do not edit it by hand.
 - `packages/boss-cli/assets/` contains built-in DAGs, pipeline packs, plugin schema, and plugins.
 - `skill/SKILL.md` is the main agent-facing orchestration entry.
 - `skill/agents/` contains the role prompts.

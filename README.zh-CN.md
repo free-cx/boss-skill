@@ -169,6 +169,17 @@ boss runtime inspect-pipeline FEATURE
 boss runtime generate-summary FEATURE
 ```
 
+面向 Agent 的 `boss` 命令在适用场景下使用这些通用参数（where applicable）；可用 `--describe` 查看单个命令的精确 JSON schema：
+
+- `--json`：结构化输出；non-TTY stdout defaults to JSON
+- `--describe`：JSON command schema
+- `--dry-run`：对写入或高风险操作输出 structured action plan
+- `--json-input=<json|->`：JSON input payload
+- `--fields=<a,b>` 和 `--limit=<n>`：限制输出字段和数量
+- `--yes`：仅用于高风险 non-interactive 命令的额外确认
+
+Structured errors 会写到 stderr，格式为 `{"error":{...}}`，包含 `code`、`message`、`input`、`retryable` 和 `suggestion`。
+
 ## 工作流
 
 Boss 使用 4 阶段工作流：
@@ -217,6 +228,8 @@ Hook 环境变量：
 | --- | --- |
 | `BOSS_HOOK_PROFILE` | `minimal`、`standard`、`strict` |
 | `BOSS_DISABLED_HOOKS` | 逗号分隔的 hook ID |
+
+Runtime 状态由 `.boss/<feature>/.meta/workflow-plan.json` 和 `.boss/<feature>/.meta/execution.json` 支撑。Workflow 定义会记录 `workflowHash`、`packHash` 和 artifact DAG hashes。恢复执行使用 `boss runtime resume <feature> --from-run <run-id>` 重新加载 plan、比较 node inputs，并物化 `execution.workflow.nextNodeIds` 作为下一批可调度节点。`GateEvaluated` / `WaveVerified` 事件会在门禁和 evidence wave 完成时更新 workflow node 状态。
 
 ## 安全敏感面
 
@@ -327,6 +340,7 @@ boss-skill/
 关键源码位置：
 
 - `packages/boss-cli/src/` 是 CLI 和 runtime 的 TypeScript 源码。
+- `packages/boss-cli/dist/` 是发布到 npm bin 的生成产物，不要手工修改。
 - `packages/boss-cli/assets/` 保存内置 DAG、pipeline packs、plugin schema 和插件。
 - `skill/SKILL.md` 是面向 Agent 的主编排入口。
 - `skill/agents/` 保存角色 prompts。
