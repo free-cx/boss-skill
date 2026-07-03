@@ -55,6 +55,9 @@ const REQUIRED_PACKED_FILES = [
   '.claude-plugin/marketplace.json',
   '.codex-plugin/plugin.json',
   '.codex-plugin/marketplace.json',
+  '.agents/plugins/marketplace.json',
+  '.agents/plugins/provenance.json',
+  'scripts/provenance.js',
   'scripts/hooks/lib/normalize-input.js',
   'scripts/hooks/subagent-stop.js'
 ] as const;
@@ -320,14 +323,68 @@ describe('Boss install matrix', () => {
     expect(plugin.skills).toContain('./skill/skills/');
   });
 
-  it('Codex plugin declares the Codex-specific hook manifest', () => {
+  it('Codex plugin declares install-surface metadata without extra runtime surfaces', () => {
     const plugin = JSON.parse(
       fs.readFileSync(path.join(REPO_ROOT, '.codex-plugin', 'plugin.json'), 'utf8')
-    ) as { hooks?: string; skills: string[] };
+    ) as {
+      hooks?: string;
+      skills: string | string[];
+      mcpServers?: unknown;
+      apps?: unknown;
+      interface?: { displayName?: string; defaultPrompt?: string[] };
+    };
 
-    expect(plugin.skills).toContain('./skill/');
-    expect(plugin.skills).toContain('./skill/skills/');
-    expect(plugin.hooks).toBe('./skill/hooks/codex/hooks.json');
+    expect(plugin.skills).toBe('./skill/');
+    expect(plugin.hooks).toBeUndefined();
+    expect(plugin.mcpServers).toBeUndefined();
+    expect(plugin.apps).toBeUndefined();
+    expect(plugin.interface?.displayName).toBe('Boss');
+    expect(plugin.interface?.defaultPrompt?.length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    '.agents/plugins/marketplace.json',
+    '.codex-plugin/marketplace.json',
+    '.claude-plugin/marketplace.json'
+  ])('%s declares install policy and structured local source', (relativePath) => {
+    const marketplace = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, relativePath), 'utf8')) as {
+      plugins?: Array<{
+        name?: string;
+        source?: { source?: string; path?: string };
+        policy?: { installation?: string; authentication?: string };
+        category?: string;
+      }>;
+    };
+
+    const boss = marketplace.plugins?.find((plugin) => plugin.name === 'boss');
+    expect(boss?.source).toEqual({ source: 'local', path: './' });
+    expect(boss?.policy).toEqual({ installation: 'AVAILABLE', authentication: 'ON_INSTALL' });
+    expect(boss?.category).toBe('Productivity');
+  });
+
+  it('keeps publisher identity and support URLs consistent across publish metadata', () => {
+    const packageJson = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8')) as {
+      author?: { name?: string; email?: string; url?: string };
+      bugs?: { url?: string };
+    };
+    const codexPlugin = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, '.codex-plugin', 'plugin.json'), 'utf8')) as {
+      author?: { name?: string; email?: string; url?: string };
+    };
+    const marketplaces = [
+      '.agents/plugins/marketplace.json',
+      '.codex-plugin/marketplace.json',
+      '.claude-plugin/marketplace.json'
+    ].map((relativePath) => JSON.parse(fs.readFileSync(path.join(REPO_ROOT, relativePath), 'utf8')) as {
+      owner?: { name?: string; email?: string; url?: string };
+      support?: { url?: string; security?: string };
+    });
+
+    expect(packageJson.author).toEqual(codexPlugin.author);
+    for (const marketplace of marketplaces) {
+      expect(marketplace.owner).toEqual(packageJson.author);
+      expect(marketplace.support?.url).toBe(packageJson.bugs?.url);
+      expect(marketplace.support?.security).toBe('https://github.com/echoVic/boss-skill/security/advisories/new');
+    }
   });
 
   it('npm dry-run pack includes release-critical runtime, skill, and plugin files', () => {

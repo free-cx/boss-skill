@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
+const PROVENANCE_FILE = '.agents/plugins/provenance.json';
 
 // ── 需要同步版本号的文件 ───────────────────────────────
 const VERSION_FILES = [
@@ -89,6 +90,27 @@ const VERSION_FILES = [
     }
   },
   {
+    path: '.agents/plugins/marketplace.json',
+    kind: 'marketplace',
+    update(content, version) {
+      const obj = JSON.parse(content);
+      obj.version = version;
+      if (Array.isArray(obj.plugins)) {
+        for (const p of obj.plugins) {
+          p.version = version;
+        }
+      }
+      return JSON.stringify(obj, null, 2) + '\n';
+    }
+  },
+  {
+    path: PROVENANCE_FILE,
+    kind: 'provenance',
+    update(content, version) {
+      return content;
+    }
+  },
+  {
     path: 'skill/SKILL.md',
     kind: 'skill',
     update(content, version) {
@@ -146,6 +168,11 @@ function verifyVersionFile(file, version) {
     if (!match || match[1].trim() !== version) {
       throw new Error(`${file.path} frontmatter version=${match ? match[1].trim() : '<missing>'}`);
     }
+    return;
+  }
+
+  if (file.kind === 'provenance') {
+    run('npm run provenance:verify');
     return;
   }
 
@@ -211,6 +238,9 @@ function main() {
   // 3. 同步所有版本号
   console.log(`\n✏️  同步版本号 → ${next}`);
   for (const file of VERSION_FILES) {
+    if (file.kind === 'provenance') {
+      continue;
+    }
     const content = readFile(file.path);
     const updated = file.update(content, next);
     if (dryRun) {
@@ -219,6 +249,11 @@ function main() {
       writeFile(file.path, updated);
       console.log(`  ✅ ${file.path}`);
     }
+  }
+  if (dryRun) {
+    console.log(`  [dry-run] 将更新 ${PROVENANCE_FILE}`);
+  } else {
+    run('npm run provenance:generate');
   }
 
   // 4. 验证一致性

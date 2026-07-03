@@ -2,6 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@blade-ai/boss-skill)](https://www.npmjs.com/package/@blade-ai/boss-skill)
 [![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/echoVic/boss-skill?utm_source=oss&utm_medium=github&utm_campaign=echoVic%2Fboss-skill&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
+[![Boss trust badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fhol.org%2Fapi%2Fregistry%2Fbadges%2Fplugin%3Fslug%3Dechovic%252Fboss%26metric%3Dtrust%26style%3Dflat)](https://hol.org/registry/plugins/echovic%2Fboss)
 
 [English README](./README.md)
 
@@ -216,6 +217,27 @@ Hook 环境变量：
 | --- | --- |
 | `BOSS_HOOK_PROFILE` | `minimal`、`standard`、`strict` |
 | `BOSS_DISABLED_HOOKS` | 逗号分隔的 hook ID |
+
+## 安全敏感面
+
+Boss 会尽量保持发布用 plugin manifest 精简：只声明 bundled skills；没有实际 companion 文件时，不声明 MCP server、app manifest 或 assets。Codex hooks 由 `boss-skill install` 安装流程处理，不放在 marketplace manifest 里。
+
+npm 包会排除本地开发用 Agent 配置，例如 `.claude/settings.json` 和 `.claude/settings.local.json`。可发布的 plugin metadata 只放在 `.claude-plugin/`、`.codex-plugin/` 和 `.agents/plugins/marketplace.json`。
+
+发布 provenance 位于 `.agents/plugins/provenance.json`。它记录仓库 HTTPS URL、不可变 source commit SHA、publisher 身份，以及 plugin manifests 和安全敏感组件的 SHA-256 摘要。可用下面命令校验：
+
+```bash
+npm run provenance:verify
+```
+
+Publisher verification 属于外部平台操作，不在包内完成。HOL registry 可用仓库 owner 的 GitHub 账号在 `https://hol.org/guard/plugins` 认领插件。公开 trust card 地址是 `https://hol.org/registry/plugins/echovic%2Fboss/embed`。
+
+发布或安装前应重点关注这些敏感行为：
+
+- `boss-skill install` 可能写入 Agent 配置目录，例如 `~/.codex/skills/boss/`，并把 Boss 管理的 hook 条目合并到 `~/.codex/hooks.json`。
+- Hook 条目会执行 `boss hooks run ...`，再调度 `scripts/hooks/` 下的脚本。
+- `.boss/plugins/<name>/plugin.json` 下的 runtime 插件可以注册 gate 或 reporter hooks；启用项目前应审查本地插件。
+- 在敏感环境里，可用 `BOSS_HOOK_PROFILE=minimal` 或 `BOSS_DISABLED_HOOKS=<ids>` 降低 hook 行为。
 
 ## 流水线产物
 

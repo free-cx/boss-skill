@@ -31,3 +31,6 @@ packages/*/dist/
 # Superpowers local browser companion artifacts
 .superpowers/
 /dist
+
+# Local agent settings
+.claude/settings.local.json

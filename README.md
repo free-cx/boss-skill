@@ -2,6 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@blade-ai/boss-skill)](https://www.npmjs.com/package/@blade-ai/boss-skill)
 [![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/echoVic/boss-skill?utm_source=oss&utm_medium=github&utm_campaign=echoVic%2Fboss-skill&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
+[![Boss trust badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fhol.org%2Fapi%2Fregistry%2Fbadges%2Fplugin%3Fslug%3Dechovic%252Fboss%26metric%3Dtrust%26style%3Dflat)](https://hol.org/registry/plugins/echovic%2Fboss)
 
 [中文文档](./README.zh-CN.md)
 
@@ -216,6 +217,27 @@ Hooks are controlled by environment variables:
 | --- | --- |
 | `BOSS_HOOK_PROFILE` | `minimal`, `standard`, `strict` |
 | `BOSS_DISABLED_HOOKS` | Comma-separated hook IDs |
+
+## Security-Sensitive Surfaces
+
+Boss intentionally keeps the published plugin manifest small: it declares only bundled skills and omits MCP servers, app manifests, and asset references unless those companion files exist. Codex hooks are installed by the `boss-skill install` flow, not by the marketplace manifest.
+
+The npm package excludes local development agent settings such as `.claude/settings.json` and `.claude/settings.local.json`. Publishable plugin metadata lives under `.claude-plugin/`, `.codex-plugin/`, and `.agents/plugins/marketplace.json`.
+
+Release provenance lives in `.agents/plugins/provenance.json`. It pins the repository HTTPS URL, immutable source commit SHA, publisher identity, and SHA-256 digests for plugin manifests and security-sensitive components. Verify it with:
+
+```bash
+npm run provenance:verify
+```
+
+Publisher verification is external to the package. For the HOL registry, claim the plugin with the repository owner's GitHub account at `https://hol.org/guard/plugins`. The public trust card is available at `https://hol.org/registry/plugins/echovic%2Fboss/embed`.
+
+Security-sensitive behavior to review before publishing or installing:
+
+- `boss-skill install` may write to agent configuration directories such as `~/.codex/skills/boss/` and merge Boss-managed entries into `~/.codex/hooks.json`.
+- Hook entries execute `boss hooks run ...`, which dispatches scripts from `scripts/hooks/`.
+- Runtime plugins under `.boss/plugins/<name>/plugin.json` can register gate or reporter hooks; review project-local plugins before enabling them.
+- Use `BOSS_HOOK_PROFILE=minimal` or `BOSS_DISABLED_HOOKS=<ids>` when you need to reduce hook behavior in a sensitive environment.
 
 ## Pipeline Artifacts
 
