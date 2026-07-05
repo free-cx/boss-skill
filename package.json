@@ -35,6 +35,8 @@
     "automation"
   ],
   "files": [
+    "assets/",
+    "boss-skill-promo.png",
     "packages/boss-cli/dist/",
     "packages/boss-cli/assets/",
     "packages/boss-cli/src/runtime/schema/",

@@ -57,6 +57,9 @@ const REQUIRED_PACKED_FILES = [
   '.codex-plugin/marketplace.json',
   '.agents/plugins/marketplace.json',
   '.agents/plugins/provenance.json',
+  'assets/boss-composer-icon.svg',
+  'assets/boss-logo.svg',
+  'boss-skill-promo.png',
   'scripts/provenance.js',
   'scripts/hooks/lib/normalize-input.js',
   'scripts/hooks/subagent-stop.js'
