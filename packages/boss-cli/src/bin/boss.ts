@@ -19,6 +19,7 @@ import {
   runProjectCommand,
   runQaCommand,
   runRuntimeCommand,
+  runSkillsCommand,
   throwUnknownCommand,
   writeDescription
 } from '../cli/dispatcher.js';
@@ -45,6 +46,10 @@ function describeRoot() {
       'install',
       'uninstall',
       'path',
+      'skills add SOURCE',
+      'skills list',
+      'skills update NAME',
+      'skills remove NAME',
       'status FEATURE',
       'continue FEATURE',
       'launch FEATURE',
@@ -94,6 +99,9 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
         return 0;
       }
       return installMain(argv);
+
+    case 'skills':
+      return runSkillsCommand(commandArgv);
 
     case 'status':
       return statusMain(commandArgv, { cwd: process.cwd() });

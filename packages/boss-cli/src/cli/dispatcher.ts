@@ -17,7 +17,8 @@ import {
   packsDescription,
   projectDescription,
   qaDescription,
-  runtimeDescription
+  runtimeDescription,
+  skillsDescription
 } from './registry.js';
 import {
   ARTIFACT_USAGE,
@@ -27,6 +28,7 @@ import {
   PACKS_USAGE,
   PROJECT_USAGE,
   QA_USAGE,
+  SKILLS_USAGE,
   showRuntimeHelp
 } from './help.js';
 import { packageRootFromImportMeta } from '../infrastructure/paths.js';
@@ -350,6 +352,34 @@ export async function runArtifactCommand(argv: string[]): Promise<number> {
 
   const mod: CommandModule = await import('../commands/artifact/index.js');
   return mod.main(removeFirstPositional(argv, subcommand), { cwd: process.cwd() });
+}
+
+export async function runSkillsCommand(argv: string[]): Promise<number> {
+  const context = createCliContext(argv, { command: 'boss skills', validateOptionValues: false });
+  const subcommand = context.positionals[0];
+  const SKILLS_SUBCOMMANDS = ['add', 'list', 'update', 'remove'] as const;
+
+  if (context.values.describe && context.positionals.length === 0) {
+    writeDescription(describeGroup(skillsDescription, SKILLS_SUBCOMMANDS), context);
+    return 0;
+  }
+
+  if (!subcommand || argv.includes('-h') || argv.includes('--help')) {
+    process.stdout.write(SKILLS_USAGE);
+    return 0;
+  }
+
+  if (!SKILLS_SUBCOMMANDS.includes(subcommand as (typeof SKILLS_SUBCOMMANDS)[number])) {
+    throwUnknownCommand('boss skills', subcommand);
+  }
+
+  if (context.values.describe) {
+    writeDescription(describeRegisteredCommand(`boss skills ${subcommand}`), context);
+    return 0;
+  }
+
+  const mod: CommandModule = await import('../commands/skills/index.js');
+  return mod.main(argv, { cwd: process.cwd() });
 }
 
 export async function runPacksCommand(argv: string[]): Promise<number> {

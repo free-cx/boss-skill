@@ -372,6 +372,53 @@ export function buildInstallPlan(): InstallAction[] {
   }));
 }
 
+async function runInteractiveInstall(): Promise<number> {
+  const { runInstallWizard } = await import('../../skills/self-install-wizard.js');
+  return runInstallWizard({
+    version: pkg.version,
+    agents: AGENTS.map((agent) => {
+      const dest = agent.dest();
+      const sideEffects: string[] = [];
+      if (agent.method === 'codex-copy') {
+        sideEffects.push(`merge Boss hooks into ${path.join(HOME, '.codex', 'hooks.json')}`);
+      }
+      if (agent.method === 'plugin') {
+        sideEffects.push('no files copied — loaded via claude --plugin-dir');
+      }
+      return {
+        name: agent.name,
+        detected: agent.detect(),
+        dest,
+        method: agent.method,
+        sideEffects,
+        postInstallNote:
+          agent.method === 'plugin'
+            ? [`Use:  claude --plugin-dir "${PKG_ROOT}"`, `Or:   claude --plugin-dir "$(boss-skill path)"`]
+            : undefined,
+        install: () => {
+          if (agent.method === 'copy') {
+            copyInstall(agent, false, true);
+          } else if (agent.method === 'codex-copy') {
+            copyInstall(agent, false, true);
+            installCodexHooks(false, true);
+          }
+        }
+      };
+    })
+  });
+}
+
+function shouldRunWizard(context: ReturnType<typeof createCliContext>): boolean {
+  return (
+    context.stdinIsTTY &&
+    context.stdoutIsTTY &&
+    !context.useJson &&
+    !context.values.yes &&
+    !context.values.dryRun &&
+    !context.values.describe
+  );
+}
+
 export function buildUninstallPlan(): UninstallAction[] {
   return AGENTS.filter((agent) => agent.method !== 'plugin' && agent.detect()).map((agent) => {
     const dest = agent.dest();
@@ -437,7 +484,7 @@ export function showHelp(): void {
   console.log(`${USAGE}\n${INSTALL_HELP}`);
 }
 
-export function installMain(argv: string[] = process.argv.slice(2)): number {
+export function installMain(argv: string[] = process.argv.slice(2)): number | Promise<number> {
   const forceHuman = argv.includes('--human');
   const normalizedArgv = argv.filter((arg) => arg !== '--human');
   const context = createCliContext(normalizedArgv, { command: 'boss install' });
@@ -472,6 +519,9 @@ export function installMain(argv: string[] = process.argv.slice(2)): number {
           () => ''
         );
         return 0;
+      }
+      if (shouldRunWizard(context)) {
+        return runInteractiveInstall();
       }
       autoInstall(dryRun);
       return 0;

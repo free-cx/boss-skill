@@ -9,7 +9,8 @@ import {
   projectDescription,
   qaDescription,
   rootDescription,
-  runtimeDescription
+  runtimeDescription,
+  skillsDescription
 } from './registry.js';
 
 export const ROOT_USAGE = [
@@ -18,6 +19,10 @@ export const ROOT_USAGE = [
   '  install',
   '  uninstall',
   '  path',
+  '  skills add SOURCE',
+  '  skills list',
+  '  skills update [NAME]',
+  '  skills remove NAME',
   '  status FEATURE',
   '  continue FEATURE',
   '  gate FEATURE',
@@ -80,6 +85,19 @@ export const PACKS_USAGE = [
   renderHelp(packsDescription, 'boss packs detect [project-dir]'),
   'Commands:',
   '  detect',
+  ''
+].join('\n');
+
+export const SKILLS_USAGE = [
+  renderHelp(skillsDescription, 'boss skills COMMAND [options]'),
+  'Commands:',
+  '  add <source> [--skills a,b] [--agents id1,id2] [--global]',
+  '      Install skills from owner/repo, git URL (@ref) or local dir.',
+  '      Default: project install (.agents/skills + per-agent dirs, skills-lock.json).',
+  '      --global installs to each agent home directory instead.',
+  '  list [--global]              Show installed skills',
+  '  update [name] [--global]     Re-fetch sources and reinstall',
+  '  remove <name> [--global]     Remove installed copies',
   ''
 ].join('\n');
 
