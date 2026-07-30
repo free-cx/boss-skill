@@ -27,6 +27,9 @@ packages/*/dist/
 
 # Boss generated artifacts
 .boss/
+# ...except committed eval fixtures, which intentionally ship a .boss workspace
+!test/evals/fixtures/**/workspace/.boss/
+!test/evals/fixtures/**/workspace/.boss/**
 
 # Superpowers local browser companion artifacts
 .superpowers/
