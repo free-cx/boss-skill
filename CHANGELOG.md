@@ -34,7 +34,10 @@
 - 安装文档主推 `npx skills add echoVic/boss-skill`（vercel-labs/skills 主流工具）。
 - README 新增 Platform Support 一节，显式声明跨平台边界：核心管线无 POSIX-only 假设、
   `git` 与 `bash gate.sh` 为可选并优雅降级。
-- `CHANGELOG.md`（本文件）与隐私/网络边界声明。
+- **`PRIVACY.md`**：声明 boss 默认零出网——移除 knowledge 外挂后不再有任何出站请求，
+  唯一网络面是 opt-in 的 `boss design preview` 回环服务器；并附 `network-boundary`
+  测试从源码层守卫该不变量（禁止引入网络客户端、预览服务器只绑 `127.0.0.1`）。
+- `CHANGELOG.md`（本文件）。
 
 ### 变更（Changed）
 

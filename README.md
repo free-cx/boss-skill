@@ -286,6 +286,10 @@ Security-sensitive behavior to review before publishing or installing:
 - Runtime plugins under `.boss/plugins/<name>/plugin.json` can register gate or reporter hooks; review project-local plugins before enabling them.
 - Use `BOSS_HOOK_PROFILE=minimal` or `BOSS_DISABLED_HOOKS=<ids>` when you need to reduce hook behavior in a sensitive environment.
 
+Boss is local-first and makes no outbound network requests by default; the only network
+surface is the opt-in, loopback-only `boss design preview` server. See [PRIVACY.md](PRIVACY.md)
+for the full data and network boundary.
+
 ## Pipeline Artifacts
 
 ```text
