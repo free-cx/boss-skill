@@ -74,7 +74,6 @@ function renderText(summary: ReturnType<typeof inspectPipeline>): string {
   lines.push(`conversationMetrics: opened=${summary.conversationMetrics.opened} resolved=${summary.conversationMetrics.resolved} todos=${summary.conversationMetrics.todos} huddles=${summary.conversationMetrics.huddles} unresolved=${summary.conversationMetrics.unresolved}`);
   lines.push(`derivedTodos: ${summary.derivedTodos.length}`);
   lines.push(`memoryStartup: ${((summary.memory && summary.memory.startupSummary) || []).map((item) => item.summary).join(' | ') || 'none'}`);
-  lines.push(`knowledgeStartup: ${((summary.knowledge && summary.knowledge.startupSummary) || []).map((item) => item.summary).join(' | ') || 'none'}`);
   return `${lines.join('\n')}\n`;
 }
 

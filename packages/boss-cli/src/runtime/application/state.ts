@@ -4,7 +4,6 @@ import * as path from 'node:path';
 import { EVENT_TYPE_VALUES, type EventType } from '../domain/event-types.js';
 import type { ExecutionState, RuntimeEvent } from '../projectors/materialize-state.js';
 import { buildFeatureSummary, rebuildFeatureMemory, rebuildGlobalMemory } from './memory.js';
-import { refreshKnowledge } from './knowledge.js';
 import type { PipelinePackStateParameters } from './packs.js';
 
 export interface PipelineParameters extends Record<string, unknown>, PipelinePackStateParameters {
@@ -29,6 +28,8 @@ export interface PipelineExecutionState extends Omit<ExecutionState, 'parameters
 
 export interface ArtifactDefinition {
   inputs?: string[];
+  /** 显式声明该产物写入的路径集合；用于并行安全组分组。缺省回退到产物名。 */
+  writes?: string[];
   agent?: string | string[] | null;
   stage?: number;
   optional?: boolean;
@@ -118,5 +119,4 @@ export function refreshMemory(feature: string, cwd: string): void {
     const message = (err as Error).message;
     process.stderr.write(`[boss-skill] memory refresh skipped: ${message}\n`);
   }
-  refreshKnowledge(feature, cwd);
 }

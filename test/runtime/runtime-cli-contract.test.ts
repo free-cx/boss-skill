@@ -519,7 +519,9 @@ describe('runtime CLI contract', () => {
       ],
       { cwd: tmpDir }
     );
-    initPipeline('test-feat', { cwd: tmpDir });
+    // 注意：不在 seed 之后调用 initPipeline —— 那会触发 refreshMemory→rebuildFeatureMemory，
+    // 而 rebuild 是对事件流的全量重放（replaceFeatureMemory），会覆盖这条手工 seed 的记录
+    // （它没有对应的 events.jsonl 来源）。query-memory 只需 feature-memory.json + summary。
     buildFeatureSummary('test-feat', { cwd: tmpDir });
 
     const result = runCli('query-memory', ['test-feat', '--agent', 'boss-backend', '--json']);

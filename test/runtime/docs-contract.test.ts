@@ -149,9 +149,12 @@ describe('package metadata', () => {
     expect(pkg.files).not.toContain('SKILL.md');
   });
 
-  it('registers main and methodology skill roots for Claude Code plugin mode', () => {
+  it('declares a single skill root so external skill CLIs discover only boss', () => {
+    // boss 是「一个 skill」，不是一筐平级 skill。只声明 ./skill/ 一个根，
+    // 与 .codex-plugin 对齐：`npx skills add echoVic/boss-skill` 只列出 boss，
+    // skill/skills/ 下的内部方法论随 ./skill/ 目录树整体安装（不被列成独立可选项）。
     expect(claudePlugin.skills).toContain('./skill/');
-    expect(claudePlugin.skills).toContain('./skill/skills/');
+    expect(claudePlugin.skills).not.toContain('./skill/skills/');
   });
 
   it('documents the src to dist layout', () => {
@@ -294,6 +297,20 @@ describe('boss natural language command contract', () => {
 });
 
 describe('multi-driver runtime documentation contract', () => {
+  it('documents the host-primitive boundary so Boss does not reinvent host capabilities', () => {
+    // Boss 只应提供宿主没有的三件事；其余一律用宿主原语。
+    expect(skill).toContain('不重造宿主已有的能力');
+    expect(platformDrivers).toContain('不重造宿主原语');
+
+    // 边界表必须点明三项自有能力
+    for (const owned of ['事件溯源', '门禁', 'provenance']) {
+      expect(skill).toContain(owned);
+    }
+
+    // 不得把宿主工具名硬编码进跨宿主文档（各宿主命名不同）
+    expect(platformDrivers).not.toContain('TodoWrite');
+  });
+
   it('documents multi-driver runtime without weakening Claude Code hooks', () => {
     expect(multiDriverRuntimePlan).toContain('Claude Code');
     expect(multiDriverRuntimePlan).toContain('Codex');
@@ -419,9 +436,13 @@ describe('subagent orchestration safety contract', () => {
   });
 
   it('documents conversation escalation behavior in the QA prompt', () => {
-    expect(qaAgent).toContain('request_change');
-    expect(qaAgent).toContain('huddle');
-    expect(qaAgent).toContain('single-owner todo');
+    // 会话原语已从 9 个 agent prompt 收敛到共享协议（prefix 缓存原则）。
+    // 因此这里验证两件事：QA prompt 确实指向共享协议，且共享协议真的定义了这些原语。
+    expect(qaAgent).toContain('agents/shared/agent-protocol.md');
+    expect(qaAgent).toContain('执行中会话层');
+    for (const primitive of ['request_change', 'huddle', 'single-owner todo']) {
+      expect(sharedAgentProtocol).toContain(primitive);
+    }
   });
 });
 

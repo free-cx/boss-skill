@@ -17,8 +17,8 @@ const pluginConfig = JSON.parse(fs.readFileSync(path.join(pluginDir, 'plugin.jso
 const { dimensions, passThreshold, model, maxTokens, timeout } = pluginConfig;
 
 // Determine API credentials
-const apiKey = process.env.LLM_JUDGE_API_KEY || process.env.BOSS_KNOWLEDGE_API_KEY || process.env.OPENAI_API_KEY;
-const baseUrl = process.env.LLM_JUDGE_BASE_URL || process.env.BOSS_KNOWLEDGE_BASE_URL || 'https://api.openai.com/v1';
+const apiKey = process.env.LLM_JUDGE_API_KEY || process.env.OPENAI_API_KEY;
+const baseUrl = process.env.LLM_JUDGE_BASE_URL || 'https://api.openai.com/v1';
 const modelName = process.env.LLM_JUDGE_MODEL || model;
 
 if (!apiKey) {

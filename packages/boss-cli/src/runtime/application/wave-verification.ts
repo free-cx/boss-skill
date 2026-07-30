@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 
 import { EVENT_TYPES } from '../domain/event-types.js';
+import { formatCommand, type StructuredCommand } from '../domain/structured-wave.js';
 import { readWaves, type EvidenceWave } from './waves.js';
 import { appendRuntimeEvent, ensureFeatureName } from './state.js';
 import type { RuntimeEvent } from '../projectors/materialize-state.js';
@@ -31,14 +32,33 @@ export interface WaveVerificationResult {
   event?: { id: number; type: string };
 }
 
-function runShellCommand(cmd: string, cwd: string): { exitCode: number; stdout: string; stderr: string } {
-  const result = spawnSync(cmd, {
+/**
+ * 执行一条结构化命令。
+ *
+ * 不使用 `shell: true`：命令与参数以 argv 数组传递，由内核直接 exec，
+ * 因此 tasks.md / waves.json 里的元字符不会被解释。
+ * 历史上此处对 Markdown 单元格用了 shell，克隆恶意仓库即可任意执行命令。
+ */
+function runStructuredCommand(
+  command: StructuredCommand,
+  cwd: string
+): { exitCode: number; stdout: string; stderr: string } {
+  const result = spawnSync(command.command, command.args, {
     cwd,
-    shell: true,
+    shell: false,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     timeout: 120_000
   });
+
+  if (result.error) {
+    const code = (result.error as NodeJS.ErrnoException).code;
+    const message = code === 'ENOENT'
+      ? `找不到可执行文件: ${command.command}`
+      : result.error.message;
+    return { exitCode: 127, stdout: '', stderr: message };
+  }
+
   return {
     exitCode: result.status ?? 1,
     stdout: (result.stdout || '').trim().split('\n').slice(-30).join('\n'),
@@ -46,18 +66,20 @@ function runShellCommand(cmd: string, cwd: string): { exitCode: number; stdout: 
   };
 }
 
-function verifyRedPhase(commands: string[], cwd: string): PhaseResult {
+function verifyRedPhase(commands: StructuredCommand[], cwd: string): PhaseResult {
   const results = commands.map((cmd) => {
-    const { exitCode, stdout, stderr } = runShellCommand(cmd, cwd);
-    return { command: cmd, exitCode, passed: exitCode !== 0, stdout, stderr };
+    const { exitCode, stdout, stderr } = runStructuredCommand(cmd, cwd);
+    // 红测「正确」意味着它确实失败了；但找不到可执行文件不算有效的红。
+    const passed = exitCode !== 0 && exitCode !== 127;
+    return { command: formatCommand(cmd), exitCode, passed, stdout, stderr };
   });
   return { results, allCorrect: results.every((r) => r.passed) };
 }
 
-function verifyGreenPhase(commands: string[], cwd: string): PhaseResult {
+function verifyGreenPhase(commands: StructuredCommand[], cwd: string): PhaseResult {
   const results = commands.map((cmd) => {
-    const { exitCode, stdout, stderr } = runShellCommand(cmd, cwd);
-    return { command: cmd, exitCode, passed: exitCode === 0, stdout, stderr };
+    const { exitCode, stdout, stderr } = runStructuredCommand(cmd, cwd);
+    return { command: formatCommand(cmd), exitCode, passed: exitCode === 0, stdout, stderr };
   });
   return { results, allCorrect: results.every((r) => r.passed) };
 }

@@ -64,7 +64,7 @@ describe('subagent-stop hook', () => {
     expect(fs.existsSync(logFile)).toBe(true);
   });
 
-  it('requires structured boss status blocks for boss agents', () => {
+  it('records the reported status for boss agents', () => {
     const execData = createExecData({
       feature: 'test-feat',
       status: 'running',
@@ -82,13 +82,9 @@ describe('subagent-stop hook', () => {
         cwd: tmpDir,
         agent_type: 'boss-tech-lead',
         agent_id: 'agent-789',
-        last_assistant_message: [
-          'DONE',
-          '[BOSS_STATUS]',
-          'status: BLOCKED',
-          'reason: waiting-for-schema',
-          '[/BOSS_STATUS]'
-        ].join('\n')
+        // 散文里写 DONE 不影响结果：状态只来自结构化字段
+        last_assistant_message: 'DONE',
+        structured_output: { status: 'BLOCKED', reason: 'waiting-for-schema' }
       })
     );
 
@@ -115,7 +111,7 @@ describe('subagent-stop hook', () => {
     expect(entry.reason).toBe('waiting-for-schema');
   });
 
-  it('treats missing structured status blocks as failed without fallback parsing', () => {
+  it('does not record any agent status when none was reported', () => {
     const execData = createExecData({
       feature: 'test-feat',
       status: 'running',
@@ -142,17 +138,17 @@ describe('subagent-stop hook', () => {
     ) as {
       stages: {
         '2': {
-          agents: {
-            'boss-tech-lead': { status: string };
-          };
+          agents?: Record<string, { status: string }>;
         };
       };
     };
 
-    expect(execJson.stages['2'].agents['boss-tech-lead'].status).toBe('failed');
+    // 缺失上报应表现为「没推进」而非「失败」：
+    // 未按协议上报的执行不应被伪造成一个失败事件。
+    expect(execJson.stages['2'].agents?.['boss-tech-lead']).toBeUndefined();
   });
 
-  it('marks malformed BOSS_STATUS values with a parse reason', () => {
+  it('ignores unknown status values instead of inventing a failure reason', () => {
     const execData = createExecData({
       feature: 'test-feat',
       status: 'running',
@@ -170,12 +166,7 @@ describe('subagent-stop hook', () => {
         cwd: tmpDir,
         agent_type: 'boss-tech-lead',
         agent_id: 'agent-791',
-        last_assistant_message: [
-          '[BOSS_STATUS]',
-          'status: ALL_GOOD',
-          'reason: ship it',
-          '[/BOSS_STATUS]'
-        ].join('\n')
+        structured_output: { status: 'ALL_GOOD', reason: 'ship it' }
       })
     );
 
@@ -184,22 +175,21 @@ describe('subagent-stop hook', () => {
     ) as {
       stages: {
         '2': {
-          agents: {
-            'boss-tech-lead': { status: string; failureReason: string };
-          };
+          agents?: Record<string, { status: string }>;
         };
       };
     };
-    expect(execJson.stages['2'].agents['boss-tech-lead'].status).toBe('failed');
-    expect(execJson.stages['2'].agents['boss-tech-lead'].failureReason).toContain('Invalid BOSS_STATUS');
-    expect(execJson.stages['2'].agents['boss-tech-lead'].failureReason).toContain('ALL_GOOD');
+
+    // 非法枚举值由 report-agent-status 命令在工具层拒绝并要求重试，
+    // hook 侧不接受、也不猜测。
+    expect(execJson.stages['2'].agents?.['boss-tech-lead']).toBeUndefined();
 
     const logFile = path.join(tmpDir, '.boss', 'test-feat', '.meta', 'agent-log.jsonl');
     const entry = JSON.parse(fs.readFileSync(logFile, 'utf8').trim()) as {
       status: string;
       reason: string;
     };
-    expect(entry.status).toBe('INVALID');
-    expect(entry.reason).toContain('Invalid BOSS_STATUS');
+    expect(entry.status).toBe('');
+    expect(entry.reason).toBe('');
   });
 });

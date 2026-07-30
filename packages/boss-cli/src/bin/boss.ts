@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { main as continueMain } from '../commands/continue.js';
 import { installMain } from '../commands/install/index.js';
 import { main as statusMain } from '../commands/status.js';
-import { createCliContext, describeCommand, runMain } from '../cli/contract.js';
+import { CliUserError, createCliContext, describeCommand, runMain } from '../cli/contract.js';
 import { runtimeCommandNames } from '../cli/registry.js';
 import {
   describeRegisteredCommand,
@@ -19,7 +19,6 @@ import {
   runProjectCommand,
   runQaCommand,
   runRuntimeCommand,
-  runSkillsCommand,
   throwUnknownCommand,
   writeDescription
 } from '../cli/dispatcher.js';
@@ -46,10 +45,6 @@ function describeRoot() {
       'install',
       'uninstall',
       'path',
-      'skills add SOURCE',
-      'skills list',
-      'skills update NAME',
-      'skills remove NAME',
       'status FEATURE',
       'continue FEATURE',
       'launch FEATURE',
@@ -101,7 +96,14 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
       return installMain(argv);
 
     case 'skills':
-      return runSkillsCommand(commandArgv);
+      // `boss skills`（管理他人 skill 的通用管理器）已移除：boss 是被安装的 skill，
+      // 不再充当安装别的 skill 的工具。安装 boss 自身用 `boss install` / `npx @blade-ai/boss-skill`。
+      throw new CliUserError({
+        code: 'command_removed',
+        message: 'boss skills 命令组已移除',
+        retryable: false,
+        suggestion: '安装 boss 自身请用 `boss install`（或 `npx @blade-ai/boss-skill`）；boss 不再管理其它 skill'
+      });
 
     case 'status':
       return statusMain(commandArgv, { cwd: process.cwd() });

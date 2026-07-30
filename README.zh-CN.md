@@ -57,12 +57,26 @@ Boss 不等于“安装后 100% 自动交付”。它提供 runtime 工作流和
 
 ### 1. 安装
 
+Boss 是一个「被安装进 coding agent」的 skill，而不是用来安装其它 skill 的工具。
+
+**推荐 —— 通过 `skills` CLI（[vercel-labs/skills](https://github.com/vercel-labs/skills)，skills.sh）：**
+
 ```bash
+npx skills add echoVic/boss-skill
+```
+
+这是安装 skill 的标准、跨 agent 的主流方式：它从仓库发现 `boss`，交互式询问目标 Agent / 安装范围（项目 vs 全局）/ 安装方式，并生成可提交的 `skills-lock.json`。Boss 只暴露一个 skill 根，所以选择列表只出现 `boss` 一项——其内部方法论随它一起安装。
+
+**备选 —— Boss 自带的多宿主安装器**（自动检测 Claude Code、Codex、OpenClaw、Antigravity、Hermes 并全部安装，同时合并 Codex hooks）：
+
+```bash
+# 一次性运行，无需全局安装
+npx @blade-ai/boss-skill
+
+# 或全局安装后运行自安装向导
 npm install -g @blade-ai/boss-skill
 boss-skill
 ```
-
-`boss-skill` 会自动检测支持的 Agent，并尽量把 Boss skill bundle 安装到对应位置。
 
 Claude Code plugin 模式：
 

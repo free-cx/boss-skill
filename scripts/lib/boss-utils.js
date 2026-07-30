@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const STAGE_MAP = {
   'prd.md': 1,
@@ -146,6 +147,29 @@ function getReadyArtifacts(dag, execData, params) {
   return ready;
 }
 
+/**
+ * 解析 artifact DAG 路径，顺序与 CLI 的 resolveArtifactDagPath 一致：
+ * 项目级 `.boss/artifact-dag.json` → 内置资产。
+ *
+ * 历史上 hook 只查 `harness/artifact-dag.json`，而该目录在迁移后已不存在，
+ * 导致 DAG 永远加载失败、ready 判定这条逃生门永久失效，合法的产物写入会被误拦。
+ */
+function resolveArtifactDagPath(cwd) {
+  const projectDag = path.join(cwd, '.boss', 'artifact-dag.json');
+  if (fs.existsSync(projectDag)) return projectDag;
+
+  const builtIn = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '..',
+    '..',
+    'packages',
+    'boss-cli',
+    'assets',
+    'artifact-dag.json'
+  );
+  return fs.existsSync(builtIn) ? builtIn : null;
+}
+
 export {
   STAGE_MAP,
   AGENT_STAGE_MAP,
@@ -153,5 +177,6 @@ export {
   findActiveFeature,
   writeJson,
   loadArtifactDag,
+  resolveArtifactDagPath,
   getReadyArtifacts
 };

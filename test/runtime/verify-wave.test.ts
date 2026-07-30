@@ -22,6 +22,41 @@ function writeTasksWithWave(tmpDir: string, feature: string, rows: string[]): vo
   );
 }
 
+interface WaveFixture {
+  id: string;
+  title?: string;
+  redTests?: string[][];
+  greenGates?: string[][];
+}
+
+/**
+ * 写入结构化 waves.json。命令用 argv 数组表达，因此这里用真实可执行文件
+ * `true` / `false`，而不是 shell 内建的 `exit 0` / `exit 1`。
+ */
+function writeStructuredWaves(tmpDir: string, feature: string, waves: WaveFixture[]): void {
+  const featureDir = path.join(tmpDir, '.boss', feature);
+  fs.mkdirSync(featureDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(featureDir, 'waves.json'),
+    JSON.stringify(
+      {
+        waves: waves.map((wave) => ({
+          id: wave.id,
+          title: wave.title ?? wave.id,
+          scope: 'scope',
+          writeSet: ['src/a.ts'],
+          redTests: wave.redTests ?? [],
+          greenGates: wave.greenGates ?? [],
+          contractRows: ['CM-1'],
+          stopCondition: 'Stop'
+        }))
+      },
+      null,
+      2
+    )
+  );
+}
+
 describe('verify-wave', () => {
   let tmpDir: string;
   const feature = 'test-feat';
@@ -54,8 +89,8 @@ describe('verify-wave', () => {
 
   describe('red phase', () => {
     it('verified=true when all red tests fail (exitCode != 0)', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：Red | scope | `src/a.ts` | `exit 1` | `exit 0` | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-red', redTests: [['false']], greenGates: [['true']] }
       ]);
       const result = verifyWave(feature, 'wave-1-red', 'red', { cwd: tmpDir });
       expect(result.verified).toBe(true);
@@ -65,8 +100,8 @@ describe('verify-wave', () => {
     });
 
     it('verified=false when a red test passes unexpectedly (exitCode == 0)', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：Red | scope | `src/a.ts` | `exit 0` | `exit 0` | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-red', redTests: [['true']], greenGates: [['true']] }
       ]);
       const result = verifyWave(feature, 'wave-1-red', 'red', { cwd: tmpDir });
       expect(result.verified).toBe(false);
@@ -75,8 +110,8 @@ describe('verify-wave', () => {
     });
 
     it('handles multiple red test commands', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：Multi | scope | `src/a.ts` | `exit 1`, `exit 1` | `exit 0` | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-multi', redTests: [['false'], ['false']], greenGates: [['true']] }
       ]);
       const result = verifyWave(feature, 'wave-1-multi', 'red', { cwd: tmpDir });
       expect(result.verified).toBe(true);
@@ -84,8 +119,8 @@ describe('verify-wave', () => {
     });
 
     it('throws when wave has no redTests', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：Empty | scope | `src/a.ts` |  | `exit 0` | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-empty', redTests: [], greenGates: [['true']] }
       ]);
       expect(() => verifyWave(feature, 'wave-1-empty', 'red', { cwd: tmpDir })).toThrow(
         '没有定义 redTests'
@@ -95,8 +130,8 @@ describe('verify-wave', () => {
 
   describe('green phase', () => {
     it('verified=true when all green gates pass (exitCode == 0)', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：Green | scope | `src/a.ts` | `exit 1` | `exit 0` | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-green', redTests: [['false']], greenGates: [['true']] }
       ]);
       const result = verifyWave(feature, 'wave-1-green', 'green', { cwd: tmpDir });
       expect(result.verified).toBe(true);
@@ -106,8 +141,8 @@ describe('verify-wave', () => {
     });
 
     it('verified=false when a green gate fails (exitCode != 0)', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：Green | scope | `src/a.ts` | `exit 1` | `exit 1` | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-green', redTests: [['false']], greenGates: [['false']] }
       ]);
       const result = verifyWave(feature, 'wave-1-green', 'green', { cwd: tmpDir });
       expect(result.verified).toBe(false);
@@ -116,8 +151,8 @@ describe('verify-wave', () => {
     });
 
     it('throws when wave has no greenGates', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：NoGate | scope | `src/a.ts` | `exit 1` |  | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-nogate', redTests: [['false']], greenGates: [] }
       ]);
       expect(() => verifyWave(feature, 'wave-1-nogate', 'green', { cwd: tmpDir })).toThrow(
         '没有定义 greenGates'
@@ -127,8 +162,8 @@ describe('verify-wave', () => {
 
   describe('full phase', () => {
     it('verified=true when red fails and green passes', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：Full | scope | `src/a.ts` | `exit 1` | `exit 0` | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-full', redTests: [['false']], greenGates: [['true']] }
       ]);
       const result = verifyWave(feature, 'wave-1-full', 'full', { cwd: tmpDir });
       expect(result.verified).toBe(true);
@@ -137,16 +172,16 @@ describe('verify-wave', () => {
     });
 
     it('verified=false when red passes unexpectedly', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：Full | scope | `src/a.ts` | `exit 0` | `exit 0` | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-full', redTests: [['true']], greenGates: [['true']] }
       ]);
       const result = verifyWave(feature, 'wave-1-full', 'full', { cwd: tmpDir });
       expect(result.verified).toBe(false);
     });
 
     it('verified=false when green fails', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：Full | scope | `src/a.ts` | `exit 1` | `exit 1` | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-full', redTests: [['false']], greenGates: [['false']] }
       ]);
       const result = verifyWave(feature, 'wave-1-full', 'full', { cwd: tmpDir });
       expect(result.verified).toBe(false);
@@ -155,8 +190,8 @@ describe('verify-wave', () => {
 
   describe('event recording', () => {
     it('appends WaveVerified event to events.jsonl', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：Ev | scope | `src/a.ts` | `exit 1` | `exit 0` | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-ev', redTests: [['false']], greenGates: [['true']] }
       ]);
       const result = verifyWave(feature, 'wave-1-ev', 'full', { cwd: tmpDir });
       expect(result.event).toBeDefined();
@@ -175,8 +210,8 @@ describe('verify-wave', () => {
     });
 
     it('dry-run does not write event', () => {
-      writeTasksWithWave(tmpDir, feature, [
-        '| Wave 1：Dry | scope | `src/a.ts` | `exit 1` | `exit 0` | CM-1 | Stop |'
+      writeStructuredWaves(tmpDir, feature, [
+        { id: 'wave-1-dry', redTests: [['false']], greenGates: [['true']] }
       ]);
       const result = verifyWave(feature, 'wave-1-dry', 'full', { cwd: tmpDir, dryRun: true });
       expect(result.verified).toBe(true);

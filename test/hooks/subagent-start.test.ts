@@ -87,7 +87,7 @@ describe('subagent-start hook', () => {
 
     expect(parsed.hookSpecificOutput.additionalContext).toContain('test-feat');
     expect(parsed.hookSpecificOutput.additionalContext).toContain('code');
-    expect(parsed.hookSpecificOutput.additionalContext).toContain('BOSS_STATUS');
+    expect(parsed.hookSpecificOutput.additionalContext).toContain('report-agent-status');
   });
 
   it('marks known boss agents as running in execution state and emits progress', () => {

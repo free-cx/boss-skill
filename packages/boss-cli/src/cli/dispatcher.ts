@@ -17,8 +17,7 @@ import {
   packsDescription,
   projectDescription,
   qaDescription,
-  runtimeDescription,
-  skillsDescription
+  runtimeDescription
 } from './registry.js';
 import {
   ARTIFACT_USAGE,
@@ -28,7 +27,6 @@ import {
   PACKS_USAGE,
   PROJECT_USAGE,
   QA_USAGE,
-  SKILLS_USAGE,
   showRuntimeHelp
 } from './help.js';
 import { packageRootFromImportMeta } from '../infrastructure/paths.js';
@@ -61,6 +59,7 @@ const runtimeCommands: Record<string, () => Promise<RuntimeModule>> = {
   'query-memory': () => import('../commands/runtime/query-memory.js'),
   'record-artifact': () => import('../commands/runtime/record-artifact.js'),
   'record-feedback': () => import('../commands/runtime/record-feedback.js'),
+  'record-user-choice': () => import('../commands/runtime/record-user-choice.js'),
   'open-conversation': () => import('../commands/runtime/open-conversation.js'),
   'pause': () => import('../commands/runtime/pause.js'),
   'resume': () => import('../commands/runtime/resume.js'),
@@ -72,6 +71,7 @@ const runtimeCommands: Record<string, () => Promise<RuntimeModule>> = {
   'register-plugins': () => import('../commands/runtime/register-plugins.js'),
   'render-diagnostics': () => import('../commands/runtime/render-diagnostics.js'),
   'replay-events': () => import('../commands/runtime/replay-events.js'),
+  'report-agent-status': () => import('../commands/runtime/report-agent-status.js'),
   'retry-agent': () => import('../commands/runtime/retry-agent.js'),
   'retry-stage': () => import('../commands/runtime/retry-stage.js'),
   'run-plugin-hook': () => import('../commands/runtime/run-plugin-hook.js'),
@@ -352,34 +352,6 @@ export async function runArtifactCommand(argv: string[]): Promise<number> {
 
   const mod: CommandModule = await import('../commands/artifact/index.js');
   return mod.main(removeFirstPositional(argv, subcommand), { cwd: process.cwd() });
-}
-
-export async function runSkillsCommand(argv: string[]): Promise<number> {
-  const context = createCliContext(argv, { command: 'boss skills', validateOptionValues: false });
-  const subcommand = context.positionals[0];
-  const SKILLS_SUBCOMMANDS = ['add', 'list', 'update', 'remove'] as const;
-
-  if (context.values.describe && context.positionals.length === 0) {
-    writeDescription(describeGroup(skillsDescription, SKILLS_SUBCOMMANDS), context);
-    return 0;
-  }
-
-  if (!subcommand || argv.includes('-h') || argv.includes('--help')) {
-    process.stdout.write(SKILLS_USAGE);
-    return 0;
-  }
-
-  if (!SKILLS_SUBCOMMANDS.includes(subcommand as (typeof SKILLS_SUBCOMMANDS)[number])) {
-    throwUnknownCommand('boss skills', subcommand);
-  }
-
-  if (context.values.describe) {
-    writeDescription(describeRegisteredCommand(`boss skills ${subcommand}`), context);
-    return 0;
-  }
-
-  const mod: CommandModule = await import('../commands/skills/index.js');
-  return mod.main(argv, { cwd: process.cwd() });
 }
 
 export async function runPacksCommand(argv: string[]): Promise<number> {

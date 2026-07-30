@@ -46,9 +46,11 @@ describe('evidence wave runtime', () => {
       status: 'pending',
       scope: 'persistence and schema',
       writeSet: ['src/data.ts', 'src/schema.ts'],
-      greenGates: ['npm run typecheck', 'npm test -- data.test.ts'],
       contractRows: ['CM-1', 'CM-2']
     });
+    // Markdown 不再作为命令来源：命令须由 waves.json 以 argv 数组提供。
+    expect(waves[0]!.redTests).toEqual([]);
+    expect(waves[0]!.greenGates).toEqual([]);
   });
 
   it('populates buildBossStatus currentWave from the first non-completed wave', () => {
@@ -71,12 +73,12 @@ describe('evidence wave runtime', () => {
     expect(status.currentWave).toMatchObject({
       id: 'wave-1-runtime',
       title: 'Wave 1：Runtime',
-      status: 'pending',
-      greenGates: ['npm run typecheck']
+      status: 'pending'
     });
+    expect(status.currentWave?.greenGates).toEqual([]);
   });
 
-  it('keeps shell pipes inside code spans in the same table cell', () => {
+  it('never surfaces shell syntax from table cells as executable commands', () => {
     const featureDir = path.join(tmpDir, '.boss', 'test-feat');
     fs.mkdirSync(featureDir, { recursive: true });
     fs.writeFileSync(
@@ -84,19 +86,23 @@ describe('evidence wave runtime', () => {
       [
         '| Evidence Wave | 范围 | Owner 文件 | 红测 | 绿门禁 | Contract Matrix 行 | Stop Condition |',
         '| --- | --- | --- | --- | --- | --- | --- |',
-        '| Wave 1：Pipes | qa | `src/report.ts` | `npm test -- report.test.ts` | `cat report.json | jq .ok` | CM-pipe | Stop if report parse fails |'
+        '| Wave 1：Pipes | qa | `src/report.ts` | `touch /tmp/boss-pwned && exit 1` | `cat report.json | jq .ok` | CM-pipe | Stop if report parse fails |'
       ].join('\n')
     );
 
     const waves = readWaves('test-feat', { cwd: tmpDir });
 
+    // 回归防护：表格单元格曾被直接交给 `spawnSync(..., { shell: true })`，
+    // 任何能写 tasks.md 的人（例如被克隆的仓库）即可任意执行命令。
+    // 非命令字段仍可从 Markdown 读取，命令则一律为空。
     expect(waves[0]).toMatchObject({
       id: 'wave-1-pipes',
-      greenGates: ['cat report.json | jq .ok'],
       contractRows: ['CM-pipe'],
       pausePolicy: 'Stop if report parse fails',
       rollbackRisk: 'Stop if report parse fails'
     });
+    expect(waves[0]!.redTests).toEqual([]);
+    expect(waves[0]!.greenGates).toEqual([]);
   });
 
   it('generates stable non-empty ids for non-latin and duplicate titles', () => {

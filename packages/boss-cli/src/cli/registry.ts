@@ -1,4 +1,5 @@
 import type { CommandDescription } from './contract.js';
+import { AGENT_REPORT_STATUS_VALUES } from '../runtime/domain/agent-report.js';
 
 export const commonOptions = [
   { name: 'json', type: 'boolean' as const, default: false },
@@ -116,15 +117,6 @@ export const hooksDescription: CommandDescription = {
   summary: 'Run Boss hooks'
 };
 
-export const skillsDescription: CommandDescription = {
-  ...rootDescription,
-  command: 'boss skills',
-  summary: 'Install and manage skills from git repositories'
-};
-
-export const skillsAgentsOption = { name: 'agents', type: 'string' as const };
-export const skillsSelectionOption = { name: 'skills', type: 'string' as const };
-
 export const designPreviewOptions = [
   ...runtimeBaseOptions,
   { name: 'no-open', type: 'boolean' as const, default: false },
@@ -174,34 +166,6 @@ export const commandDescriptions: Record<string, CommandDescription> = {
     parameters: [],
     options: commonOptions,
     risk_tier: 'medium'
-  },
-  'boss skills add': {
-    command: 'boss skills add',
-    summary: 'Install skills from a git repository or local directory into agents',
-    parameters: [{ name: 'source', type: 'string', required: true }],
-    options: [...commonOptions, skillsSelectionOption, skillsAgentsOption],
-    risk_tier: 'medium'
-  },
-  'boss skills list': {
-    command: 'boss skills list',
-    summary: 'List skills installed via boss skills add',
-    parameters: [],
-    options: commonOptions,
-    risk_tier: 'low'
-  },
-  'boss skills update': {
-    command: 'boss skills update',
-    summary: 'Re-fetch sources and reinstall skills to their recorded targets',
-    parameters: [{ name: 'name', type: 'string', required: false }],
-    options: commonOptions,
-    risk_tier: 'medium'
-  },
-  'boss skills remove': {
-    command: 'boss skills remove',
-    summary: 'Remove an installed skill from agents and the manifest',
-    parameters: [{ name: 'name', type: 'string', required: true }],
-    options: [...commonOptions, skillsAgentsOption],
-    risk_tier: 'high'
   },
   'boss status': {
     command: 'boss status',
@@ -308,6 +272,7 @@ export const runtimeCommandNames = [
   'resume',
   'update-stage',
   'update-agent',
+  'report-agent-status',
   'agent-cache',
   'record-artifact',
   'get-ready-artifacts',
@@ -326,6 +291,7 @@ export const runtimeCommandNames = [
   'register-plugins',
   'run-plugin-hook',
   'record-feedback',
+  'record-user-choice',
   'open-conversation',
   'append-conversation-message',
   'resolve-conversation',
@@ -396,10 +362,12 @@ for (const name of [
   'launch',
   'update-stage',
   'update-agent',
+  'report-agent-status',
   'pause',
   'resume',
   'record-artifact',
   'record-feedback',
+  'record-user-choice',
   'open-conversation',
   'append-conversation-message',
   'resolve-conversation',
@@ -421,6 +389,28 @@ runtimeDescriptions['record-artifact'] = {
   options: [
     ...runtimeMutationOptions,
     { name: 'no-open', type: 'boolean' as const, default: false }
+  ],
+  risk_tier: 'medium'
+};
+
+runtimeDescriptions['report-agent-status'] = {
+  ...runtimeDescriptions['report-agent-status']!,
+  summary:
+    'Report a subagent terminal status through a validated enum instead of a prose status block',
+  parameters: [
+    { name: 'feature', type: 'string', required: true },
+    { name: 'stage', type: 'string', required: true },
+    { name: 'agent', type: 'string', required: true },
+    {
+      name: 'status',
+      type: 'string',
+      required: true,
+      enum: [...AGENT_REPORT_STATUS_VALUES]
+    }
+  ],
+  options: [
+    ...runtimeMutationOptions,
+    { name: 'reason', type: 'string' as const }
   ],
   risk_tier: 'medium'
 };
@@ -670,6 +660,20 @@ Object.assign(runtimeDescriptions, {
       { name: 'artifact', type: 'string' as const },
       { name: 'reason', type: 'string' as const },
       { name: 'priority', type: 'string' as const, default: 'recommended' }
+    ]
+  },
+  'record-user-choice': {
+    ...runtimeDescriptions['record-user-choice']!,
+    summary: 'Record a user choice as a durable preference in the event stream',
+    parameters: [{ name: 'feature', type: 'string' as const, required: true }],
+    options: [
+      ...runtimeMutationOptions,
+      { name: 'choice-type', type: 'string' as const },
+      { name: 'selected', type: 'string' as const },
+      { name: 'options', type: 'string' as const },
+      { name: 'reason', type: 'string' as const },
+      { name: 'agent', type: 'string' as const },
+      { name: 'stage', type: 'string' as const }
     ]
   },
   'open-conversation': {

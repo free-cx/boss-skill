@@ -167,6 +167,24 @@ export function saveFeatureMemory(
   return next;
 }
 
+/**
+ * 全量覆盖写入 feature memory，不与磁盘上的旧副本合并。
+ *
+ * 供 `rebuildFeatureMemory` 使用：它是对事件流的完整重放（projection），
+ * 结果必须直接替换旧投影。若走 `saveFeatureMemory` 的 merge 路径，会把上一次
+ * 投影当作"既有记录"再合并——`max(confidence)` 会掩盖偏好递减、evidence 会
+ * 每次重放累积，破坏"派生状态可从事件流精确重建"的不变量。
+ */
+export function replaceFeatureMemory(
+  feature: string,
+  records: PersistedMemoryRecord[],
+  { cwd = process.cwd() }: { cwd?: string } = {}
+): FeatureMemoryPayload {
+  const next = { feature, records };
+  writeJson(featureMemoryPath(cwd, feature), next);
+  return next;
+}
+
 export function saveFeatureSummary(
   feature: string,
   summary: FeatureMemorySummary,

@@ -780,6 +780,37 @@ export function recordFeedback(
   return state as PipelineExecutionState;
 }
 
+export function recordUserChoice(
+  feature: string,
+  opts: {
+    choiceType: string;
+    selected: string;
+    options?: string[];
+    reason?: string;
+    agent?: string;
+    stage?: number | null;
+    cwd?: string;
+  }
+): PipelineExecutionState {
+  const { cwd = process.cwd(), choiceType, selected, options, reason, agent, stage } = opts;
+  ensureFeatureName(feature);
+  if (!choiceType) throw new Error('缺少 choiceType 参数');
+  if (!selected) throw new Error('缺少 selected 参数');
+
+  appendRuntimeEvent(cwd, feature, EVENT_TYPES.USER_CHOICE_RECORDED, {
+    choiceType,
+    selected,
+    ...(options ? { options } : {}),
+    ...(reason ? { reason } : {}),
+    ...(agent ? { agent } : {}),
+    ...(stage != null ? { stage } : {})
+  });
+
+  const { state } = materializeState(feature, cwd);
+  refreshMemory(feature, cwd);
+  return state as PipelineExecutionState;
+}
+
 export function retryAgent(
   feature: string,
   stage: number | string,
