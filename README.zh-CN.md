@@ -57,12 +57,18 @@ Boss 不等于“安装后 100% 自动交付”。它提供 runtime 工作流和
 
 ### 1. 安装
 
+Boss 是一个「被安装进 coding agent」的 skill，而不是用来安装其它 skill 的工具。任选一种方式：
+
 ```bash
+# 一次性运行，无需全局安装
+npx @blade-ai/boss-skill
+
+# 或全局安装后运行自安装向导
 npm install -g @blade-ai/boss-skill
 boss-skill
 ```
 
-`boss-skill` 会自动检测支持的 Agent，并尽量把 Boss skill bundle 安装到对应位置。
+`boss-skill` 会自动检测支持的 Agent（Claude Code、Codex、OpenClaw、Antigravity、Hermes），并尽量把 Boss skill bundle 安装到对应位置。
 
 Claude Code plugin 模式：
 

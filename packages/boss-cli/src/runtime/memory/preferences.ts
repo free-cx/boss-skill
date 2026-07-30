@@ -40,7 +40,14 @@ function categoryFor(choiceType: string): string {
 }
 
 function preferenceId(category: string, subject: string): string {
-  return `pref-${category}-${subject}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  // 保留 subject 的可区分性：ASCII 字母数字与连字符原样保留（转小写），
+  // 其余字符（含全部 CJK）编码为其 Unicode 码点，避免不同的非 ASCII subject
+  // 被 `replace(/[^a-z0-9-]/g, '-')` 统一抹除后塌缩成同一 id、进而被误判为重复确认。
+  const encode = (value: string): string =>
+    [...value]
+      .map((char) => (/[a-z0-9-]/.test(char.toLowerCase()) ? char.toLowerCase() : `u${char.codePointAt(0)!.toString(36)}`))
+      .join('');
+  return `pref-${encode(category)}-${encode(subject)}`;
 }
 
 function buildSummary(data: UserChoiceEventData, confirmations: number): string {

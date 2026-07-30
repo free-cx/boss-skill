@@ -57,12 +57,18 @@ Boss does not mean "install once and get guaranteed autonomous delivery." It pro
 
 ### 1. Install
 
+Boss is a skill you install into your coding agent — not a tool that installs other skills. Pick either path:
+
 ```bash
+# One-shot, no global install
+npx @blade-ai/boss-skill
+
+# Or install globally, then run the self-install wizard
 npm install -g @blade-ai/boss-skill
 boss-skill
 ```
 
-`boss-skill` auto-detects supported agents and installs the Boss skill bundle where possible.
+`boss-skill` auto-detects supported agents (Claude Code, Codex, OpenClaw, Antigravity, Hermes) and installs the Boss skill bundle where possible.
 
 For Claude Code plugin mode:
 

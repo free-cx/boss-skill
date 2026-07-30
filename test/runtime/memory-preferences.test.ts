@@ -73,6 +73,38 @@ describe('memory/preferences deterministic fold', () => {
     expect(byTag['方案B']!.evidence).toHaveLength(1);
   });
 
+  it('keeps pure-CJK opposing choices distinct instead of collapsing to one id', () => {
+    // 回归防护：preferenceId 曾用 `replace(/[^a-z0-9-]/g, '-')` 抹除全部非 ASCII 字符，
+    // 使 '方案甲' 与 '方案乙' 塌缩为同一 id（pref-design-style----），
+    // 对立选择被误判为「重复确认」（confidence 累加、evidence 追加、对立削弱不触发）。
+    // 纯中文标签是 design-variants 的常态，故必须独立覆盖此路径。
+    const records = extractPreferenceMemories('feat', [
+      choiceEvent(2, '方案甲'),
+      choiceEvent(3, '方案甲'),
+      choiceEvent(4, '方案乙')
+    ]);
+    // 必须是两条独立记录，而非被合并成一条
+    expect(records).toHaveLength(2);
+    const byTag = Object.fromEntries(records.map((r) => [r.tags[1]!, r]));
+    expect(byTag['方案甲']!.id).not.toBe(byTag['方案乙']!.id);
+    // 甲 升到 0.7 后被 乙 的对立削弱回 0.5；乙 自身从 0.5 起
+    expect(byTag['方案甲']!.confidence).toBeCloseTo(0.5);
+    expect(byTag['方案乙']!.confidence).toBeCloseTo(0.5);
+    expect(byTag['方案甲']!.evidence).toHaveLength(2);
+    expect(byTag['方案乙']!.evidence).toHaveLength(1);
+    // summary 不应被错误标记为「已确认」
+    expect(byTag['方案乙']!.summary).not.toContain('已确认');
+  });
+
+  it('generates distinct ids for distinct pure-CJK review decisions', () => {
+    const records = extractPreferenceMemories('feat', [
+      choiceEvent(2, '通过', { choiceType: 'review-decision' }),
+      choiceEvent(3, '拒绝', { choiceType: 'review-decision' })
+    ]);
+    expect(records).toHaveLength(2);
+    expect(records[0]!.id).not.toBe(records[1]!.id);
+  });
+
   it('does not decrement across different categories', () => {
     const records = extractPreferenceMemories('feat', [
       choiceEvent(2, 'darkmode', { choiceType: 'config-preference' }),
