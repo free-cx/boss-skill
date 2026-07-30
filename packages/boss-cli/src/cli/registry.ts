@@ -251,6 +251,13 @@ export const commandDescriptions: Record<string, CommandDescription> = {
     options: commonOptions,
     risk_tier: 'low'
   },
+  'boss doctor': {
+    command: 'boss doctor',
+    summary: 'Diagnose install locations, version drift, event-stream integrity, and orphan locks',
+    parameters: [],
+    options: commonOptions,
+    risk_tier: 'low'
+  },
   'boss hooks run': {
     command: 'boss hooks run',
     summary: 'Run a Boss hook through the hook dispatcher',

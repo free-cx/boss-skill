@@ -18,6 +18,7 @@ export const ROOT_USAGE = [
   '  install',
   '  uninstall',
   '  path',
+  '  doctor',
   '  status FEATURE',
   '  continue FEATURE',
   '  gate FEATURE',
