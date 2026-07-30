@@ -5,6 +5,7 @@ import {
   CliUserError,
   createCliContext,
   describeCommand,
+  errorPayload,
   exitCodeForError,
   outputList,
   pickFields,
@@ -115,5 +116,24 @@ describe('CLI contract utilities', () => {
       message: 'Timed out',
       retryable: true
     }))).toBe(2);
+  });
+
+  it('maps runtime "未找到执行文件" throws to pipeline_not_initialized with recovery hint', () => {
+    const payload = errorPayload(new Error('未找到执行文件: .boss/todo-app/.meta/execution.json'));
+    expect(payload.error.code).toBe('pipeline_not_initialized');
+    expect(payload.error.input).toEqual({ path: '.boss/todo-app/.meta/execution.json' });
+    expect(payload.error.suggestion).toContain('init-pipeline');
+    expect(payload.error.retryable).toBe(false);
+  });
+
+  it('maps runtime "未找到事件文件" throws to pipeline_not_initialized', () => {
+    const payload = errorPayload(new Error('未找到事件文件: .boss/todo-app/.meta/events.jsonl'));
+    expect(payload.error.code).toBe('pipeline_not_initialized');
+    expect(payload.error.suggestion).toContain('boss doctor');
+  });
+
+  it('falls back to internal_error for unrecognized throws', () => {
+    const payload = errorPayload(new Error('something unexpected'));
+    expect(payload.error.code).toBe('internal_error');
   });
 });

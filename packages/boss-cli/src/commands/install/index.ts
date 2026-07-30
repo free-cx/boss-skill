@@ -18,7 +18,7 @@ import { commandDescriptions } from '../../cli/registry.js';
 import { copyDirectory, readJsonFile, writeJsonFile } from '../../infrastructure/fs.js';
 import { packageRootFromImportMeta } from '../../infrastructure/paths.js';
 
-const PKG_ROOT = packageRootFromImportMeta(import.meta.url, 5);
+export const PKG_ROOT = packageRootFromImportMeta(import.meta.url, 5);
 const SKILL_ROOT = path.join(PKG_ROOT, 'skill');
 const CODEX_HOOKS_SOURCE = path.join(SKILL_ROOT, 'hooks', 'codex', 'hooks.json');
 const CODEX_HOOKS_STATE = '.boss-hooks-state.json';
@@ -28,7 +28,7 @@ const pkg = readJsonFile<{
 }>(path.join(PKG_ROOT, 'package.json'));
 const HOME = os.homedir();
 
-interface Agent {
+export interface Agent {
   name: string;
   detect: () => boolean;
   dest: () => string;
@@ -127,7 +127,7 @@ const METADATA: Record<string, string> = {
         - bash`,
 };
 
-const AGENTS: Agent[] = [
+export const AGENTS: Agent[] = [
   {
     name: 'OpenClaw',
     detect: () => fs.existsSync(path.join(HOME, '.openclaw')),

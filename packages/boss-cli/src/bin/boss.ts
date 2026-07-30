@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { main as continueMain } from '../commands/continue.js';
 import { installMain } from '../commands/install/index.js';
+import { main as doctorMain } from '../commands/doctor.js';
 import { main as statusMain } from '../commands/status.js';
 import { CliUserError, createCliContext, describeCommand, runMain } from '../cli/contract.js';
 import { runtimeCommandNames } from '../cli/registry.js';
@@ -45,6 +46,7 @@ function describeRoot() {
       'install',
       'uninstall',
       'path',
+      'doctor',
       'status FEATURE',
       'continue FEATURE',
       'launch FEATURE',
@@ -104,6 +106,13 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
         retryable: false,
         suggestion: '安装 boss 自身请用 `boss install`（或 `npx @blade-ai/boss-skill`）；boss 不再管理其它 skill'
       });
+
+    case 'doctor':
+      if (rootContext.values.describe && rootContext.positionals.length === 1) {
+        writeDescription(describeRegisteredCommand('boss doctor'), createCliContext(commandArgv, { command: 'boss doctor' }));
+        return 0;
+      }
+      return doctorMain(commandArgv, { cwd: process.cwd() });
 
     case 'status':
       return statusMain(commandArgv, { cwd: process.cwd() });

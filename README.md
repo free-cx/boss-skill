@@ -143,6 +143,26 @@ Auto-detected targets:
 | Hermes | `~/.hermes/` | Copy to `~/.hermes/skills/boss/` and inject metadata |
 | Claude Code | Always available | Plugin mode with `--plugin-dir` |
 
+## Platform Support
+
+Boss targets Node.js `>=20` and runs on Linux, macOS, and Windows. The CLI shells out
+only through `spawnSync` with explicit argument arrays (never `shell: true`), and resolves
+`npm`/`npx` to their `.cmd` variants on Windows, so there is no POSIX-only assumption in
+the core pipeline.
+
+Two capabilities depend on optional external tools and degrade gracefully when they are
+absent:
+
+- **WIP checkpoints** (stash/commit/branch) require `git` and a git working tree. Outside a
+  repository, or without `git` on `PATH`, checkpointing is silently skipped — the pipeline
+  is unaffected.
+- **Legacy hand-written `gate.sh` plugins** are executed via `bash`. On Windows without a
+  bash in `PATH` these will fail to launch; prefer the cross-platform Node gate entry
+  (`gate.js` / `gate.mjs`) for portable plugins.
+
+Run `boss doctor` to see the resolved runtime environment (Node version, platform, and
+whether `git` is available) alongside install and event-stream health.
+
 ## Commands
 
 Common slash commands:
@@ -265,6 +285,10 @@ Security-sensitive behavior to review before publishing or installing:
 - Hook entries execute `boss hooks run ...`, which dispatches scripts from `scripts/hooks/`.
 - Runtime plugins under `.boss/plugins/<name>/plugin.json` can register gate or reporter hooks; review project-local plugins before enabling them.
 - Use `BOSS_HOOK_PROFILE=minimal` or `BOSS_DISABLED_HOOKS=<ids>` when you need to reduce hook behavior in a sensitive environment.
+
+Boss is local-first and makes no outbound network requests by default; the only network
+surface is the opt-in, loopback-only `boss design preview` server. See [PRIVACY.md](PRIVACY.md)
+for the full data and network boundary.
 
 ## Pipeline Artifacts
 

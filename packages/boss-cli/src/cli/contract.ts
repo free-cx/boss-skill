@@ -358,6 +358,20 @@ export function errorPayload(err: unknown): { error: CliErrorData } {
       }
     };
   }
+  // feature 尚未初始化：runtime 层裸抛「未找到执行文件/事件文件」，在此统一映射为
+  // 带恢复指引的 not_initialized，避免各命令重复包装。
+  const notInitializedMatch = message.match(/^未找到(?:执行文件|事件文件):\s*(.+)$/);
+  if (notInitializedMatch) {
+    return {
+      error: {
+        code: 'pipeline_not_initialized',
+        message,
+        input: { path: notInitializedMatch[1] },
+        retryable: false,
+        suggestion: '该 feature 尚未初始化或路径不对；先运行 `boss runtime init-pipeline <feature>`，或用 `boss doctor` 检查已有 feature'
+      }
+    };
+  }
   return {
     error: {
       code: 'internal_error',

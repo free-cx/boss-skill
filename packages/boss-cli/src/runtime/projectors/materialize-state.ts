@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { EVENT_TYPES, EVENT_TYPE_VALUES, type EventType } from '../domain/event-types.js';
 import { computeNextNodeIds } from '../domain/scheduling.js';
+import { readJsonlTolerant } from '../../infrastructure/fs.js';
 import type {
   ConversationMessage,
   ConversationResolution,
@@ -815,6 +816,17 @@ function validateEvent(event: unknown): asserts event is RuntimeEvent {
         validatePluginSummary(plugin, `${context}.plugins`);
       }
       break;
+    case EVENT_TYPES.WAVE_VERIFIED:
+      if (!isNonEmptyString(event.data.waveId)) {
+        failValidation('waveId 必须是非空字符串', context);
+      }
+      if (!isNonEmptyString(event.data.phase)) {
+        failValidation('phase 必须是非空字符串', context);
+      }
+      if (!isBoolean(event.data.verified)) {
+        failValidation('verified 必须是布尔值', context);
+      }
+      break;
     default:
       break;
   }
@@ -1397,21 +1409,18 @@ export function finalizeState(state: ExecutionState): ExecutionState {
 }
 
 export function readEvents(eventsFile: string): RuntimeEvent[] {
-  const raw = fs.readFileSync(eventsFile, 'utf8').trim();
-  if (!raw) return [];
-  return raw
-    .split('\n')
-    .filter(Boolean)
-    .map((line: string, index: number) => {
-      let event: unknown;
-      try {
-        event = JSON.parse(line);
-      } catch (err) {
-        failValidation(`第 ${index + 1} 条事件不是合法 JSON: ${(err as Error).message}`);
-      }
-      validateEvent(event);
-      return event;
-    });
+  // 容忍崩溃残留的损坏尾行（原子追加中途被杀最多留一条不完整末行）：
+  // 跳过并告警而非让整个 feature 不可读；非末行损坏仍会抛错（真正的篡改）。
+  const { records, corruptTail } = readJsonlTolerant(eventsFile);
+  if (corruptTail !== undefined) {
+    process.stderr.write(
+      `[boss-skill] 跳过 events.jsonl 末尾的损坏行（疑似写入中途崩溃，视作该事件未记录）: ${corruptTail.slice(0, 120)}\n`
+    );
+  }
+  return records.map((event) => {
+    validateEvent(event);
+    return event;
+  });
 }
 
 export function materializeState(

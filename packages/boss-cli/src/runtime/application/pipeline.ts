@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { createHash } from 'node:crypto';
 
 import { resolveArtifactDagPath } from '../assets.js';
+import { appendLineSync } from '../../infrastructure/fs.js';
 import { EVENT_TYPES, type EventType } from '../domain/event-types.js';
 import {
   materializeState,
@@ -681,7 +682,10 @@ export function recordArtifacts(
   }));
   const rollback = beforeAppend?.();
   try {
-    fs.appendFileSync(eventsFile, `${events.map((event) => JSON.stringify(event)).join('\n')}\n`, 'utf8');
+    // 逐行原子追加（O_APPEND + fsync），避免批量写中途崩溃留下半行
+    for (const event of events) {
+      appendLineSync(eventsFile, JSON.stringify(event));
+    }
   } catch (err) {
     if (typeof rollback === 'function') {
       rollback();

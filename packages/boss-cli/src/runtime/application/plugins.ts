@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { listPluginManifestPaths, resolveBuiltInAssetPath } from '../assets.js';
+import { appendLineSync, readJsonlTolerant } from '../../infrastructure/fs.js';
 import { EVENT_TYPES } from '../domain/event-types.js';
 import {
   materializeState,
@@ -380,11 +381,11 @@ function appendEvent(
 ): { id: number; type: string; timestamp: string; data: Record<string, unknown> } {
   let id = 1;
   if (fs.existsSync(eventsFile)) {
-    const raw = fs.readFileSync(eventsFile, 'utf8').trim();
-    if (raw) id = raw.split('\n').length + 1;
+    // 只数可解析行，忽略崩溃残留的损坏尾行（与 state.appendEvent 同口径）
+    id = readJsonlTolerant(eventsFile).records.length + 1;
   }
   const payload = { ...event, id };
-  fs.appendFileSync(eventsFile, `${JSON.stringify(payload)}\n`, 'utf8');
+  appendLineSync(eventsFile, JSON.stringify(payload));
   return payload;
 }
 
