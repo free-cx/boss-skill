@@ -44,6 +44,10 @@
 
 ### 修复（Fixed）
 
+- **未初始化 feature 的错误提示**：对未 `init-pipeline` 的 feature 运行 `status`/
+  `continue`/`gate` 等命令时，此前只抛裸「未找到执行文件」落到 `internal_error`。
+  现统一映射为 `pipeline_not_initialized`，带 `boss runtime init-pipeline` /
+  `boss doctor` 的恢复指引。
 - **schema 与运行时校验漂移**：`WaveVerified` 事件在 `event-schema.json` 声明了
   `waveId/phase/verified` 必填，但运行时 `validateEvent` 落到 `default` 分支完全
   不校验——损坏的 wave 事件会被静默接受。已补上逐字段校验，并新增
