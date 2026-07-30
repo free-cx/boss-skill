@@ -816,6 +816,17 @@ function validateEvent(event: unknown): asserts event is RuntimeEvent {
         validatePluginSummary(plugin, `${context}.plugins`);
       }
       break;
+    case EVENT_TYPES.WAVE_VERIFIED:
+      if (!isNonEmptyString(event.data.waveId)) {
+        failValidation('waveId 必须是非空字符串', context);
+      }
+      if (!isNonEmptyString(event.data.phase)) {
+        failValidation('phase 必须是非空字符串', context);
+      }
+      if (!isBoolean(event.data.verified)) {
+        failValidation('verified 必须是布尔值', context);
+      }
+      break;
     default:
       break;
   }

@@ -44,6 +44,11 @@
 
 ### 修复（Fixed）
 
+- **schema 与运行时校验漂移**：`WaveVerified` 事件在 `event-schema.json` 声明了
+  `waveId/phase/verified` 必填，但运行时 `validateEvent` 落到 `default` 分支完全
+  不校验——损坏的 wave 事件会被静默接受。已补上逐字段校验，并新增
+  `schema-runtime-bridge` 测试：从 schema 提取每个事件类型的必填字段，逐个抽掉后
+  断言运行时必拒，作为长期防漂移守卫。
 - **事件流原子性**：追加改用 `O_APPEND` + `fsync`；读取容忍崩溃残留的损坏尾行
   （跳过并告警），中间行损坏仍按篡改拒绝。此前裸 `appendFileSync` + 硬失败会让
   一次崩溃使整个 feature 不可读。
