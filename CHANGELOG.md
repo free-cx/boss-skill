@@ -29,8 +29,11 @@
 - **`boss runtime report-agent-status`**：子代理终态经工具层枚举校验上报，取代
   `[BOSS_STATUS]` 散文块的正则解析。
 - **`boss runtime record-user-choice`**：把用户选择写入事件流，驱动确定性偏好聚合。
-- **`boss doctor`**：诊断安装位置、hook 注册、事件流完整性、孤儿 lock、版本一致性。
+- **`boss doctor`**：诊断安装位置、hook 注册、事件流完整性、孤儿 lock、版本一致性，
+  并报出运行环境边界（Node 版本、平台、`git` 是否可用——WIP checkpoint 依赖它）。
 - 安装文档主推 `npx skills add echoVic/boss-skill`（vercel-labs/skills 主流工具）。
+- README 新增 Platform Support 一节，显式声明跨平台边界：核心管线无 POSIX-only 假设、
+  `git` 与 `bash gate.sh` 为可选并优雅降级。
 - `CHANGELOG.md`（本文件）与隐私/网络边界声明。
 
 ### 变更（Changed）

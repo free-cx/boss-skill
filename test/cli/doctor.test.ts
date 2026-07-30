@@ -43,6 +43,19 @@ describe('boss doctor', () => {
     expect(report.checks.some((c) => c.name === 'features')).toBe(true);
   });
 
+  it('reports runtime environment boundaries (node/platform/git)', () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'boss-doctor-'));
+    const report = JSON.parse(runDoctor(['--json'], tmpDir).stdout) as {
+      checks: Array<{ name: string; status: string; detail: string }>;
+    };
+    expect(report.checks.some((c) => c.name === 'node')).toBe(true);
+    expect(report.checks.some((c) => c.name === 'platform')).toBe(true);
+    const git = report.checks.find((c) => c.name === 'git');
+    expect(git).toBeDefined();
+    // git 缺失不是错误，只影响可选的 WIP checkpoint —— 状态始终 ok
+    expect(git?.status).toBe('ok');
+  });
+
   it('reports an intact feature event stream as ok', () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'boss-doctor-'));
     initFeature(tmpDir);

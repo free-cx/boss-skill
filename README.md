@@ -143,6 +143,26 @@ Auto-detected targets:
 | Hermes | `~/.hermes/` | Copy to `~/.hermes/skills/boss/` and inject metadata |
 | Claude Code | Always available | Plugin mode with `--plugin-dir` |
 
+## Platform Support
+
+Boss targets Node.js `>=20` and runs on Linux, macOS, and Windows. The CLI shells out
+only through `spawnSync` with explicit argument arrays (never `shell: true`), and resolves
+`npm`/`npx` to their `.cmd` variants on Windows, so there is no POSIX-only assumption in
+the core pipeline.
+
+Two capabilities depend on optional external tools and degrade gracefully when they are
+absent:
+
+- **WIP checkpoints** (stash/commit/branch) require `git` and a git working tree. Outside a
+  repository, or without `git` on `PATH`, checkpointing is silently skipped — the pipeline
+  is unaffected.
+- **Legacy hand-written `gate.sh` plugins** are executed via `bash`. On Windows without a
+  bash in `PATH` these will fail to launch; prefer the cross-platform Node gate entry
+  (`gate.js` / `gate.mjs`) for portable plugins.
+
+Run `boss doctor` to see the resolved runtime environment (Node version, platform, and
+whether `git` is available) alongside install and event-stream health.
+
 ## Commands
 
 Common slash commands:

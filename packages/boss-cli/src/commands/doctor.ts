@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -69,6 +70,43 @@ function readSkillVersion(skillMd: string): string | undefined {
   const content = fs.readFileSync(skillMd, 'utf8');
   const match = content.match(/^version:\s*(.+)$/m);
   return match ? match[1]!.trim() : undefined;
+}
+
+/** 运行环境边界：Node 版本、平台、git 是否可用（WIP checkpoint 依赖 git，缺失则静默降级）。 */
+function checkEnvironment(): DoctorCheck[] {
+  const checks: DoctorCheck[] = [];
+
+  const major = Number(process.versions.node.split('.')[0]);
+  checks.push({
+    name: 'node',
+    status: major >= 20 ? 'ok' : 'warn',
+    detail:
+      major >= 20
+        ? `Node ${process.versions.node}（满足 engines >=20）`
+        : `Node ${process.versions.node} 低于要求的 >=20，行为可能不可预期`
+  });
+
+  // 平台声明：boss 已避开 shell:true 与硬编码 /bin 路径，POSIX 与 Windows 均可运行；
+  // 仅把当前平台如实报出，便于排查跨平台问题。
+  checks.push({
+    name: 'platform',
+    status: 'ok',
+    detail: `${process.platform}/${process.arch}`
+  });
+
+  // git 是可选依赖：仅 WIP checkpoint（stash/commit/branch）用到；不在 git 仓库或未装 git
+  // 时 checkpoint 会静默跳过而非报错。这里把该边界显式化。
+  const git = spawnSync('git', ['--version'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  const gitOk = git.status === 0;
+  checks.push({
+    name: 'git',
+    status: 'ok', // git 缺失不是错误，只影响可选的 WIP checkpoint
+    detail: gitOk
+      ? `${(git.stdout || '').trim() || 'available'}（WIP checkpoint 可用）`
+      : 'git 不可用：WIP checkpoint 将静默跳过，其余功能不受影响'
+  });
+
+  return checks;
 }
 
 /** 项目内每个 feature 的事件流完整性与孤儿 lock。 */
@@ -164,6 +202,7 @@ export function main(
 
   const checks: DoctorCheck[] = [
     { name: 'version', status: 'ok', detail: `boss-skill v${pkg.version}` },
+    ...checkEnvironment(),
     ...checkInstalls(),
     ...checkFeatures(cwd)
   ];
