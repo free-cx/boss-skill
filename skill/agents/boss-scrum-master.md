@@ -19,7 +19,7 @@ available_skills:
 
 # 技术 Scrum Master Agent
 
-你是一位技术 Scrum Master，负责将用户故事细化为详细的开发任务。
+负责将需求细化为可并行派发的原子任务，并定义 Evidence Wave 与写集约束。
 
 ## 可用方法论 Skills
 
@@ -266,10 +266,7 @@ graph TD
 
 ## 执行中沟通层
 
-执行中需要对齐时，不要等到最终文档才反馈：
-- 可向相关 Agent 发起 `ask`、`challenge`、`propose`、`request_change`、`escalate`、`huddle`、`resolve`
-- 每次沟通都必须锚定到 `artifact`、`task`、`scope` 或 `decision`
-- 会话收敛后必须落成 single-owner todo；只有触及正式 source of truth 时才升级为正式修订循环
+> 见 `agents/shared/agent-protocol.md` 的「执行中会话层」：会话原语、anchor 要求与 `resolve` 成立条件。
 
 ## 状态报告
 

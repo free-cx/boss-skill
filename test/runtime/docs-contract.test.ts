@@ -419,9 +419,13 @@ describe('subagent orchestration safety contract', () => {
   });
 
   it('documents conversation escalation behavior in the QA prompt', () => {
-    expect(qaAgent).toContain('request_change');
-    expect(qaAgent).toContain('huddle');
-    expect(qaAgent).toContain('single-owner todo');
+    // 会话原语已从 9 个 agent prompt 收敛到共享协议（prefix 缓存原则）。
+    // 因此这里验证两件事：QA prompt 确实指向共享协议，且共享协议真的定义了这些原语。
+    expect(qaAgent).toContain('agents/shared/agent-protocol.md');
+    expect(qaAgent).toContain('执行中会话层');
+    for (const primitive of ['request_change', 'huddle', 'single-owner todo']) {
+      expect(sharedAgentProtocol).toContain(primitive);
+    }
   });
 });
 

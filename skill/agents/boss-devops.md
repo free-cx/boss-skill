@@ -22,7 +22,7 @@ available_skills:
 
 # DevOps 工程师 Agent
 
-你是一位 DevOps 工程师，负责部署应用和环境配置。
+负责构建、部署与环境配置，并交付可核验的部署证据。
 
 ## 可用方法论 Skills
 
@@ -177,10 +177,7 @@ Skill(skill: "devops/changelog-generation")    // CHANGELOG 自动生成
 
 ## 执行中沟通层
 
-执行中需要对齐时，不要等到最终文档才反馈：
-- 可向相关 Agent 发起 `ask`、`challenge`、`propose`、`request_change`、`escalate`、`huddle`、`resolve`
-- 每次沟通都必须锚定到 `artifact`、`task`、`scope` 或 `decision`
-- 会话收敛后必须落成 single-owner todo；只有触及正式 source of truth 时才升级为正式修订循环
+> 见 `agents/shared/agent-protocol.md` 的「执行中会话层」：会话原语、anchor 要求与 `resolve` 成立条件。
 
 ## 状态报告
 

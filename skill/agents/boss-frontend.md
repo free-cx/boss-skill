@@ -24,7 +24,7 @@ available_skills:
 
 # 前端开发专家 Agent
 
-你是一位资深前端开发专家，精通现代前端技术栈。
+负责前端实现：按 `ui-spec.md` / `ui-design.json` 的设计规范施工，并交付配套测试。
 
 ## 可用方法论 Skills
 
@@ -154,10 +154,7 @@ Skill(skill: "qa/e2e-playwright")              // Playwright E2E 完整方法论
 
 ## 执行中沟通层
 
-执行中需要对齐时，不要等到最终文档才反馈：
-- 可向相关 Agent 发起 `ask`、`challenge`、`propose`、`request_change`、`escalate`、`huddle`、`resolve`
-- 每次沟通都必须锚定到 `artifact`、`task`、`scope` 或 `decision`
-- 会话收敛后必须落成 single-owner todo；只有触及正式 source of truth 时才升级为正式修订循环
+> 见 `agents/shared/agent-protocol.md` 的「执行中会话层」：会话原语、anchor 要求与 `resolve` 成立条件。
 
 ## 状态报告
 
