@@ -11,6 +11,9 @@ import {
   updateAgent,
   updateStage
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
+import { appendRuntimeEvent } from '../../packages/boss-cli/src/runtime/application/state.js';
+import { materializeState } from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
+import { EVENT_TYPES } from '../../packages/boss-cli/src/runtime/domain/event-types.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
 describe('Boss runtime fault injection', () => {
@@ -38,6 +41,34 @@ describe('Boss runtime fault injection', () => {
 
     expect(eventsText()).toBe(before);
     expect(fs.existsSync(path.join(tmpDir, '.boss', 'escape.json.v1'))).toBe(false);
+  });
+
+  it('recovers from a crash-corrupted trailing event line instead of failing the feature', () => {
+    // 模拟原子追加中途崩溃：在事件流末尾追加一条截断的半行 JSON。
+    const eventsFile = path.join(tmpDir, '.boss', 'fault-feature', '.meta', 'events.jsonl');
+    const validCount = eventsText().trim().split('\n').length;
+    fs.appendFileSync(eventsFile, '{"type":"StageStarted","id":999', 'utf8'); // 无换行、半条 JSON
+
+    // 读取/投影应跳过损坏尾行并成功，而不是让整个 feature 不可读
+    const { state, eventCount } = materializeState('fault-feature', tmpDir);
+    expect(eventCount).toBe(validCount);
+    expect(state.feature).toBe('fault-feature');
+
+    // 新事件仍可正常追加，id 基于「可解析行数」而非包含损坏行的行数
+    const next = appendRuntimeEvent(tmpDir, 'fault-feature', EVENT_TYPES.STAGE_STARTED, { stage: 1 });
+    expect(next.id).toBe(validCount + 1);
+  });
+
+  it('rejects a corrupt NON-trailing event line as tampering', () => {
+    const eventsFile = path.join(tmpDir, '.boss', 'fault-feature', '.meta', 'events.jsonl');
+    // 先追加一条真实事件，确保损坏行能落在「中间」而非末尾
+    appendRuntimeEvent(tmpDir, 'fault-feature', EVENT_TYPES.STAGE_STARTED, { stage: 1 });
+    const lines = eventsText().trim().split('\n');
+    expect(lines.length).toBeGreaterThanOrEqual(2);
+    // 在中间插入损坏行（保证其后仍有合法行）——这不是崩溃残留，而是真正的损坏/篡改
+    lines.splice(1, 0, '{corrupt}');
+    fs.writeFileSync(eventsFile, lines.join('\n') + '\n', 'utf8');
+    expect(() => materializeState('fault-feature', tmpDir)).toThrow(/非末行|not.*JSON/i);
   });
 
   it('rejects missing Markdown artifact recording without mutating the trace', () => {

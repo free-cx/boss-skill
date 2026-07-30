@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { EVENT_TYPE_VALUES, type EventType } from '../domain/event-types.js';
+import { appendLineSync, readJsonlTolerant } from '../../infrastructure/fs.js';
 import type { ExecutionState, RuntimeEvent } from '../projectors/materialize-state.js';
 import { buildFeatureSummary, rebuildFeatureMemory, rebuildGlobalMemory } from './memory.js';
 import type { PipelinePackStateParameters } from './packs.js';
@@ -83,13 +84,12 @@ export function appendEvent(
 ): RuntimeEvent {
   let id = 1;
   if (fs.existsSync(eventsFile)) {
-    const raw = fs.readFileSync(eventsFile, 'utf8').trim();
-    if (raw) {
-      id = raw.split('\n').length + 1;
-    }
+    // 只数能被解析的行：崩溃残留的损坏尾行不计入 id，避免 id 被虚增后与后续冲突。
+    const { records } = readJsonlTolerant(eventsFile);
+    id = records.length + 1;
   }
   const payload = { ...event, id };
-  fs.appendFileSync(eventsFile, `${JSON.stringify(payload)}\n`, 'utf8');
+  appendLineSync(eventsFile, JSON.stringify(payload));
   return payload;
 }
 
