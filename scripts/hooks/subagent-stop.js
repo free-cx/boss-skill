@@ -4,46 +4,49 @@ import path from 'node:path';
 import { findActiveFeature, readExecJson, AGENT_STAGE_MAP } from '../lib/boss-utils.js';
 import { emitProgress } from '../lib/progress-emitter.js';
 import * as runtime from '../../packages/boss-cli/dist/runtime/application/pipeline.js';
+import {
+  isAgentReportStatus,
+  toPipelineAgentStatus
+} from '../../packages/boss-cli/dist/runtime/domain/agent-report.js';
 
-const ALLOWED_BOSS_STATUSES = new Set([
-  'DONE',
-  'DONE_WITH_CONCERNS',
-  'NEEDS_CONTEXT',
-  'BLOCKED',
-  'REVISION_NEEDED'
-]);
+/**
+ * 读取子代理上报的结构化状态。
+ *
+ * 状态的权威来源是 `boss runtime report-agent-status` 写入的事件流 —— 子代理调用该命令时
+ * 枚举已在工具层校验过。此处只从 hook 输入里取已解析好的结构化字段，
+ * 不再用正则从自然语言消息里提取（旧实现把 message 截断到前 500 字符，
+ * 而状态块在末尾，导致较长的成功回复被误判为 failed）。
+ */
+function readReportedStatus(input) {
+  const candidates = [
+    input.structured_output,
+    input.structuredOutput,
+    input.agent_status,
+    input.agentStatus
+  ];
 
-function parseStructuredStatus(message) {
-  const match = message.match(/\[BOSS_STATUS\]([\s\S]*?)\[\/BOSS_STATUS\]/i);
-  if (!match) {
-    return null;
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    if (typeof candidate === 'string') {
+      if (isAgentReportStatus(candidate)) {
+        return { status: candidate, reason: '' };
+      }
+      continue;
+    }
+    if (typeof candidate === 'object') {
+      const status = candidate.status;
+      if (isAgentReportStatus(status)) {
+        return {
+          status,
+          reason: typeof candidate.reason === 'string' ? candidate.reason : ''
+        };
+      }
+    }
   }
 
-  const block = match[1];
-  const statusMatch = block.match(/^\s*status\s*:\s*([A-Z_]+)\s*$/im);
-  if (!statusMatch) {
-    return null;
-  }
-
-  const reasonMatch = block.match(/^\s*reason\s*:\s*(.*?)\s*$/im);
-  const rawStatus = statusMatch[1];
-  if (!ALLOWED_BOSS_STATUSES.has(rawStatus)) {
-    return {
-      status: 'INVALID',
-      reason: `Invalid BOSS_STATUS status: ${rawStatus}`,
-      rawStatus
-    };
-  }
-  return {
-    status: rawStatus,
-    reason: reasonMatch ? reasonMatch[1] : ''
-  };
+  return null;
 }
 
-function parseStatus(message) {
-  const structured = parseStructuredStatus(message);
-  return structured || { status: '', reason: '' };
-}
 
 function run(rawInput) {
   const input = JSON.parse(rawInput);
@@ -69,7 +72,7 @@ function run(rawInput) {
   const logFile = path.join(logDir, 'agent-log.jsonl');
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
-  const parsedStatus = parseStatus(lastMsg);
+  const parsedStatus = readReportedStatus(input) || { status: '', reason: '' };
   const entry = JSON.stringify({
     timestamp: now,
     agentType,
@@ -100,9 +103,10 @@ function run(rawInput) {
         }
       }
 
-      if (currentStage) {
-        const agentStatus = parsedStatus.status && (parsedStatus.status === 'DONE' || parsedStatus.status === 'DONE_WITH_CONCERNS')
-          ? 'completed' : 'failed';
+      // 未上报状态时不写入事件：状态的权威来源是 report-agent-status 命令。
+      // 缺失应表现为「没推进」而非「失败」，否则会把未按协议上报的成功执行误记为失败。
+      if (currentStage && parsedStatus.status) {
+        const agentStatus = toPipelineAgentStatus(parsedStatus.status);
 
         emitProgress(cwd, active.feature, {
           type: 'agent-complete',
@@ -127,5 +131,5 @@ function run(rawInput) {
 
 export {
   run,
-  parseStatus
+  readReportedStatus
 };

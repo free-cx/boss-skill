@@ -249,22 +249,15 @@ Skill(
 
 ## 状态报告
 
-任务完成后，必须在输出末尾附加结构化状态块（详见 `agents/prompts/subagent-protocol.md`）：
+任务完成后，必须通过命令上报终态（状态值在工具层校验，不要用自然语言描述状态）：
 
+```bash
+boss runtime report-agent-status <feature> <stage> <agent> <STATUS> --reason "<简述>"
 ```
-[BOSS_STATUS]
-status: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED | REVISION_NEEDED
-summary: 一句话总结执行结果
-conversation_id: [仅参与执行中会话时填写]
-resolution_summary: [仅会话已收敛时填写]
-todo_ids: [仅会话产出 todo 时填写]
-concerns: [仅 DONE_WITH_CONCERNS 时填写]
-missing: [仅 NEEDS_CONTEXT 时填写]
-blocker: [仅 BLOCKED 时填写]
-revision_target: [仅 REVISION_NEEDED 或会话升级为正式修订时填写，如 architecture.md]
-revision_reason: [仅 REVISION_NEEDED 时填写]
-[/BOSS_STATUS]
-```
+
+`STATUS` ∈ `DONE` | `DONE_WITH_CONCERNS` | `NEEDS_CONTEXT` | `BLOCKED` | `REVISION_NEEDED`。
+非法值会被拒绝并要求重试。补充字段（concerns / missing / blocker / revision_target 等）
+与语义详见 `agents/prompts/subagent-protocol.md`。
 
 ---
 

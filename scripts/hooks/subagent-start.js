@@ -58,11 +58,9 @@ function run(rawInput) {
     stablePrompt += `, 活跃阶段: ${currentStage} (${stageName})`;
   }
   stablePrompt += `\n子 Agent 类型: ${agentType}`;
-  stablePrompt += '\n请在最终消息中附带固定状态块：';
-  stablePrompt += '\n[BOSS_STATUS]';
-  stablePrompt += '\nstatus: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED | REVISION_NEEDED';
-  stablePrompt += '\nreason: <optional>';
-  stablePrompt += '\n[/BOSS_STATUS]';
+  stablePrompt += '\n完成时必须通过命令上报终态（状态值在工具层校验，不要用自然语言描述状态）：';
+  stablePrompt += `\n  boss runtime report-agent-status ${active.feature} <stage> ${agentType || '<agent>'} <STATUS> --reason "<简述>"`;
+  stablePrompt += '\n  STATUS ∈ DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED | REVISION_NEEDED';
   let context = stablePrompt;
   context += buildMemoryContext(active.feature, agentType, currentStage, cwd);
 

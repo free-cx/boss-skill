@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { createHash } from 'node:crypto';
 
 import { EVENT_TYPES } from '../domain/event-types.js';
+import { computeNextNodeIds } from '../domain/scheduling.js';
 import type { RuntimeHashDescriptor } from './pipeline.js';
 import type { ArtifactDag } from './state.js';
 import {
@@ -39,6 +40,8 @@ export interface WorkflowPlanNode {
   stage: number;
   phase: string;
   inputs: string[];
+  /** 该节点写入的路径集合；用于并行安全组分组。缺省回退到 artifact 名。 */
+  writes?: string[];
   optional: boolean;
   parallelGroup?: string;
   description?: string;
@@ -83,6 +86,8 @@ export interface WorkflowExecutionNode {
   stage: number;
   phase: string;
   inputs: string[];
+  /** 该节点写入的路径集合；用于并行安全组分组。缺省回退到 artifact 名。 */
+  writes?: string[];
   optional: boolean;
   status: WorkflowNodeExecutionStatus;
   decision?: WorkflowResumeDecision;
@@ -240,6 +245,7 @@ function toWorkflowNode(artifact: string, definition: NonNullable<ArtifactDag['a
     stage,
     phase,
     inputs: normalizeInputs(definition.inputs),
+    writes: normalizeInputs(definition.writes),
     optional: definition.optional === true,
     description: definition.description
   };
@@ -373,16 +379,9 @@ export function refreshWorkflowSchedule(workflow: WorkflowExecutionState): Workf
     };
   }
 
-  const ready = Object.values(nodes)
-    .filter((node) => node.status === 'ready')
-    .sort((left, right) => {
-      if (left.stage !== right.stage) return left.stage - right.stage;
-      return left.id.localeCompare(right.id);
-    });
-  const nextStage = ready[0]?.stage;
-  const nextNodeIds = nextStage === undefined
-    ? []
-    : ready.filter((node) => node.stage === nextStage).map((node) => node.id);
+  // 按写集不重叠的并行安全组派发，不再按 stage 分批：
+  // DAG 的 inputs 已表达数据依赖，stage 仅作优先级提示。
+  const nextNodeIds = computeNextNodeIds(Object.values(nodes));
 
   return {
     ...workflow,

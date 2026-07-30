@@ -29,6 +29,8 @@ export interface PipelineExecutionState extends Omit<ExecutionState, 'parameters
 
 export interface ArtifactDefinition {
   inputs?: string[];
+  /** 显式声明该产物写入的路径集合；用于并行安全组分组。缺省回退到产物名。 */
+  writes?: string[];
   agent?: string | string[] | null;
   stage?: number;
   optional?: boolean;

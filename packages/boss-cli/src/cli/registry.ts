@@ -1,4 +1,5 @@
 import type { CommandDescription } from './contract.js';
+import { AGENT_REPORT_STATUS_VALUES } from '../runtime/domain/agent-report.js';
 
 export const commonOptions = [
   { name: 'json', type: 'boolean' as const, default: false },
@@ -308,6 +309,7 @@ export const runtimeCommandNames = [
   'resume',
   'update-stage',
   'update-agent',
+  'report-agent-status',
   'agent-cache',
   'record-artifact',
   'get-ready-artifacts',
@@ -396,6 +398,7 @@ for (const name of [
   'launch',
   'update-stage',
   'update-agent',
+  'report-agent-status',
   'pause',
   'resume',
   'record-artifact',
@@ -421,6 +424,28 @@ runtimeDescriptions['record-artifact'] = {
   options: [
     ...runtimeMutationOptions,
     { name: 'no-open', type: 'boolean' as const, default: false }
+  ],
+  risk_tier: 'medium'
+};
+
+runtimeDescriptions['report-agent-status'] = {
+  ...runtimeDescriptions['report-agent-status']!,
+  summary:
+    'Report a subagent terminal status through a validated enum instead of a prose status block',
+  parameters: [
+    { name: 'feature', type: 'string', required: true },
+    { name: 'stage', type: 'string', required: true },
+    { name: 'agent', type: 'string', required: true },
+    {
+      name: 'status',
+      type: 'string',
+      required: true,
+      enum: [...AGENT_REPORT_STATUS_VALUES]
+    }
+  ],
+  options: [
+    ...runtimeMutationOptions,
+    { name: 'reason', type: 'string' as const }
   ],
   risk_tier: 'medium'
 };

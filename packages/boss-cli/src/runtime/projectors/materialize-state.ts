@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { EVENT_TYPES, EVENT_TYPE_VALUES, type EventType } from '../domain/event-types.js';
+import { computeNextNodeIds } from '../domain/scheduling.js';
 import type {
   ConversationMessage,
   ConversationResolution,
@@ -95,6 +96,8 @@ export interface WorkflowExecutionNode {
   stage: number;
   phase: string;
   inputs: string[];
+  /** 该节点写入的路径集合；用于并行安全组分组。缺省回退到 artifact 名。 */
+  writes?: string[];
   optional: boolean;
   status: WorkflowExecutionNodeStatus;
   decision?: string;
@@ -438,16 +441,8 @@ function refreshWorkflowSchedule(state: ExecutionState, timestamp?: string): voi
     };
   }
 
-  const ready = Object.values(workflow.nodes)
-    .filter((node) => node.status === 'ready')
-    .sort((left, right) => {
-      if (left.stage !== right.stage) return left.stage - right.stage;
-      return left.id.localeCompare(right.id);
-    });
-  const nextStage = ready[0]?.stage;
-  workflow.nextNodeIds = nextStage === undefined
-    ? []
-    : ready.filter((node) => node.stage === nextStage).map((node) => node.id);
+  // 与 application/workflow.ts 共用 domain/scheduling 的分组逻辑，避免调度语义漂移。
+  workflow.nextNodeIds = computeNextNodeIds(Object.values(workflow.nodes));
   workflow.updatedAt = timestamp ?? workflow.updatedAt;
 }
 

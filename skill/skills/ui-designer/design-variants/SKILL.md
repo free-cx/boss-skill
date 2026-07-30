@@ -113,12 +113,9 @@ triggers:
 
 ### 状态报告
 
-```
-[BOSS_STATUS]
-status: NEEDS_CONTEXT
-summary: 已产出 N 个设计变体，等待用户选择最终方案
-missing: 用户尚未选择设计方案（方案A/B/C）
-[/BOSS_STATUS]
+```bash
+boss runtime report-agent-status <feature> <stage> boss-ui-designer NEEDS_CONTEXT \
+  --reason "已产出 N 个设计变体，等待用户选择最终方案（方案A/B/C）"
 ```
 
 ### 用户选择后的行为
