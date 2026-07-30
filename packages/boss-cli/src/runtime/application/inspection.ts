@@ -4,7 +4,6 @@ import * as path from 'node:path';
 import * as pipelineRuntime from './pipeline.js';
 import { projectState, type ExecutionState, type RuntimeEvent } from '../projectors/materialize-state.js';
 import type { FeatureMemorySummary } from '../memory/store.js';
-import { readProjectKnowledgeSummary, type ProjectKnowledgeSummary } from '../knowledge/store.js';
 
 export interface ActiveAgentSummary {
   stage: number;
@@ -34,7 +33,6 @@ export interface PipelineInspection {
   activeAgents: ActiveAgentSummary[];
   recentFailures: FailureSummary[];
   memory: FeatureMemorySummary;
-  knowledge: ProjectKnowledgeSummary;
   pack: {
     name: string;
     version: string;
@@ -284,7 +282,6 @@ export function inspectPipeline(
     activeAgents,
     recentFailures: getRecentFailures(execution),
     memory: readFeatureSummary(feature, cwd),
-    knowledge: readProjectKnowledgeSummary(feature, { cwd }),
     pack: {
       name:
         execution.parameters && typeof execution.parameters.pipelinePack === 'string'

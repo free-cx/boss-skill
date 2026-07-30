@@ -3,6 +3,7 @@ import * as path from 'node:path';
 
 import {
   paths,
+  replaceFeatureMemory,
   saveFeatureMemory,
   saveFeatureSummary,
   saveGlobalMemory,
@@ -13,6 +14,7 @@ import {
   type PersistedMemoryRecord
 } from '../memory/store.js';
 import { extractFeatureMemories } from '../memory/extractor.js';
+import { extractPreferenceMemories } from '../memory/preferences.js';
 import { queryAgentMemories } from '../memory/query.js';
 import { buildAgentSections, buildConversationSummary, buildStartupSummary } from '../memory/summarizer.js';
 import type { ExecutionState, RuntimeEvent } from '../projectors/materialize-state.js';
@@ -90,8 +92,13 @@ export function rebuildFeatureMemory(
 ): FeatureMemoryPayload {
   const execution = readExecution(feature, { cwd }) ?? { parameters: {}, stages: {} };
   const events = readEvents(feature, { cwd });
-  const records = extractFeatureMemories({ feature, execution, events, now });
-  return writeFeatureMemory(feature, records, { cwd });
+  const records = [
+    ...extractFeatureMemories({ feature, execution, events, now }),
+    // 用户选择偏好：对事件流做确定性 fold，与其余 memory 记录同源、可重放
+    ...extractPreferenceMemories(feature, events)
+  ];
+  // 全量替换而非 merge：这是一次完整重放，结果必须直接覆盖旧投影
+  return replaceFeatureMemory(feature, records, { cwd });
 }
 
 export function buildFeatureSummary(

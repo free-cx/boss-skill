@@ -328,6 +328,7 @@ export const runtimeCommandNames = [
   'register-plugins',
   'run-plugin-hook',
   'record-feedback',
+  'record-user-choice',
   'open-conversation',
   'append-conversation-message',
   'resolve-conversation',
@@ -403,6 +404,7 @@ for (const name of [
   'resume',
   'record-artifact',
   'record-feedback',
+  'record-user-choice',
   'open-conversation',
   'append-conversation-message',
   'resolve-conversation',
@@ -695,6 +697,20 @@ Object.assign(runtimeDescriptions, {
       { name: 'artifact', type: 'string' as const },
       { name: 'reason', type: 'string' as const },
       { name: 'priority', type: 'string' as const, default: 'recommended' }
+    ]
+  },
+  'record-user-choice': {
+    ...runtimeDescriptions['record-user-choice']!,
+    summary: 'Record a user choice as a durable preference in the event stream',
+    parameters: [{ name: 'feature', type: 'string' as const, required: true }],
+    options: [
+      ...runtimeMutationOptions,
+      { name: 'choice-type', type: 'string' as const },
+      { name: 'selected', type: 'string' as const },
+      { name: 'options', type: 'string' as const },
+      { name: 'reason', type: 'string' as const },
+      { name: 'agent', type: 'string' as const },
+      { name: 'stage', type: 'string' as const }
     ]
   },
   'open-conversation': {

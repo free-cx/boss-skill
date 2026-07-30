@@ -45,8 +45,8 @@ user-invocable: true
 | 事件溯源与重放 | **Boss** | `events.jsonl` 追加写 + projector 重放，宿主不提供 |
 | 不可绕过门禁 | **Boss** | 建模为 runtime stage，非提示词自觉 |
 | 产物 provenance | **Boss** | 对能改变 Agent 行为的文件做内容指纹 |
-| 知识抽取（可选） | **Boss，默认关闭** | 需显式设置 `BOSS_KNOWLEDGE_API_KEY`；
-  未设置时零网络请求、静默降级，不影响流水线 |
+| 记忆 / 偏好派生 | **Boss，确定性** | 从 `events.jsonl` 规则化投影（含用户选择偏好聚合），
+  可完整重放；不外挂第二个 LLM 去二次抽取 |
 
 ## 什么时候读取什么
 

@@ -308,11 +308,6 @@ describe('multi-driver runtime documentation contract', () => {
     expect(platformDrivers).not.toContain('TodoWrite');
   });
 
-  it('keeps knowledge extraction opt-in and offline by default', () => {
-    expect(skill).toContain('BOSS_KNOWLEDGE_API_KEY');
-    expect(skill).toContain('零网络请求');
-  });
-
   it('documents multi-driver runtime without weakening Claude Code hooks', () => {
     expect(multiDriverRuntimePlan).toContain('Claude Code');
     expect(multiDriverRuntimePlan).toContain('Codex');

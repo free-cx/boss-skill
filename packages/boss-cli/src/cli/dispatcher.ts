@@ -61,6 +61,7 @@ const runtimeCommands: Record<string, () => Promise<RuntimeModule>> = {
   'query-memory': () => import('../commands/runtime/query-memory.js'),
   'record-artifact': () => import('../commands/runtime/record-artifact.js'),
   'record-feedback': () => import('../commands/runtime/record-feedback.js'),
+  'record-user-choice': () => import('../commands/runtime/record-user-choice.js'),
   'open-conversation': () => import('../commands/runtime/open-conversation.js'),
   'pause': () => import('../commands/runtime/pause.js'),
   'resume': () => import('../commands/runtime/resume.js'),
