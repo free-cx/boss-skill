@@ -149,9 +149,12 @@ describe('package metadata', () => {
     expect(pkg.files).not.toContain('SKILL.md');
   });
 
-  it('registers main and methodology skill roots for Claude Code plugin mode', () => {
+  it('declares a single skill root so external skill CLIs discover only boss', () => {
+    // boss 是「一个 skill」，不是一筐平级 skill。只声明 ./skill/ 一个根，
+    // 与 .codex-plugin 对齐：`npx skills add echoVic/boss-skill` 只列出 boss，
+    // skill/skills/ 下的内部方法论随 ./skill/ 目录树整体安装（不被列成独立可选项）。
     expect(claudePlugin.skills).toContain('./skill/');
-    expect(claudePlugin.skills).toContain('./skill/skills/');
+    expect(claudePlugin.skills).not.toContain('./skill/skills/');
   });
 
   it('documents the src to dist layout', () => {

@@ -57,7 +57,17 @@ Boss does not mean "install once and get guaranteed autonomous delivery." It pro
 
 ### 1. Install
 
-Boss is a skill you install into your coding agent — not a tool that installs other skills. Pick either path:
+Boss is a skill you install into your coding agent — not a tool that installs other skills.
+
+**Recommended — via the `skills` CLI ([vercel-labs/skills](https://github.com/vercel-labs/skills), skills.sh):**
+
+```bash
+npx skills add echoVic/boss-skill
+```
+
+This is the standard, agent-agnostic way to install a skill: it discovers `boss` from the repo, prompts for target agent / scope (project vs global) / install method, and records a `skills-lock.json` you can commit. Boss ships a single skill root, so the picker shows just `boss` — its internal methodologies travel with it.
+
+**Alternative — Boss's own multi-agent installer** (auto-detects Claude Code, Codex, OpenClaw, Antigravity, Hermes and installs into all of them, plus merges Codex hooks):
 
 ```bash
 # One-shot, no global install
@@ -67,8 +77,6 @@ npx @blade-ai/boss-skill
 npm install -g @blade-ai/boss-skill
 boss-skill
 ```
-
-`boss-skill` auto-detects supported agents (Claude Code, Codex, OpenClaw, Antigravity, Hermes) and installs the Boss skill bundle where possible.
 
 For Claude Code plugin mode:
 

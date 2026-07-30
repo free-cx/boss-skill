@@ -317,13 +317,15 @@ describe('Boss install matrix', () => {
     expect(fs.existsSync(path.join(codexHome, '.boss-hooks-state.json'))).toBe(false);
   });
 
-  it('Claude plugin declares the main skill and methodology skill roots', () => {
+  it('Claude plugin declares a single skill root matching the Codex surface', () => {
     const plugin = JSON.parse(
       fs.readFileSync(path.join(REPO_ROOT, '.claude-plugin', 'plugin.json'), 'utf8')
     ) as { skills: string[] };
 
+    // 只声明 ./skill/ 一个根：boss 作为单个 skill 被外部 skills CLI 发现，
+    // 内部方法论随目录整体安装，不被列成独立可选项。
     expect(plugin.skills).toContain('./skill/');
-    expect(plugin.skills).toContain('./skill/skills/');
+    expect(plugin.skills).not.toContain('./skill/skills/');
   });
 
   it('Codex plugin declares install-surface metadata without extra runtime surfaces', () => {
