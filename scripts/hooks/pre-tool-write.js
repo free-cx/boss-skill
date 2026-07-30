@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { STAGE_MAP, loadArtifactDag, getReadyArtifacts } from '../lib/boss-utils.js';
+import { STAGE_MAP, loadArtifactDag, resolveArtifactDagPath, getReadyArtifacts } from '../lib/boss-utils.js';
 import { normalizeHookInput } from './lib/normalize-input.js';
 
 function classifyWriteDecision(filePath, cwd) {
@@ -45,8 +45,8 @@ function classifyWriteDecision(filePath, cwd) {
         const stageStatus = stage.status || 'unknown';
 
         if (stageStatus !== 'running' && stageStatus !== 'retrying') {
-          const dagPath = path.join(cwd, 'harness', 'artifact-dag.json');
-          const dag = loadArtifactDag(dagPath);
+          const dagPath = resolveArtifactDagPath(cwd);
+          const dag = dagPath ? loadArtifactDag(dagPath) : null;
           if (dag && dag.artifacts && dag.artifacts[artifact]) {
             const ready = getReadyArtifacts(dag, data, data.parameters || {});
             const isReady = ready.some(r => r.artifact === artifact);

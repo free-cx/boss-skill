@@ -294,6 +294,25 @@ describe('boss natural language command contract', () => {
 });
 
 describe('multi-driver runtime documentation contract', () => {
+  it('documents the host-primitive boundary so Boss does not reinvent host capabilities', () => {
+    // Boss 只应提供宿主没有的三件事；其余一律用宿主原语。
+    expect(skill).toContain('不重造宿主已有的能力');
+    expect(platformDrivers).toContain('不重造宿主原语');
+
+    // 边界表必须点明三项自有能力
+    for (const owned of ['事件溯源', '门禁', 'provenance']) {
+      expect(skill).toContain(owned);
+    }
+
+    // 不得把宿主工具名硬编码进跨宿主文档（各宿主命名不同）
+    expect(platformDrivers).not.toContain('TodoWrite');
+  });
+
+  it('keeps knowledge extraction opt-in and offline by default', () => {
+    expect(skill).toContain('BOSS_KNOWLEDGE_API_KEY');
+    expect(skill).toContain('零网络请求');
+  });
+
   it('documents multi-driver runtime without weakening Claude Code hooks', () => {
     expect(multiDriverRuntimePlan).toContain('Claude Code');
     expect(multiDriverRuntimePlan).toContain('Codex');
