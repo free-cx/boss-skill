@@ -177,7 +177,11 @@ boss runtime report-agent-status <feature> <stage> <agent> <STATUS> --reason "<�
 
 ## Wave 派发前写集校验
 
-进入 code 阶段时，编排器不得只按角色或前后端标签决定并行度。必须先从 `tasks.md` 中每个 Task 的「文件输出列表 / 写集」解析计划写入路径，构建冲突图，再决定哪些任务可进入同一 Wave。
+进入 code 阶段时，编排器不得只按角色或前后端标签决定并行度。必须先从 `waves.json` 的 `writeSet`
+（或 `tasks.md` 中每个 Task 的「文件输出列表 / 写集」）解析计划写入路径，构建冲突图，再决定哪些任务可进入同一 Wave。
+
+运行时的节点级调度遵循同一原则：`boss` 按写集不重叠分组派发，而非按 stage 分批 ——
+DAG 的 `inputs` 已表达数据依赖，写集冲突才是并行度的真实约束。
 
 **派发规则**：
 - 同一 Wave 的任务写集必须互斥；写同一文件、同一中央索引、同一依赖清单、锁文件、全局配置、`i18n.ts`、`store.ts` 等共享文件时，视为冲突。

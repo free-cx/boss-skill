@@ -1,6 +1,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+import {
+  normalizeCommands,
+  type StructuredCommand
+} from '../domain/structured-wave.js';
+
 export type EvidenceWaveStatus = 'pending' | 'running' | 'completed' | 'blocked' | 'failed';
 
 export interface EvidenceWave {
@@ -8,13 +13,33 @@ export interface EvidenceWave {
   title: string;
   scope: string;
   writeSet: string[];
-  redTests: string[];
-  greenGates: string[];
+  redTests: StructuredCommand[];
+  greenGates: StructuredCommand[];
   contractRows: string[];
   rollbackRisk: string;
   pausePolicy: string;
   status: EvidenceWaveStatus;
 }
+
+const WAVE_STATUSES: ReadonlySet<string> = new Set<string>([
+  'pending',
+  'running',
+  'completed',
+  'blocked',
+  'failed'
+]);
+
+function normalizeStatus(value: unknown): EvidenceWaveStatus {
+  return typeof value === 'string' && WAVE_STATUSES.has(value)
+    ? (value as EvidenceWaveStatus)
+    : 'pending';
+}
+
+function normalizeStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && item.length > 0);
+}
+
 
 function splitMarkdownRow(line: string): string[] {
   const cells: string[] = [];
@@ -90,10 +115,60 @@ function parseTitleAndStatus(rawTitle: string): { title: string; status: Evidenc
   };
 }
 
-export function readWaves(
-  feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
-): EvidenceWave[] {
+/** 结构化真相源：`.boss/<feature>/waves.json`。 */
+export function wavesPath(feature: string, cwd: string): string {
+  return path.join(cwd, '.boss', feature, 'waves.json');
+}
+
+function readStructuredWaves(feature: string, cwd: string): EvidenceWave[] | null {
+  const filePath = wavesPath(feature, cwd);
+  if (!fs.existsSync(filePath)) return null;
+
+  let parsed: unknown;
+  try {
+    if (!fs.statSync(filePath).isFile()) return null;
+    parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (err) {
+    throw new Error(`waves.json 解析失败: ${(err as Error).message}`);
+  }
+
+  const rawWaves = Array.isArray(parsed)
+    ? parsed
+    : Array.isArray((parsed as Record<string, unknown>)?.waves)
+      ? ((parsed as Record<string, unknown>).waves as unknown[])
+      : null;
+  if (!rawWaves) {
+    throw new Error('waves.json 必须是数组或包含 waves 数组的对象');
+  }
+
+  const usedIds = new Map<string, number>();
+  return rawWaves.map((entry, index) => {
+    const record = (entry ?? {}) as Record<string, unknown>;
+    const title = typeof record.title === 'string' ? record.title : '';
+    const explicitId = typeof record.id === 'string' && record.id.length > 0 ? record.id : '';
+    return {
+      id: explicitId || uniqueWaveId(title, index, usedIds),
+      title,
+      scope: typeof record.scope === 'string' ? record.scope : '',
+      writeSet: normalizeStringList(record.writeSet),
+      redTests: normalizeCommands(record.redTests, `waves[${index}].redTests`),
+      greenGates: normalizeCommands(record.greenGates, `waves[${index}].greenGates`),
+      contractRows: normalizeStringList(record.contractRows),
+      rollbackRisk: typeof record.stopCondition === 'string' ? record.stopCondition : '',
+      pausePolicy: typeof record.stopCondition === 'string' ? record.stopCondition : '',
+      status: normalizeStatus(record.status)
+    };
+  });
+}
+
+/**
+ * 从 Markdown 表格读取 wave 的*非命令*字段。
+ *
+ * 命令刻意不从 Markdown 读取：表格单元格曾被直接交给 shell 执行，
+ * 任何能写 tasks.md 的人即可任意执行命令。验证命令一律改由
+ * waves.json 提供 argv 数组。
+ */
+function readMarkdownWaves(feature: string, cwd: string): EvidenceWave[] {
   const tasksPath = path.join(cwd, '.boss', feature, 'tasks.md');
   if (!fs.existsSync(tasksPath)) {
     return [];
@@ -127,7 +202,7 @@ export function readWaves(
     if (isSeparatorRow(cells)) continue;
     if (cells.length < 7) continue;
 
-    const [title, scope, ownerFiles, redTests, greenGates, contractRows, stopCondition] = cells;
+    const [title, scope, ownerFiles, , , contractRows, stopCondition] = cells;
     const parsedTitle = parseTitleAndStatus(cleanCell(title ?? ''));
     const cleanedTitle = parsedTitle.title;
     if (!cleanedTitle) continue;
@@ -138,8 +213,9 @@ export function readWaves(
       title: cleanedTitle,
       scope: cleanCell(scope ?? ''),
       writeSet: splitListCell(ownerFiles ?? ''),
-      redTests: splitListCell(redTests ?? ''),
-      greenGates: splitListCell(greenGates ?? ''),
+      // Markdown 不再作为命令来源
+      redTests: [],
+      greenGates: [],
       contractRows: splitListCell(contractRows ?? ''),
       rollbackRisk: cleanedStopCondition,
       pausePolicy: cleanedStopCondition,
@@ -149,3 +225,15 @@ export function readWaves(
 
   return rows;
 }
+
+/**
+ * 读取 wave 列表。waves.json 存在时以其为准；否则退回 Markdown，
+ * 但退回路径不携带任何可执行命令。
+ */
+export function readWaves(
+  feature: string,
+  { cwd = process.cwd() }: { cwd?: string } = {}
+): EvidenceWave[] {
+  return readStructuredWaves(feature, cwd) ?? readMarkdownWaves(feature, cwd);
+}
+

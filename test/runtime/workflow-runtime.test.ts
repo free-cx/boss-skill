@@ -339,13 +339,23 @@ describe('workflow runtime layer', () => {
 
   it('projects wave verification results into workflow node status', () => {
     runtime.initPipeline('workflow-feat', { cwd: tmpDir });
+    // 命令来自结构化 waves.json（argv 数组），Markdown 不再提供命令
     fs.writeFileSync(
-      path.join(tmpDir, '.boss', 'workflow-feat', 'tasks.md'),
-      [
-        '| Evidence Wave | 范围 | Owner 文件 | 红测 | 绿门禁 | Contract Matrix 行 | Stop Condition |',
-        '| --- | --- | --- | --- | --- | --- | --- |',
-        '| Wave 1：Runtime | workflow node status | `packages/boss-cli/src/runtime/application/workflow.ts` | `node -e "process.exit(1)"` | `node -e "process.exit(0)"` | CM-runtime | Stop on failed status |'
-      ].join('\n') + '\n',
+      path.join(tmpDir, '.boss', 'workflow-feat', 'waves.json'),
+      JSON.stringify({
+        waves: [
+          {
+            id: 'wave-1-runtime',
+            title: 'Wave 1：Runtime',
+            scope: 'workflow node status',
+            writeSet: ['packages/boss-cli/src/runtime/application/workflow.ts'],
+            redTests: [['false']],
+            greenGates: [['true']],
+            contractRows: ['CM-runtime'],
+            stopCondition: 'Stop on failed status'
+          }
+        ]
+      }) + '\n',
       'utf8'
     );
 
