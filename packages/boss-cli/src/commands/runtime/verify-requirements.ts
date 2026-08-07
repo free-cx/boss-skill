@@ -8,11 +8,14 @@ import {
   createCliContext,
   describeCommand,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import {
+  type RequirementsVerificationResult,
+  verifyRequirements,
+} from '../../runtime/application/requirements-verification.js';
 import { printRuntimeHelp } from './agent-command-utils.js';
-import { verifyRequirements, type RequirementsVerificationResult } from '../../runtime/application/requirements-verification.js';
 
 function printHelp(): void {
   printRuntimeHelp('verify-requirements', 'boss runtime verify-requirements FEATURE [options]');
@@ -26,7 +29,7 @@ export function parseArgs(argv: string[]) {
   const parsed = {
     feature: '',
     testDir: '',
-    dryRun: false
+    dryRun: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -88,19 +91,22 @@ function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Ensure .boss/<feature>/prd.md exists with AC-N acceptance criteria'
+      suggestion: 'Ensure .boss/<feature>/prd.md exists with AC-N acceptance criteria',
     });
   }
   return err;
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime verify-requirements' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['verify-requirements']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['verify-requirements'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['verify-requirements'], null, 2)}\n`,
     );
     return 0;
   }
@@ -115,7 +121,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
     const result = verifyRequirements(parsed.feature, {
       cwd,
       testDir: parsed.testDir || undefined,
-      dryRun: parsed.dryRun
+      dryRun: parsed.dryRun,
     });
 
     writeOutput(result, context, (data) => renderText(data as RequirementsVerificationResult));
@@ -128,7 +134,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const context = createCliContext(process.argv.slice(2), {
     command: 'boss runtime verify-requirements',
-    validateOptionValues: false
+    validateOptionValues: false,
   });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

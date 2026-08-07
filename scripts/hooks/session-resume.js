@@ -71,8 +71,8 @@ function run(rawInput) {
   const result = {
     hookSpecificOutput: {
       hookEventName: 'SessionStart',
-      additionalContext: context
-    }
+      additionalContext: context,
+    },
   };
 
   if (previousSession) {

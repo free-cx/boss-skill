@@ -9,11 +9,11 @@ import {
   describeCommand,
   parseLimit,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import { printRuntimeHelp, requireOptionValue } from './agent-command-utils.js';
 import { queryAgentSection, readFeatureSummary } from '../../runtime/application/memory.js';
+import { printRuntimeHelp, requireOptionValue } from './agent-command-utils.js';
 
 function printHelp(): void {
   printRuntimeHelp('query-memory', 'boss runtime query-memory FEATURE [options]');
@@ -29,7 +29,7 @@ export function parseArgs(argv: string[]) {
     startup: false,
     json: false,
     agent: '',
-    stage: null as number | null
+    stage: null as number | null,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -52,7 +52,7 @@ export function parseArgs(argv: string[]) {
           message: `Invalid --stage value: ${rawStage}`,
           input: { stage: rawStage },
           retryable: false,
-          suggestion: 'Use a non-negative integer stage number'
+          suggestion: 'Use a non-negative integer stage number',
         });
       }
       parsed.stage = stage;
@@ -90,19 +90,22 @@ function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline <feature> first'
+      suggestion: 'Run boss runtime init-pipeline <feature> first',
     });
   }
   return err;
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime query-memory' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['query-memory']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['query-memory'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['query-memory'], null, 2)}\n`,
     );
     return 0;
   }
@@ -126,19 +129,26 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
           cwd,
           agent: parsed.agent,
           stage: parsed.stage ?? undefined,
-          limit: parseLimit(context.values.limit)
-        })
+          limit: parseLimit(context.values.limit),
+        }),
       };
-      writeOutput(payload, context, () =>
-        payload.memories.map((item) => `- [${item.category}] ${item.summary}`).join('\n') + '\n'
+      writeOutput(
+        payload,
+        context,
+        () =>
+          payload.memories.map((item) => `- [${item.category}] ${item.summary}`).join('\n') + '\n',
       );
       return 0;
     }
 
     if (parsed.startup) {
       const payload = { feature: parsed.feature, startupSummary: summary.startupSummary || [] };
-      writeOutput(payload, context, () =>
-        payload.startupSummary.map((item) => `- [${item.category}] ${item.summary}`).join('\n') + '\n'
+      writeOutput(
+        payload,
+        context,
+        () =>
+          payload.startupSummary.map((item) => `- [${item.category}] ${item.summary}`).join('\n') +
+          '\n',
       );
       return 0;
     }
@@ -151,6 +161,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime query-memory', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime query-memory',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   CliUserError,
   consumeCliContractOption,
   createCliContext,
@@ -10,24 +11,23 @@ import {
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { updateAgent } from '../../runtime/application/pipeline.js';
+import {
+  AGENT_REPORT_STATUS_VALUES,
+  type AgentReportStatus,
+  isAgentReportStatus,
+  toPipelineAgentStatus,
+} from '../../runtime/domain/agent-report.js';
 import {
   optionalInputString,
   printRuntimeHelp,
   requireInputString,
   requireOptionValue,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import {
-  AGENT_REPORT_STATUS_VALUES,
-  isAgentReportStatus,
-  toPipelineAgentStatus,
-  type AgentReportStatus
-} from '../../runtime/domain/agent-report.js';
-import { updateAgent } from '../../runtime/application/pipeline.js';
 
 interface ReportAgentStatusInput {
   feature: string;
@@ -40,7 +40,7 @@ interface ReportAgentStatusInput {
 function showHelp(): void {
   printRuntimeHelp(
     'report-agent-status',
-    'boss runtime report-agent-status FEATURE STAGE AGENT STATUS [--reason <text>]'
+    'boss runtime report-agent-status FEATURE STAGE AGENT STATUS [--reason <text>]',
   );
 }
 
@@ -56,7 +56,7 @@ function requireReportStatus(value: unknown): AgentReportStatus {
       message: `Unknown agent status: ${raw}`,
       input: { status: raw, allowed: [...AGENT_REPORT_STATUS_VALUES] },
       retryable: true,
-      suggestion: `Use one of: ${AGENT_REPORT_STATUS_VALUES.join(', ')}`
+      suggestion: `Use one of: ${AGENT_REPORT_STATUS_VALUES.join(', ')}`,
     });
   }
   return raw;
@@ -96,7 +96,7 @@ function parseFlatInput(argv: string[]): ReportAgentStatusInput {
     stage: requireInputString(stage, 'stage'),
     agent: requireInputString(agent, 'agent'),
     status: requireReportStatus(status),
-    reason
+    reason,
   };
 }
 
@@ -109,7 +109,7 @@ function resolveInput(argv: string[], context: CliContext): ReportAgentStatusInp
       stage: requireInputString(input.stage, 'stage'),
       agent: requireInputString(input.agent, 'agent'),
       status: requireReportStatus(input.status),
-      reason: optionalInputString(input.reason)
+      reason: optionalInputString(input.reason),
     };
   }
   return parseFlatInput(argv);
@@ -123,20 +123,20 @@ function actionFor(input: ReportAgentStatusInput) {
     agent: input.agent,
     reported_status: input.status,
     target_status: toPipelineAgentStatus(input.status),
-    reason: input.reason
+    reason: input.reason,
   };
 }
 
 export function main(
   argv: string[] = process.argv.slice(2),
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): number {
   const context = createCliContext(argv, { command: 'boss runtime report-agent-status' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['report-agent-status']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['report-agent-status'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['report-agent-status'], null, 2)}\n`,
     );
     return 0;
   }
@@ -157,7 +157,7 @@ export function main(
     updateAgent(input.feature, input.stage, input.agent, pipelineStatus, {
       // 失败时把上报原因带进事件流，便于诊断；成功路径不写 reason。
       reason: pipelineStatus === 'failed' ? input.reason || input.status : '',
-      cwd
+      cwd,
     });
     writeOutput(
       {
@@ -166,11 +166,10 @@ export function main(
         agent: input.agent,
         reportedStatus: input.status,
         agentStatus: pipelineStatus,
-        reason: input.reason ?? ''
+        reason: input.reason ?? '',
       },
       context,
-      () =>
-        `Agent ${input.agent} (阶段 ${input.stage}): ${input.status} -> ${pipelineStatus}\n`
+      () => `Agent ${input.agent} (阶段 ${input.stage}): ${input.status} -> ${pipelineStatus}\n`,
     );
     return 0;
   } catch (err) {
@@ -181,7 +180,7 @@ export function main(
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const context = createCliContext(process.argv.slice(2), {
     command: 'boss runtime report-agent-status',
-    validateOptionValues: false
+    validateOptionValues: false,
   });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

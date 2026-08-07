@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 describe('hook-flags', () => {
   const originalEnv = {
     BOSS_HOOK_PROFILE: process.env.BOSS_HOOK_PROFILE,
-    BOSS_DISABLED_HOOKS: process.env.BOSS_DISABLED_HOOKS
+    BOSS_DISABLED_HOOKS: process.env.BOSS_DISABLED_HOOKS,
   };
 
   async function loadFlags() {

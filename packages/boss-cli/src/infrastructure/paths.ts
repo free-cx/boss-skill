@@ -9,10 +9,17 @@ export function packageRootFromImportMeta(importMetaUrl: string, ancestorLevels:
   if (!Number.isInteger(ancestorLevels) || ancestorLevels < 0) {
     throw new Error(`Invalid package root depth: ${ancestorLevels}`);
   }
-  return path.resolve(dirnameFromImportMeta(importMetaUrl), ...Array.from({ length: ancestorLevels }, () => '..'));
+  return path.resolve(
+    dirnameFromImportMeta(importMetaUrl),
+    ...Array.from({ length: ancestorLevels }, () => '..'),
+  );
 }
 
-export function resolvePackagePath(importMetaUrl: string, ancestorLevels: number, ...segments: string[]): string {
+export function resolvePackagePath(
+  importMetaUrl: string,
+  ancestorLevels: number,
+  ...segments: string[]
+): string {
   return path.join(packageRootFromImportMeta(importMetaUrl, ancestorLevels), ...segments);
 }
 

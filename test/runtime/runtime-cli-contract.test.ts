@@ -1,19 +1,18 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { main as continueMain } from '../../packages/boss-cli/src/commands/continue.js';
 import {
   buildFeatureSummary,
-  writeFeatureMemory
+  writeFeatureMemory,
 } from '../../packages/boss-cli/src/runtime/application/memory.js';
 import {
   initPipeline,
   updateAgent,
-  updateStage
+  updateStage,
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
-import { main as continueMain } from '../../packages/boss-cli/src/commands/continue.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
@@ -26,7 +25,9 @@ describe('runtime CLI contract', () => {
 
   beforeEach(() => {
     if (!fs.existsSync(BOSS_BIN)) {
-      throw new Error('Missing built Boss CLI dist. Run `npm run build` before runtime CLI contract tests.');
+      throw new Error(
+        'Missing built Boss CLI dist. Run `npm run build` before runtime CLI contract tests.',
+      );
     }
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'boss-runtime-cli-'));
     originalCwd = process.cwd();
@@ -39,34 +40,58 @@ describe('runtime CLI contract', () => {
   });
 
   function distCli(name: string) {
-    return path.join(REPO_ROOT, 'packages', 'boss-cli', 'dist', 'commands', 'runtime', `${name}.js`);
+    return path.join(
+      REPO_ROOT,
+      'packages',
+      'boss-cli',
+      'dist',
+      'commands',
+      'runtime',
+      `${name}.js`,
+    );
   }
 
   function runCli(name: string, args: string[]) {
     return spawnSync(process.execPath, [BOSS_BIN, 'runtime', name, ...args], {
       cwd: tmpDir,
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
   }
 
   function runBoss(args: string[]) {
     return spawnSync(process.execPath, [BOSS_BIN, ...args], {
       cwd: tmpDir,
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
   }
 
   it('get-ready-artifacts CLI does not depend on runtime internal exports', () => {
     const source = fs.readFileSync(
-      path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'commands', 'runtime', 'get-ready-artifacts.ts'),
-      'utf8'
+      path.join(
+        REPO_ROOT,
+        'packages',
+        'boss-cli',
+        'src',
+        'commands',
+        'runtime',
+        'get-ready-artifacts.ts',
+      ),
+      'utf8',
     );
 
     expect(source).not.toMatch(/\._internal\b/);
   });
 
   it('dist init-pipeline artifact is rebuilt from the current source under review', () => {
-    const sourcePath = path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'commands', 'runtime', 'init-pipeline.ts');
+    const sourcePath = path.join(
+      REPO_ROOT,
+      'packages',
+      'boss-cli',
+      'src',
+      'commands',
+      'runtime',
+      'init-pipeline.ts',
+    );
     const distPath = distCli('init-pipeline');
 
     const sourceMtime = fs.statSync(sourcePath).mtimeMs;
@@ -84,7 +109,9 @@ describe('runtime CLI contract', () => {
   it('init-pipeline CLI exposes help text and stable JSON fields', () => {
     const help = runCli('init-pipeline', ['--help']);
     expect(help.status).toBe(0);
-    expect(help.stdout + help.stderr).toMatch(/Usage: boss runtime init-pipeline FEATURE \[options\]/);
+    expect(help.stdout + help.stderr).toMatch(
+      /Usage: boss runtime init-pipeline FEATURE \[options\]/,
+    );
 
     const result = runCli('init-pipeline', ['test-feat']);
     expect(result.status).toBe(0);
@@ -107,7 +134,9 @@ describe('runtime CLI contract', () => {
 
     const help = runCli('record-artifact', ['--help']);
     expect(help.status).toBe(0);
-    expect(help.stdout + help.stderr).toMatch(/Usage: boss runtime record-artifact FEATURE ARTIFACT STAGE \[options\]/);
+    expect(help.stdout + help.stderr).toMatch(
+      /Usage: boss runtime record-artifact FEATURE ARTIFACT STAGE \[options\]/,
+    );
 
     const result = runCli('record-artifact', ['test-feat', 'prd.md', '1']);
     expect(result.status).toBe(0);
@@ -154,7 +183,9 @@ describe('runtime CLI contract', () => {
 
     const help = runCli('get-ready-artifacts', ['--help']);
     expect(help.status).toBe(0);
-    expect(help.stdout).toMatch(/Usage: boss runtime get-ready-artifacts FEATURE \[ARTIFACT\] \[options\]/);
+    expect(help.stdout).toMatch(
+      /Usage: boss runtime get-ready-artifacts FEATURE \[ARTIFACT\] \[options\]/,
+    );
 
     const result = runCli('get-ready-artifacts', ['test-feat', '--ready', '--json']);
     expect(result.status).toBe(0);
@@ -168,7 +199,9 @@ describe('runtime CLI contract', () => {
 
     const help = runCli('evaluate-gates', ['--help']);
     expect(help.status).toBe(0);
-    expect(help.stdout + help.stderr).toMatch(/Usage: boss runtime evaluate-gates FEATURE GATE \[options\]/);
+    expect(help.stdout + help.stderr).toMatch(
+      /Usage: boss runtime evaluate-gates FEATURE GATE \[options\]/,
+    );
 
     const result = runCli('evaluate-gates', ['test-feat', 'gate1', '--dry-run']);
     expect(result.status).toBe(0);
@@ -184,23 +217,25 @@ describe('runtime CLI contract', () => {
           type: 'evaluate_gate',
           feature: 'test-feat',
           gate: 'gate1',
-          writes_event: false
-        }
+          writes_event: false,
+        },
       ],
       risk_tier: 'medium',
-      requires_approval: false
+      requires_approval: false,
     });
   });
 
   it('update-stage and update-agent CLIs expose runtime-first help text', () => {
     const stageHelp = runCli('update-stage', ['--help']);
     expect(stageHelp.status).toBe(0);
-    expect(stageHelp.stdout + stageHelp.stderr).toMatch(/Usage: boss runtime update-stage FEATURE STAGE STATUS \[options\]/);
+    expect(stageHelp.stdout + stageHelp.stderr).toMatch(
+      /Usage: boss runtime update-stage FEATURE STAGE STATUS \[options\]/,
+    );
 
     const agentHelp = runCli('update-agent', ['--help']);
     expect(agentHelp.status).toBe(0);
     expect(agentHelp.stdout + agentHelp.stderr).toMatch(
-      /Usage: boss runtime update-agent FEATURE STAGE AGENT STATUS \[options\]/
+      /Usage: boss runtime update-agent FEATURE STAGE AGENT STATUS \[options\]/,
     );
   });
 
@@ -211,21 +246,29 @@ describe('runtime CLI contract', () => {
 
     const replayHelp = runCli('replay-events', ['--help']);
     expect(replayHelp.status).toBe(0);
-    expect(replayHelp.stdout + replayHelp.stderr).toMatch(/Usage: boss runtime replay-events FEATURE/);
+    expect(replayHelp.stdout + replayHelp.stderr).toMatch(
+      /Usage: boss runtime replay-events FEATURE/,
+    );
 
     const progressHelp = runCli('inspect-progress', ['--help']);
     expect(progressHelp.status).toBe(0);
-    expect(progressHelp.stdout + progressHelp.stderr).toMatch(/Usage: boss runtime inspect-progress FEATURE/);
+    expect(progressHelp.stdout + progressHelp.stderr).toMatch(
+      /Usage: boss runtime inspect-progress FEATURE/,
+    );
 
     const diagnosticsHelp = runCli('render-diagnostics', ['--help']);
     expect(diagnosticsHelp.status).toBe(0);
-    expect(diagnosticsHelp.stdout + diagnosticsHelp.stderr).toMatch(/Usage: boss runtime render-diagnostics FEATURE/);
+    expect(diagnosticsHelp.stdout + diagnosticsHelp.stderr).toMatch(
+      /Usage: boss runtime render-diagnostics FEATURE/,
+    );
   });
 
   it('extract-memory, query-memory, and build-memory-summary expose help text', () => {
     const extractHelp = runCli('extract-memory', ['--help']);
     expect(extractHelp.status).toBe(0);
-    expect(extractHelp.stdout + extractHelp.stderr).toMatch(/Usage: boss runtime extract-memory FEATURE/);
+    expect(extractHelp.stdout + extractHelp.stderr).toMatch(
+      /Usage: boss runtime extract-memory FEATURE/,
+    );
 
     const queryHelp = runCli('query-memory', ['--help']);
     expect(queryHelp.status).toBe(0);
@@ -233,7 +276,9 @@ describe('runtime CLI contract', () => {
 
     const summaryHelp = runCli('build-memory-summary', ['--help']);
     expect(summaryHelp.status).toBe(0);
-    expect(summaryHelp.stdout + summaryHelp.stderr).toMatch(/Usage: boss runtime build-memory-summary FEATURE/);
+    expect(summaryHelp.stdout + summaryHelp.stderr).toMatch(
+      /Usage: boss runtime build-memory-summary FEATURE/,
+    );
   });
 
   it('conversation runtime commands expose describe metadata', () => {
@@ -243,7 +288,7 @@ describe('runtime CLI contract', () => {
       'resolve-conversation',
       'materialize-todo',
       'list-conversations',
-      'list-todos'
+      'list-todos',
     ]) {
       const result = runCli(name, ['--describe']);
       expect(result.status, name).toBe(0);
@@ -269,7 +314,7 @@ describe('runtime CLI contract', () => {
       '--initiator',
       'boss-qa',
       '--participants',
-      'boss-frontend'
+      'boss-frontend',
     ]);
     expect(opened.status, opened.stderr).toBe(0);
 
@@ -293,7 +338,7 @@ describe('runtime CLI contract', () => {
       '--intent',
       'objection',
       '--content',
-      'The loading state leaks a second click.'
+      'The loading state leaks a second click.',
     ]);
     expect(appended.status, appended.stderr).toBe(0);
 
@@ -308,7 +353,7 @@ describe('runtime CLI contract', () => {
       '--type',
       'change',
       '--success-criteria',
-      'button stays disabled during loading,existing tests still pass'
+      'button stays disabled during loading,existing tests still pass',
     ]);
     expect(materialized.status, materialized.stderr).toBe(0);
 
@@ -327,7 +372,7 @@ describe('runtime CLI contract', () => {
       '--todo-type',
       'verify',
       '--success-criteria',
-      'manual QA covers double-click prevention'
+      'manual QA covers double-click prevention',
     ]);
     expect(resolved.status, resolved.stderr).toBe(0);
 
@@ -344,14 +389,16 @@ describe('runtime CLI contract', () => {
       id: openPayload.threadId,
       status: 'closed',
       messageCount: 1,
-      todoCount: 2
+      todoCount: 2,
     });
 
     const todos = runCli('list-todos', ['test-feat']);
     expect(todos.status, todos.stderr).toBe(0);
     const todoPayload = JSON.parse(todos.stdout) as Array<{ owner: string; title: string }>;
     expect(todoPayload).toHaveLength(2);
-    expect(todoPayload.map((todo) => todo.owner)).toEqual(expect.arrayContaining(['boss-frontend', 'boss-qa']));
+    expect(todoPayload.map((todo) => todo.owner)).toEqual(
+      expect.arrayContaining(['boss-frontend', 'boss-qa']),
+    );
   });
 
   it('materialize-todo CLI works as a standalone command', () => {
@@ -366,7 +413,7 @@ describe('runtime CLI contract', () => {
       '--initiator',
       'boss-pm',
       '--participants',
-      'boss-architect'
+      'boss-architect',
     ]);
     expect(opened.status, opened.stderr).toBe(0);
 
@@ -385,7 +432,7 @@ describe('runtime CLI contract', () => {
       '--type',
       'followup',
       '--success-criteria',
-      'notes are linked to the thread'
+      'notes are linked to the thread',
     ]);
     expect(result.status, result.stderr).toBe(0);
 
@@ -403,7 +450,7 @@ describe('runtime CLI contract', () => {
     expect(payload.todo).toMatchObject({
       owner: 'boss-architect',
       title: 'Draft architecture follow-up notes',
-      type: 'followup'
+      type: 'followup',
     });
   });
 
@@ -419,7 +466,7 @@ describe('runtime CLI contract', () => {
       '--initiator',
       'boss-backend',
       '--participants',
-      'boss-architect'
+      'boss-architect',
     ]);
     expect(opened.status, opened.stderr).toBe(0);
 
@@ -440,7 +487,7 @@ describe('runtime CLI contract', () => {
       '--escalate-to',
       'boss-architect',
       '--escalate-reason',
-      'The callback contract needs a formal source-of-truth update.'
+      'The callback contract needs a formal source-of-truth update.',
     ]);
     expect(result.status, result.stderr).toBe(0);
 
@@ -453,7 +500,7 @@ describe('runtime CLI contract', () => {
     expect(payload.escalation).toMatchObject({
       artifact: 'architecture.md',
       from: 'boss-backend',
-      to: 'boss-architect'
+      to: 'boss-architect',
     });
     expect(payload.todos).toHaveLength(0);
   });
@@ -476,10 +523,10 @@ describe('runtime CLI contract', () => {
           lastSeenAt: '2026-04-17T00:00:00Z',
           expiresAt: null,
           decayScore: 10,
-          influence: 'preference'
-        }
+          influence: 'preference',
+        },
       ],
-      { cwd: tmpDir }
+      { cwd: tmpDir },
     );
     buildFeatureSummary('test-feat', { cwd: tmpDir });
 
@@ -514,10 +561,10 @@ describe('runtime CLI contract', () => {
           lastSeenAt: '2026-04-17T00:00:00Z',
           expiresAt: null,
           decayScore: 10,
-          influence: 'preference'
-        }
+          influence: 'preference',
+        },
       ],
-      { cwd: tmpDir }
+      { cwd: tmpDir },
     );
     // 注意：不在 seed 之后调用 initPipeline —— 那会触发 refreshMemory→rebuildFeatureMemory，
     // 而 rebuild 是对事件流的全量重放（replaceFeatureMemory），会覆盖这条手工 seed 的记录
@@ -534,7 +581,9 @@ describe('runtime CLI contract', () => {
     };
     expect(payload.feature).toBe('test-feat');
     expect(payload.agent).toBe('boss-backend');
-    expect(payload.memories.map((item) => item.summary)).toEqual(['Backend forgot to delete R2 objects']);
+    expect(payload.memories.map((item) => item.summary)).toEqual([
+      'Backend forgot to delete R2 objects',
+    ]);
   });
 
   it('update-stage rejects artifact recording and points agents to record-artifact', () => {
@@ -569,11 +618,14 @@ describe('runtime CLI contract', () => {
       'record-feedback',
       'resume',
       'retry-agent',
-      'retry-stage'
+      'retry-stage',
     ]) {
       const describe = runCli(command, ['--describe']);
       expect(describe.status, `${command} --describe`).toBe(0);
-      const metadata = JSON.parse(describe.stdout) as { command: string; options: Array<{ name: string }> };
+      const metadata = JSON.parse(describe.stdout) as {
+        command: string;
+        options: Array<{ name: string }>;
+      };
       expect(metadata.command).toContain(command);
       expect(metadata.options.map((option) => option.name)).toContain('json');
     }
@@ -588,11 +640,14 @@ describe('runtime CLI contract', () => {
   it('top-level multi-driver commands preserve existing describe metadata', () => {
     for (const args of [
       ['status', '--describe'],
-      ['continue', '--describe']
+      ['continue', '--describe'],
     ]) {
       const result = runBoss(args);
       expect(result.status, `${args.join(' ')} --describe`).toBe(0);
-      const payload = JSON.parse(result.stdout) as { command: string; options: Array<{ name: string }> };
+      const payload = JSON.parse(result.stdout) as {
+        command: string;
+        options: Array<{ name: string }>;
+      };
       expect(payload.command).toContain(args[0]!);
       expect(payload.options.map((option) => option.name)).toEqual(['json', 'describe', 'driver']);
     }
@@ -601,13 +656,19 @@ describe('runtime CLI contract', () => {
   it('boss gate commands expose scoped describe metadata', () => {
     const gate = runBoss(['gate', '--describe']);
     expect(gate.status).toBe(0);
-    const gatePayload = JSON.parse(gate.stdout) as { command: string; options: Array<{ name: string }> };
+    const gatePayload = JSON.parse(gate.stdout) as {
+      command: string;
+      options: Array<{ name: string }>;
+    };
     expect(gatePayload.command).toBe('boss gate');
     expect(gatePayload.options.map((option) => option.name)).toEqual(['json', 'describe', 'gate']);
 
     const final = runBoss(['gate', 'final', '--describe']);
     expect(final.status).toBe(0);
-    const finalPayload = JSON.parse(final.stdout) as { command: string; options: Array<{ name: string }> };
+    const finalPayload = JSON.parse(final.stdout) as {
+      command: string;
+      options: Array<{ name: string }>;
+    };
     expect(finalPayload.command).toBe('boss gate final');
     expect(finalPayload.options.map((option) => option.name)).toEqual(['json', 'describe']);
   });
@@ -615,13 +676,19 @@ describe('runtime CLI contract', () => {
   it('boss qa commands expose scoped describe metadata', () => {
     const qa = runBoss(['qa', '--describe']);
     expect(qa.status).toBe(0);
-    const qaPayload = JSON.parse(qa.stdout) as { command: string; options: Array<{ name: string }> };
+    const qaPayload = JSON.parse(qa.stdout) as {
+      command: string;
+      options: Array<{ name: string }>;
+    };
     expect(qaPayload.command).toBe('boss qa');
     expect(qaPayload.options.map((option) => option.name)).toEqual(['json', 'describe']);
 
     const attack = runBoss(['qa', 'attack', '--describe']);
     expect(attack.status).toBe(0);
-    const attackPayload = JSON.parse(attack.stdout) as { command: string; options: Array<{ name: string }> };
+    const attackPayload = JSON.parse(attack.stdout) as {
+      command: string;
+      options: Array<{ name: string }>;
+    };
     expect(attackPayload.command).toBe('boss qa attack');
     expect(attackPayload.options.map((option) => option.name)).toEqual(['json', 'describe']);
   });
@@ -643,8 +710,8 @@ describe('runtime CLI contract', () => {
       expect.objectContaining({
         name: 'required-artifacts',
         passed: false,
-        missing: ['prd.md', 'architecture.md', 'tasks.md', 'qa-report.md']
-      })
+        missing: ['prd.md', 'architecture.md', 'tasks.md', 'qa-report.md'],
+      }),
     );
   });
 
@@ -662,8 +729,8 @@ describe('runtime CLI contract', () => {
     expect(payload.checks).toContainEqual(
       expect.objectContaining({
         name: 'required-artifacts',
-        missing: ['prd.md', 'architecture.md', 'tasks.md', 'qa-report.md']
-      })
+        missing: ['prd.md', 'architecture.md', 'tasks.md', 'qa-report.md'],
+      }),
     );
   });
 
@@ -673,7 +740,9 @@ describe('runtime CLI contract', () => {
     const result = runBoss(['gate', 'test-feat', '--dry-run', '--json']);
 
     expect(result.status).toBe(1);
-    const payload = JSON.parse(result.stderr) as { error: { code: string; input?: { option?: string } } };
+    const payload = JSON.parse(result.stderr) as {
+      error: { code: string; input?: { option?: string } };
+    };
     expect(payload.error.code).toBe('unknown_option');
     expect(payload.error.input?.option).toBe('--dry-run');
   });
@@ -682,7 +751,9 @@ describe('runtime CLI contract', () => {
     const result = runBoss(['gate', '--json']);
 
     expect(result.status).toBe(1);
-    const payload = JSON.parse(result.stderr) as { error: { code: string; input?: { argument?: string } } };
+    const payload = JSON.parse(result.stderr) as {
+      error: { code: string; input?: { argument?: string } };
+    };
     expect(payload.error.code).toBe('missing_argument');
     expect(payload.error.input?.argument).toBe('feature');
   });
@@ -691,7 +762,9 @@ describe('runtime CLI contract', () => {
     const result = runBoss(['gate', 'final', '--json']);
 
     expect(result.status).toBe(1);
-    const payload = JSON.parse(result.stderr) as { error: { code: string; input?: { argument?: string } } };
+    const payload = JSON.parse(result.stderr) as {
+      error: { code: string; input?: { argument?: string } };
+    };
     expect(payload.error.code).toBe('missing_argument');
     expect(payload.error.input?.argument).toBe('feature');
   });
@@ -713,8 +786,8 @@ describe('runtime CLI contract', () => {
       expect.objectContaining({
         id: 'qa-report-missing',
         severity: 'critical',
-        status: 'open'
-      })
+        status: 'open',
+      }),
     );
   });
 
@@ -724,7 +797,10 @@ describe('runtime CLI contract', () => {
     const result = runBoss(['qa', '--json', 'attack', 'test-feat']);
 
     expect(result.status).toBe(1);
-    const payload = JSON.parse(result.stdout) as { feature: string; findings: Array<{ id: string }> };
+    const payload = JSON.parse(result.stdout) as {
+      feature: string;
+      findings: Array<{ id: string }>;
+    };
     expect(payload.feature).toBe('test-feat');
     expect(payload.findings).toContainEqual(expect.objectContaining({ id: 'qa-report-missing' }));
   });
@@ -735,7 +811,9 @@ describe('runtime CLI contract', () => {
     const result = runBoss(['qa', 'attack', 'test-feat', '--dry-run', '--json']);
 
     expect(result.status).toBe(1);
-    const payload = JSON.parse(result.stderr) as { error: { code: string; input?: { option?: string } } };
+    const payload = JSON.parse(result.stderr) as {
+      error: { code: string; input?: { option?: string } };
+    };
     expect(payload.error.code).toBe('unknown_option');
     expect(payload.error.input?.option).toBe('--dry-run');
   });
@@ -744,7 +822,9 @@ describe('runtime CLI contract', () => {
     const result = runBoss(['qa', 'madeup', '--describe']);
 
     expect(result.status).toBe(1);
-    const payload = JSON.parse(result.stderr) as { error: { code: string; input?: { command?: string } } };
+    const payload = JSON.parse(result.stderr) as {
+      error: { code: string; input?: { command?: string } };
+    };
     expect(payload.error.code).toBe('unknown_command');
     expect(payload.error.input?.command).toBe('madeup');
   });
@@ -753,7 +833,9 @@ describe('runtime CLI contract', () => {
     const result = runBoss(['qa', 'attack', '--json']);
 
     expect(result.status).toBe(1);
-    const payload = JSON.parse(result.stderr) as { error: { code: string; input?: { argument?: string } } };
+    const payload = JSON.parse(result.stderr) as {
+      error: { code: string; input?: { argument?: string } };
+    };
     expect(payload.error.code).toBe('missing_argument');
     expect(payload.error.input?.argument).toBe('feature');
   });
@@ -762,7 +844,9 @@ describe('runtime CLI contract', () => {
     const result = runBoss(['qa', 'attack', 'missing-feature', '--json']);
 
     expect(result.status).toBe(1);
-    const payload = JSON.parse(result.stderr) as { error: { code: string; input?: { feature?: string } } };
+    const payload = JSON.parse(result.stderr) as {
+      error: { code: string; input?: { feature?: string } };
+    };
     expect(payload.error.code).toBe('feature_not_found');
     expect(payload.error.input?.feature).toBe('missing-feature');
   });
@@ -803,7 +887,7 @@ describe('runtime CLI contract', () => {
     expect(payload.checkpoint.checkpointRequired).toBe(true);
     expect(payload.checkpoint.requiredChecks.map((check) => check.command)).toEqual([
       'npm run typecheck',
-      'npm test'
+      'npm test',
     ]);
   });
 
@@ -853,7 +937,7 @@ describe('runtime CLI contract', () => {
     expect(pipeline.status).toBe(0);
     expect(JSON.parse(pipeline.stdout)).toEqual({
       feature: 'test-feat',
-      status: 'initialized'
+      status: 'initialized',
     });
   });
 
@@ -876,14 +960,19 @@ describe('runtime CLI contract', () => {
           lastSeenAt: '2026-04-17T00:00:00Z',
           expiresAt: null,
           decayScore: 10,
-          influence: 'preference'
-        }
+          influence: 'preference',
+        },
       ],
-      { cwd: tmpDir }
+      { cwd: tmpDir },
     );
     buildFeatureSummary('test-feat', { cwd: tmpDir });
 
-    const query = runCli('query-memory', ['test-feat', '--startup', '--fields', 'feature,startupSummary']);
+    const query = runCli('query-memory', [
+      'test-feat',
+      '--startup',
+      '--fields',
+      'feature,startupSummary',
+    ]);
     expect(query.status).toBe(0);
     expect(Object.keys(JSON.parse(query.stdout))).toEqual(['feature', 'startupSummary']);
 
@@ -910,7 +999,9 @@ describe('runtime CLI contract', () => {
     const inspectEventsMetadata = JSON.parse(inspectEvents.stdout) as {
       options: Array<{ name: string; default?: unknown }>;
     };
-    expect(inspectEventsMetadata.options.find((option) => option.name === 'limit')?.default).toBe('20');
+    expect(inspectEventsMetadata.options.find((option) => option.name === 'limit')?.default).toBe(
+      '20',
+    );
 
     const updateStage = runCli('update-stage', ['--describe']);
     expect(updateStage.status).toBe(0);
@@ -918,7 +1009,7 @@ describe('runtime CLI contract', () => {
       options: Array<{ name: string }>;
     };
     expect(updateStageMetadata.options.map((option) => option.name)).toEqual(
-      expect.arrayContaining(['json', 'describe', 'fields', 'dry-run', 'json-input', 'reason'])
+      expect.arrayContaining(['json', 'describe', 'fields', 'dry-run', 'json-input', 'reason']),
     );
     expect(updateStageMetadata.options.map((option) => option.name)).not.toContain('artifact');
   });
@@ -953,7 +1044,7 @@ describe('runtime CLI contract', () => {
     expect(fieldsPayload.error).toMatchObject({
       code: 'missing_option_value',
       input: { option: '--fields' },
-      retryable: false
+      retryable: false,
     });
 
     const limit = runCli('inspect-events', ['test-feat', '--limit', '--fields', 'events']);
@@ -963,7 +1054,7 @@ describe('runtime CLI contract', () => {
     };
     expect(limitPayload.error).toMatchObject({
       code: 'missing_option_value',
-      input: { option: '--limit' }
+      input: { option: '--limit' },
     });
 
     const direct = spawnSync(
@@ -971,8 +1062,8 @@ describe('runtime CLI contract', () => {
       [distCli('inspect-pipeline'), 'test-feat', '--fields', '--json'],
       {
         cwd: tmpDir,
-        encoding: 'utf8'
-      }
+        encoding: 'utf8',
+      },
     );
     expect(direct.status).toBe(1);
     expect(direct.stderr).not.toContain('CliUserError');
@@ -981,14 +1072,18 @@ describe('runtime CLI contract', () => {
     };
     expect(directPayload.error).toMatchObject({
       code: 'missing_option_value',
-      input: { option: '--fields' }
+      input: { option: '--fields' },
     });
   });
 
   it('memory writer runtime commands support dry-run without creating memory files', () => {
     initPipeline('test-feat', { cwd: tmpDir });
-    fs.rmSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'feature-memory.json'), { force: true });
-    fs.rmSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'memory-summary.json'), { force: true });
+    fs.rmSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'feature-memory.json'), {
+      force: true,
+    });
+    fs.rmSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'memory-summary.json'), {
+      force: true,
+    });
 
     const extractResult = runCli('extract-memory', ['test-feat', '--dry-run', '--json']);
     expect(extractResult.status).toBe(0);
@@ -1000,12 +1095,14 @@ describe('runtime CLI contract', () => {
     expect(extractPayload.actions).toEqual([
       {
         type: 'write_file',
-        path: '.boss/test-feat/.meta/feature-memory.json'
-      }
+        path: '.boss/test-feat/.meta/feature-memory.json',
+      },
     ]);
     expect(extractPayload.risk_tier).toBe('medium');
     expect(extractPayload.requires_approval).toBe(false);
-    expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'feature-memory.json'))).toBe(false);
+    expect(
+      fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'feature-memory.json')),
+    ).toBe(false);
 
     const summaryResult = runCli('build-memory-summary', ['test-feat', '--dry-run', '--json']);
     expect(summaryResult.status).toBe(0);
@@ -1015,10 +1112,12 @@ describe('runtime CLI contract', () => {
     expect(summaryPayload.actions).toEqual([
       {
         type: 'write_file',
-        path: '.boss/test-feat/.meta/memory-summary.json'
-      }
+        path: '.boss/test-feat/.meta/memory-summary.json',
+      },
     ]);
-    expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'memory-summary.json'))).toBe(false);
+    expect(
+      fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'memory-summary.json')),
+    ).toBe(false);
   });
 
   it('extract-memory json returns inspectable records and injection preview', () => {
@@ -1045,15 +1144,13 @@ describe('runtime CLI contract', () => {
         expect.objectContaining({
           category: 'agent_failure_pattern',
           summary: expect.stringContaining('boss-backend failed'),
-          evidence: expect.any(Array)
-        })
-      ])
+          evidence: expect.any(Array),
+        }),
+      ]),
     );
     expect(payload.summaryPreview.startupSummary.length).toBeGreaterThan(0);
     expect(payload.summaryPreview.agentSections['boss-backend']).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ category: 'agent_failure_pattern' })
-      ])
+      expect.arrayContaining([expect.objectContaining({ category: 'agent_failure_pattern' })]),
     );
   });
 
@@ -1063,7 +1160,7 @@ describe('runtime CLI contract', () => {
     const updateStage = runCli('update-stage', [
       '--json-input={"feature":"test-feat","stage":1,"status":"running"}',
       '--dry-run',
-      '--json'
+      '--json',
     ]);
     expect(updateStage.status).toBe(0);
     expect(JSON.parse(updateStage.stdout)).toEqual({
@@ -1072,11 +1169,11 @@ describe('runtime CLI contract', () => {
           type: 'update_stage',
           feature: 'test-feat',
           stage: 1,
-          target_status: 'running'
-        })
+          target_status: 'running',
+        }),
       ],
       risk_tier: 'medium',
-      requires_approval: false
+      requires_approval: false,
     });
 
     const retryStage = runCli('retry-stage', ['test-feat', '1', '--dry-run', '--json']);
@@ -1088,7 +1185,7 @@ describe('runtime CLI contract', () => {
     expect(retryPayload.actions[0]).toMatchObject({
       type: 'retry_stage',
       feature: 'test-feat',
-      stage: 1
+      stage: 1,
     });
   });
 
@@ -1125,7 +1222,7 @@ describe('runtime CLI contract', () => {
       'record-feedback',
       'resume',
       'retry-agent',
-      'retry-stage'
+      'retry-stage',
     ]) {
       const help = runCli(command, ['--help']);
       expect(help.status, command).toBe(0);
@@ -1147,7 +1244,9 @@ describe('runtime CLI contract', () => {
     const result = runCli('inspect-pipeline', ['missing-feature']);
 
     expect(result.status).toBe(1);
-    const payload = JSON.parse(result.stderr) as { error: { code: string; input: Record<string, unknown> } };
+    const payload = JSON.parse(result.stderr) as {
+      error: { code: string; input: Record<string, unknown> };
+    };
     expect(payload.error.code).toBe('feature_not_found');
     expect(payload.error.input).toEqual({ feature: 'missing-feature' });
   });
@@ -1170,9 +1269,9 @@ describe('runtime CLI contract', () => {
         '    exitCode: 0',
         '  };',
         '}',
-        ''
+        '',
       ].join('\n'),
-      'utf8'
+      'utf8',
     );
 
     const chunkSize = 4096;
@@ -1188,7 +1287,7 @@ describe('runtime CLI contract', () => {
       cwd: tmpDir,
       env: { ...process.env, SKILL_DIR: pluginRoot },
       input,
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
 
     cleanupTempDir(pluginRoot);
@@ -1200,12 +1299,12 @@ describe('runtime CLI contract', () => {
         first: string;
         secondChunk: string;
         nearEnd: string;
-      }
+      },
     ).toEqual({
       length: 1024 * 1024,
       first: 'A',
       secondChunk: 'B',
-      nearEnd: 'V'
+      nearEnd: 'V',
     });
   });
 
@@ -1215,12 +1314,16 @@ describe('runtime CLI contract', () => {
     fs.writeFileSync(hookPath, 'export function run() { return ""; }\n', 'utf8');
 
     const input = JSON.stringify({ hook_event_name: 'Stop', cwd: tmpDir });
-    const result = spawnSync(process.execPath, [RUN_WITH_FLAGS, 'stop:pipeline-guard', 'empty-hook.js'], {
-      cwd: tmpDir,
-      env: { ...process.env, SKILL_DIR: pluginRoot, BOSS_DISABLED_HOOKS: 'stop:pipeline-guard' },
-      input,
-      encoding: 'utf8'
-    });
+    const result = spawnSync(
+      process.execPath,
+      [RUN_WITH_FLAGS, 'stop:pipeline-guard', 'empty-hook.js'],
+      {
+        cwd: tmpDir,
+        env: { ...process.env, SKILL_DIR: pluginRoot, BOSS_DISABLED_HOOKS: 'stop:pipeline-guard' },
+        input,
+        encoding: 'utf8',
+      },
+    );
 
     cleanupTempDir(pluginRoot);
 
@@ -1234,12 +1337,16 @@ describe('runtime CLI contract', () => {
     fs.writeFileSync(hookPath, 'export function run() { return undefined; }\n', 'utf8');
 
     const input = JSON.stringify({ hook_event_name: 'Stop', cwd: tmpDir });
-    const result = spawnSync(process.execPath, [RUN_WITH_FLAGS, 'stop:pipeline-guard', 'empty-hook.js'], {
-      cwd: tmpDir,
-      env: { ...process.env, SKILL_DIR: pluginRoot },
-      input,
-      encoding: 'utf8'
-    });
+    const result = spawnSync(
+      process.execPath,
+      [RUN_WITH_FLAGS, 'stop:pipeline-guard', 'empty-hook.js'],
+      {
+        cwd: tmpDir,
+        env: { ...process.env, SKILL_DIR: pluginRoot },
+        input,
+        encoding: 'utf8',
+      },
+    );
 
     cleanupTempDir(pluginRoot);
 
@@ -1252,7 +1359,7 @@ describe('runtime CLI contract', () => {
       hook_event_name: 'PreToolUse',
       tool_name: 'Bash',
       tool_input: { command: 'rm -rf /' },
-      cwd: tmpDir
+      cwd: tmpDir,
     });
 
     const result = spawnSync(
@@ -1263,13 +1370,13 @@ describe('runtime CLI contract', () => {
         'run',
         'pre:bash:dangerous-cmd-guard',
         'scripts/hooks/pre-tool-bash.js',
-        'standard,strict'
+        'standard,strict',
       ],
       {
         cwd: tmpDir,
         input,
-        encoding: 'utf8'
-      }
+        encoding: 'utf8',
+      },
     );
 
     expect(result.status).toBe(0);

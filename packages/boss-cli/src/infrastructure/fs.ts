@@ -81,7 +81,9 @@ export function readJsonlTolerant<T = unknown>(filePath: string): JsonlReadResul
       if (isLastLine) {
         return { records, corruptTail: line };
       }
-      throw new Error(`第 ${index + 1} 行不是合法 JSON（非末行，疑似损坏或篡改）: ${(err as Error).message}`);
+      throw new Error(
+        `第 ${index + 1} 行不是合法 JSON（非末行，疑似损坏或篡改）: ${(err as Error).message}`,
+      );
     }
   }
   return { records };

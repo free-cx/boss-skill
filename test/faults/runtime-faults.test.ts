@@ -1,20 +1,19 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-
-import { runCli } from '../helpers/run-cli.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   initPipeline,
   recordArtifact,
   retryAgent,
   updateAgent,
-  updateStage
+  updateStage,
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { appendRuntimeEvent } from '../../packages/boss-cli/src/runtime/application/state.js';
-import { materializeState } from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
 import { EVENT_TYPES } from '../../packages/boss-cli/src/runtime/domain/event-types.js';
+import { materializeState } from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
+import { runCli } from '../helpers/run-cli.js';
 
 describe('Boss runtime fault injection', () => {
   let tmpDir: string;
@@ -29,7 +28,10 @@ describe('Boss runtime fault injection', () => {
   });
 
   function eventsText(): string {
-    return fs.readFileSync(path.join(tmpDir, '.boss', 'fault-feature', '.meta', 'events.jsonl'), 'utf8');
+    return fs.readFileSync(
+      path.join(tmpDir, '.boss', 'fault-feature', '.meta', 'events.jsonl'),
+      'utf8',
+    );
   }
 
   it('rejects path traversal artifact names before appending events', () => {
@@ -55,7 +57,9 @@ describe('Boss runtime fault injection', () => {
     expect(state.feature).toBe('fault-feature');
 
     // 新事件仍可正常追加，id 基于「可解析行数」而非包含损坏行的行数
-    const next = appendRuntimeEvent(tmpDir, 'fault-feature', EVENT_TYPES.STAGE_STARTED, { stage: 1 });
+    const next = appendRuntimeEvent(tmpDir, 'fault-feature', EVENT_TYPES.STAGE_STARTED, {
+      stage: 1,
+    });
     expect(next.id).toBe(validCount + 1);
   });
 
@@ -75,8 +79,16 @@ describe('Boss runtime fault injection', () => {
     const before = eventsText();
 
     const result = runCli(
-      ['packages/boss-cli/dist/bin/boss.js', 'runtime', 'record-artifact', 'fault-feature', 'prd.md', '1', '--json'],
-      { cwd: tmpDir }
+      [
+        'packages/boss-cli/dist/bin/boss.js',
+        'runtime',
+        'record-artifact',
+        'fault-feature',
+        'prd.md',
+        '1',
+        '--json',
+      ],
+      { cwd: tmpDir },
     );
 
     expect(result.status).toBe(1);
@@ -92,13 +104,19 @@ describe('Boss runtime fault injection', () => {
     fs.writeFileSync(
       path.join(pluginDir, 'plugin.json'),
       JSON.stringify({ version: '1.0.0', type: 'gate', hooks: { gate: 'gate.sh' } }),
-      'utf8'
+      'utf8',
     );
     const before = eventsText();
 
     const result = runCli(
-      ['packages/boss-cli/dist/bin/boss.js', 'runtime', 'register-plugins', 'fault-feature', '--json'],
-      { cwd: tmpDir }
+      [
+        'packages/boss-cli/dist/bin/boss.js',
+        'runtime',
+        'register-plugins',
+        'fault-feature',
+        '--json',
+      ],
+      { cwd: tmpDir },
     );
 
     expect(result.status).toBe(1);
@@ -120,9 +138,9 @@ describe('Boss runtime fault injection', () => {
         '3',
         'boss-qa',
         'BOSS_STATUS=done',
-        '--json'
+        '--json',
       ],
-      { cwd: tmpDir }
+      { cwd: tmpDir },
     );
 
     expect(result.status).toBe(1);
@@ -138,8 +156,16 @@ describe('Boss runtime fault injection', () => {
     const before = eventsText();
 
     const result = runCli(
-      ['packages/boss-cli/dist/bin/boss.js', 'runtime', 'retry-agent', 'fault-feature', '3', 'boss-qa', '--json'],
-      { cwd: tmpDir }
+      [
+        'packages/boss-cli/dist/bin/boss.js',
+        'runtime',
+        'retry-agent',
+        'fault-feature',
+        '3',
+        'boss-qa',
+        '--json',
+      ],
+      { cwd: tmpDir },
     );
 
     expect(result.status).toBe(1);
@@ -168,9 +194,9 @@ describe('Boss runtime fault injection', () => {
         '3',
         'boss-qa',
         '--yes',
-        '--json'
+        '--json',
       ],
-      { cwd: tmpDir }
+      { cwd: tmpDir },
     );
 
     expect(result.status).toBe(1);

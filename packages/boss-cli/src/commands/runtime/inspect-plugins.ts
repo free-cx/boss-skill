@@ -8,11 +8,11 @@ import {
   createCliContext,
   describeCommand,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import { printRuntimeHelp } from './agent-command-utils.js';
 import { inspectPipeline } from '../../runtime/application/inspection.js';
+import { printRuntimeHelp } from './agent-command-utils.js';
 
 function printHelp(): void {
   printRuntimeHelp('inspect-plugins', 'boss runtime inspect-plugins FEATURE [options]');
@@ -25,7 +25,7 @@ export function parseArgs(argv: string[]) {
 
   const parsed = {
     feature: '',
-    json: false
+    json: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -59,13 +59,15 @@ function renderText(payload: {
   executed: unknown[];
   failed: unknown[];
 }): string {
-  return [
-    `active: ${payload.active.map((plugin) => plugin.name).join(', ') || 'none'}`,
-    `discovered: ${payload.discovered.map((plugin) => plugin.name).join(', ') || 'none'}`,
-    `activated: ${payload.activated.map((plugin) => plugin.name).join(', ') || 'none'}`,
-    `executed: ${payload.executed.length}`,
-    `failed: ${payload.failed.length}`
-  ].join('\n') + '\n';
+  return (
+    [
+      `active: ${payload.active.map((plugin) => plugin.name).join(', ') || 'none'}`,
+      `discovered: ${payload.discovered.map((plugin) => plugin.name).join(', ') || 'none'}`,
+      `activated: ${payload.activated.map((plugin) => plugin.name).join(', ') || 'none'}`,
+      `executed: ${payload.executed.length}`,
+      `failed: ${payload.failed.length}`,
+    ].join('\n') + '\n'
+  );
 }
 
 function toFeatureNotFoundError(err: unknown, feature: string): unknown {
@@ -76,19 +78,22 @@ function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline <feature> first'
+      suggestion: 'Run boss runtime init-pipeline <feature> first',
     });
   }
   return err;
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime inspect-plugins' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['inspect-plugins']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['inspect-plugins'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['inspect-plugins'], null, 2)}\n`,
     );
     return 0;
   }
@@ -107,7 +112,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       discovered: summary.plugins.discovered,
       activated: summary.plugins.activated,
       executed: summary.plugins.executed,
-      failed: summary.plugins.failed
+      failed: summary.plugins.failed,
     };
     writeOutput(payload, context, (data) => renderText(data as typeof payload));
     return 0;
@@ -117,6 +122,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime inspect-plugins', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime inspect-plugins',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

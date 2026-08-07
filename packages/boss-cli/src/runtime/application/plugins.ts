@@ -1,16 +1,15 @@
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-
-import { listPluginManifestPaths, resolveBuiltInAssetPath } from '../assets.js';
 import { appendLineSync, readJsonlTolerant } from '../../infrastructure/fs.js';
+import { packageRootFromImportMeta } from '../../infrastructure/paths.js';
+import { listPluginManifestPaths, resolveBuiltInAssetPath } from '../assets.js';
 import { EVENT_TYPES } from '../domain/event-types.js';
 import {
-  materializeState,
   type ExecutionState,
-  type PluginSummary
+  materializeState,
+  type PluginSummary,
 } from '../projectors/materialize-state.js';
-import { packageRootFromImportMeta } from '../../infrastructure/paths.js';
 
 const REPO_ROOT = packageRootFromImportMeta(import.meta.url, 5);
 const PLUGIN_TYPES = new Set(['gate', 'agent', 'pipeline-pack', 'reporter']);
@@ -72,9 +71,13 @@ function ensureFeatureMeta(cwd: string, feature: string): string {
   return eventsFile;
 }
 
-export function resolvePluginRoot(
-  { cwd = process.cwd(), repoRoot = REPO_ROOT }: { cwd?: string; repoRoot?: string } = {}
-): string {
+export function resolvePluginRoot({
+  cwd = process.cwd(),
+  repoRoot = REPO_ROOT,
+}: {
+  cwd?: string;
+  repoRoot?: string;
+} = {}): string {
   void repoRoot;
   const projectRoot = path.join(cwd, '.boss', 'plugins');
   return fs.existsSync(projectRoot) ? projectRoot : resolveBuiltInAssetPath('plugins');
@@ -117,7 +120,9 @@ function collectProjectDuplicateNameErrors(cwd: string): string[] {
     }
     const relativePath = path.relative(projectRoot, manifestPath);
     if (seenNames.has(manifest.name)) {
-      errors.push(`重复插件名: ${manifest.name} (${seenNames.get(manifest.name)} 与 ${relativePath})`);
+      errors.push(
+        `重复插件名: ${manifest.name} (${seenNames.get(manifest.name)} 与 ${relativePath})`,
+      );
       continue;
     }
     seenNames.set(manifest.name, relativePath);
@@ -201,7 +206,7 @@ function stableUniqueStrings(values: unknown): string[] {
 function normalizePlugin(
   manifest: Record<string, unknown>,
   pluginDir: string,
-  pluginRoot: string
+  pluginRoot: string,
 ): DiscoveredPlugin {
   return {
     name: String(manifest.name),
@@ -210,25 +215,23 @@ function normalizePlugin(
     description: typeof manifest.description === 'string' ? manifest.description : '',
     dependencies: stableUniqueStrings(manifest.dependencies),
     stages: Array.isArray(manifest.stages)
-      ? manifest.stages
-          .map((value) => Number(value))
-          .filter((value) => Number.isInteger(value))
+      ? manifest.stages.map((value) => Number(value)).filter((value) => Number.isInteger(value))
       : [],
     hooks: isObject(manifest.hooks)
       ? Object.fromEntries(
           Object.entries(manifest.hooks).filter(
-            (entry): entry is [string, string] => typeof entry[1] === 'string'
-          )
+            (entry): entry is [string, string] => typeof entry[1] === 'string',
+          ),
         )
       : {},
     manifestPath: path.relative(pluginRoot, path.join(pluginDir, 'plugin.json')),
-    pluginDir
+    pluginDir,
   };
 }
 
 export function sortPluginsByDependencies(
   plugins: DiscoveredPlugin[],
-  { externalDependencyNames = new Set<string>() }: { externalDependencyNames?: Set<string> } = {}
+  { externalDependencyNames = new Set<string>() }: { externalDependencyNames?: Set<string> } = {},
 ): DiscoveredPlugin[] {
   const byName = new Map<string, DiscoveredPlugin>();
   for (const plugin of plugins) {
@@ -262,7 +265,9 @@ export function sortPluginsByDependencies(
     }
   }
 
-  const queue = [...plugins.map((plugin) => plugin.name).filter((name) => indegree.get(name) === 0)].sort();
+  const queue = [
+    ...plugins.map((plugin) => plugin.name).filter((name) => indegree.get(name) === 0),
+  ].sort();
   const order: string[] = [];
 
   while (queue.length > 0) {
@@ -290,7 +295,7 @@ export function discoverPlugins({
   repoRoot = REPO_ROOT,
   type,
   strict = true,
-  externalDependencyNames = new Set<string>()
+  externalDependencyNames = new Set<string>(),
 }: {
   cwd?: string;
   repoRoot?: string;
@@ -314,7 +319,7 @@ export function discoverPlugins({
       manifest = readJson<Record<string, unknown>>(manifestPath);
     } catch (err) {
       errors.push(
-        `${path.relative(relativeRoot, manifestPath)}: JSON 解析失败 (${(err as Error).message})`
+        `${path.relative(relativeRoot, manifestPath)}: JSON 解析失败 (${(err as Error).message})`,
       );
       continue;
     }
@@ -337,7 +342,7 @@ export function discoverPlugins({
     const normalized = normalizePlugin(manifest, pluginDir, relativeRoot);
     if (seenNames.has(normalized.name)) {
       errors.push(
-        `重复插件名: ${normalized.name} (${seenNames.get(normalized.name)} 与 ${normalized.manifestPath})`
+        `重复插件名: ${normalized.name} (${seenNames.get(normalized.name)} 与 ${normalized.manifestPath})`,
       );
       continue;
     }
@@ -361,23 +366,23 @@ export function discoverPlugins({
   return {
     pluginRoot,
     plugins: orderedPlugins,
-    errors
+    errors,
   };
 }
 
 export function validatePlugins(
-  options: Parameters<typeof discoverPlugins>[0] = {}
+  options: Parameters<typeof discoverPlugins>[0] = {},
 ): PluginValidationResult {
   const result = discoverPlugins({ ...options, strict: false });
   return {
     ...result,
-    valid: result.errors.length === 0
+    valid: result.errors.length === 0,
   };
 }
 
 function appendEvent(
   eventsFile: string,
-  event: { type: string; timestamp: string; data: Record<string, unknown> }
+  event: { type: string; timestamp: string; data: Record<string, unknown> },
 ): { id: number; type: string; timestamp: string; data: Record<string, unknown> } {
   let id = 1;
   if (fs.existsSync(eventsFile)) {
@@ -390,13 +395,13 @@ function appendEvent(
 }
 
 function summarizePlugin(
-  plugin: Pick<DiscoveredPlugin, 'name' | 'version' | 'type' | 'manifestPath' | 'dependencies'>
+  plugin: Pick<DiscoveredPlugin, 'name' | 'version' | 'type' | 'manifestPath' | 'dependencies'>,
 ): PluginSummary {
   const summary: PluginSummary = {
     name: plugin.name,
     version: plugin.version,
     type: plugin.type,
-    manifestPath: plugin.manifestPath
+    manifestPath: plugin.manifestPath,
   };
   if (Array.isArray(plugin.dependencies) && plugin.dependencies.length > 0) {
     summary.dependencies = plugin.dependencies;
@@ -423,10 +428,7 @@ function resolveHookScriptPath(plugin: DiscoveredPlugin, hook: string): string {
   return path.join(plugin.pluginDir, hookPath);
 }
 
-function mergePluginSets(
-  existing: PluginSummary[],
-  incoming: DiscoveredPlugin[]
-): PluginSummary[] {
+function mergePluginSets(existing: PluginSummary[], incoming: DiscoveredPlugin[]): PluginSummary[] {
   const merged: PluginSummary[] = [];
   const byName = new Map<string, PluginSummary>();
 
@@ -437,7 +439,7 @@ function mergePluginSets(
       version: plugin.version,
       type: plugin.type,
       manifestPath: plugin.manifestPath ?? '',
-      dependencies: plugin.dependencies ?? []
+      dependencies: plugin.dependencies ?? [],
     });
     byName.set(normalized.name, normalized);
     merged.push(normalized);
@@ -460,21 +462,25 @@ function mergePluginSets(
 
 export function registerPlugins(
   feature: string,
-  { cwd = process.cwd(), repoRoot = REPO_ROOT, type }: { cwd?: string; repoRoot?: string; type?: string } = {}
+  {
+    cwd = process.cwd(),
+    repoRoot = REPO_ROOT,
+    type,
+  }: { cwd?: string; repoRoot?: string; type?: string } = {},
 ): { plugins: PluginSummary[]; execution: ExecutionState } {
   const eventsFile = ensureFeatureMeta(cwd, feature);
   const currentState = materializeState(feature, cwd).state;
   const existingNames = new Set(
     (Array.isArray(currentState.plugins) ? currentState.plugins : [])
       .map((plugin) => plugin?.name)
-      .filter((name): name is string => typeof name === 'string' && name.length > 0)
+      .filter((name): name is string => typeof name === 'string' && name.length > 0),
   );
   const discovery = discoverPlugins({
     cwd,
     repoRoot,
     type,
     strict: true,
-    externalDependencyNames: existingNames
+    externalDependencyNames: existingNames,
   });
   const now = new Date().toISOString();
 
@@ -482,12 +488,12 @@ export function registerPlugins(
     appendEvent(eventsFile, {
       type: EVENT_TYPES.PLUGIN_DISCOVERED,
       timestamp: now,
-      data: { plugin: summarizePlugin(plugin) }
+      data: { plugin: summarizePlugin(plugin) },
     });
     appendEvent(eventsFile, {
       type: EVENT_TYPES.PLUGIN_ACTIVATED,
       timestamp: now,
-      data: { plugin: summarizePlugin(plugin) }
+      data: { plugin: summarizePlugin(plugin) },
     });
   }
 
@@ -495,20 +501,24 @@ export function registerPlugins(
   appendEvent(eventsFile, {
     type: EVENT_TYPES.PLUGINS_REGISTERED,
     timestamp: now,
-    data: { plugins: mergedPlugins }
+    data: { plugins: mergedPlugins },
   });
 
   const { state } = materializeState(feature, cwd);
   return {
     plugins: mergedPlugins,
-    execution: state
+    execution: state,
   };
 }
 
 export function runHook(
   hook: string,
   feature: string,
-  { cwd = process.cwd(), repoRoot = REPO_ROOT, stage }: { cwd?: string; repoRoot?: string; stage?: string | number | null } = {}
+  {
+    cwd = process.cwd(),
+    repoRoot = REPO_ROOT,
+    stage,
+  }: { cwd?: string; repoRoot?: string; stage?: string | number | null } = {},
 ): RunHookResult {
   if (!hook) throw new Error('缺少 hook 参数');
   const eventsFile = ensureFeatureMeta(cwd, feature);
@@ -539,7 +549,7 @@ export function runHook(
     const execution = spawnSync(command, commandArgs, {
       cwd,
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
     if (execution.error) {
       throw execution.error;
@@ -559,8 +569,8 @@ export function runHook(
         plugin: summary,
         hook,
         stage: stageNumber == null ? undefined : stageNumber,
-        exitCode
-      }
+        exitCode,
+      },
     });
 
     results.push({
@@ -570,7 +580,7 @@ export function runHook(
       exitCode,
       passed,
       stdout: execution.stdout || '',
-      stderr: execution.stderr || ''
+      stderr: execution.stderr || '',
     });
   }
 
@@ -580,6 +590,6 @@ export function runHook(
     feature,
     stage: stageNumber,
     results,
-    execution: state
+    execution: state,
   };
 }

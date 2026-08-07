@@ -14,20 +14,28 @@ import { findActiveFeature, readExecJson } from '../lib/boss-utils.js';
 const CHECKPOINT_PATHSPEC = ['--', '.', ':(exclude).boss'];
 
 function hasChanges(cwd) {
-  const result = spawnSync('git', ['status', '--porcelain', '--untracked-files=all', ...CHECKPOINT_PATHSPEC], {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
+  const result = spawnSync(
+    'git',
+    ['status', '--porcelain', '--untracked-files=all', ...CHECKPOINT_PATHSPEC],
+    {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    },
+  );
   return (result.stdout || '').trim().length > 0;
 }
 
 function countChangedFiles(cwd) {
-  const result = spawnSync('git', ['status', '--porcelain', '--untracked-files=all', ...CHECKPOINT_PATHSPEC], {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
+  const result = spawnSync(
+    'git',
+    ['status', '--porcelain', '--untracked-files=all', ...CHECKPOINT_PATHSPEC],
+    {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    },
+  );
   return (result.stdout || '').trim().split('\n').filter(Boolean).length;
 }
 
@@ -35,11 +43,15 @@ function createStashCheckpoint({ cwd, feature, stage }) {
   const timestamp = new Date().toISOString();
   const changedFiles = countChangedFiles(cwd);
   const message = `boss-wip: ${feature} stage-${stage ?? '?'} ${timestamp}`;
-  const result = spawnSync('git', ['stash', 'push', '-m', message, '--include-untracked', ...CHECKPOINT_PATHSPEC], {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
+  const result = spawnSync(
+    'git',
+    ['stash', 'push', '-m', message, '--include-untracked', ...CHECKPOINT_PATHSPEC],
+    {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    },
+  );
   if (result.status !== 0) return null;
 
   const listResult = spawnSync('git', ['stash', 'list', '--max-count=1'], {
@@ -83,10 +95,12 @@ function run(cwd = process.cwd()) {
 
   const execData = readExecJson(cwd, active.feature);
   const runningStageEntry = Object.entries(execData?.stages ?? {}).find(
-    ([, stage]) => stage && typeof stage === 'object' && stage.status === 'running'
+    ([, stage]) => stage && typeof stage === 'object' && stage.status === 'running',
   );
   const currentStage =
-    execData && typeof execData.currentStage === 'number' ? execData.currentStage : runningStageEntry?.[0] ?? null;
+    execData && typeof execData.currentStage === 'number'
+      ? execData.currentStage
+      : (runningStageEntry?.[0] ?? null);
   const numericStage = currentStage == null ? null : Number(currentStage);
   const stage = Number.isInteger(numericStage) ? numericStage : null;
 

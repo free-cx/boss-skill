@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   mergeRecords,
@@ -9,7 +9,7 @@ import {
   saveFeatureMemory,
   saveFeatureSummary,
   saveGlobalMemory,
-  saveGlobalSummary
+  saveGlobalSummary,
 } from '../../packages/boss-cli/src/runtime/memory/store.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -42,20 +42,23 @@ describe('memory store runtime', () => {
           lastSeenAt: '2026-04-17T00:00:00Z',
           expiresAt: null,
           decayScore: 10,
-          influence: 'preference'
-        }
+          influence: 'preference',
+        },
       ],
-      { cwd: tmpDir }
+      { cwd: tmpDir },
     );
 
     const payload = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'feature-memory.json'), 'utf8')
+      fs.readFileSync(
+        path.join(tmpDir, '.boss', 'test-feat', '.meta', 'feature-memory.json'),
+        'utf8',
+      ),
     ) as { records: Array<{ category: string }> };
 
     expect(payload.records).toHaveLength(1);
     expect(payload.records[0]?.category).toBe('gate_failure_pattern');
     expect(paths.featureMemoryPath(tmpDir, 'test-feat')).toBe(
-      path.join(tmpDir, '.boss', 'test-feat', '.meta', 'feature-memory.json')
+      path.join(tmpDir, '.boss', 'test-feat', '.meta', 'feature-memory.json'),
     );
   });
 
@@ -79,8 +82,8 @@ describe('memory store runtime', () => {
           lastSeenAt: '2026-04-17T00:00:00Z',
           expiresAt: null,
           decayScore: 5,
-          influence: 'preference'
-        }
+          influence: 'preference',
+        },
       ],
       [
         {
@@ -100,9 +103,9 @@ describe('memory store runtime', () => {
           lastSeenAt: '2026-04-18T00:00:00Z',
           expiresAt: null,
           decayScore: 9,
-          influence: 'preference'
-        }
-      ]
+          influence: 'preference',
+        },
+      ],
     );
 
     expect(merged).toHaveLength(1);
@@ -118,13 +121,13 @@ describe('memory store runtime', () => {
         feature: 'test-feat',
         generatedAt: '2026-04-17T00:00:00Z',
         startupSummary: [
-          { category: 'historical_risk', scope: 'feature', summary: 'Stage 3 is unstable' }
+          { category: 'historical_risk', scope: 'feature', summary: 'Stage 3 is unstable' },
         ],
         agentSections: {
-          'boss-qa': [{ category: 'retry_lesson', summary: 'Check backend retry path' }]
-        }
+          'boss-qa': [{ category: 'retry_lesson', summary: 'Check backend retry path' }],
+        },
       },
-      { cwd: tmpDir }
+      { cwd: tmpDir },
     );
     saveGlobalMemory(
       [
@@ -142,28 +145,33 @@ describe('memory store runtime', () => {
           lastSeenAt: '2026-04-18T00:00:00Z',
           expiresAt: null,
           decayScore: 11,
-          influence: 'preference'
-        }
+          influence: 'preference',
+        },
       ],
-      { cwd: tmpDir }
+      { cwd: tmpDir },
     );
     saveGlobalSummary(
       {
         generatedAt: '2026-04-18T00:00:00Z',
-        startupSummary: [{ category: 'gate_failure_pattern', scope: 'global', summary: 'Gate 1 fails' }],
-        agentSections: {}
+        startupSummary: [
+          { category: 'gate_failure_pattern', scope: 'global', summary: 'Gate 1 fails' },
+        ],
+        agentSections: {},
       },
-      { cwd: tmpDir }
+      { cwd: tmpDir },
     );
 
     const featureSummary = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'memory-summary.json'), 'utf8')
+      fs.readFileSync(
+        path.join(tmpDir, '.boss', 'test-feat', '.meta', 'memory-summary.json'),
+        'utf8',
+      ),
     ) as { agentSections: Record<string, Array<{ summary: string }>> };
     const globalMemory = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', '.memory', 'global-memory.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', '.memory', 'global-memory.json'), 'utf8'),
     ) as { records: Array<{ scope: string }> };
     const globalSummary = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', '.memory', 'global-memory-summary.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', '.memory', 'global-memory-summary.json'), 'utf8'),
     ) as { startupSummary: Array<{ summary: string }> };
 
     expect(featureSummary.agentSections['boss-qa']?.[0]?.summary).toBe('Check backend retry path');

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { createHash } from 'node:crypto';
 import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,7 +15,7 @@ const MANIFEST_REFERENCES = [
   '.codex-plugin/marketplace.json',
   '.claude-plugin/plugin.json',
   '.claude-plugin/marketplace.json',
-  '.agents/plugins/marketplace.json'
+  '.agents/plugins/marketplace.json',
 ];
 
 const COMPONENT_REFERENCES = [
@@ -37,7 +37,7 @@ const COMPONENT_REFERENCES = [
   'scripts/hooks/session-start.js',
   'scripts/hooks/session-end.js',
   'packages/boss-cli/assets/artifact-dag.json',
-  'packages/boss-cli/assets/plugin-schema.json'
+  'packages/boss-cli/assets/plugin-schema.json',
 ];
 
 function readJson(relativePath) {
@@ -53,9 +53,10 @@ function repositoryCommit() {
 }
 
 function repositoryUrl(packageJson) {
-  const raw = typeof packageJson.repository === 'string'
-    ? packageJson.repository
-    : packageJson.repository?.url;
+  const raw =
+    typeof packageJson.repository === 'string'
+      ? packageJson.repository
+      : packageJson.repository?.url;
   return String(raw || packageJson.homepage || '')
     .replace(/^git\+/, '')
     .replace(/\.git$/, '');
@@ -67,7 +68,7 @@ function sha256(relativePath) {
   return {
     path: relativePath,
     sha256: createHash('sha256').update(buffer).digest('hex'),
-    bytes: buffer.byteLength
+    bytes: buffer.byteLength,
   };
 }
 
@@ -83,30 +84,32 @@ function buildProvenance(options = {}) {
     plugin: {
       name: codexPlugin.name,
       version: packageJson.version,
-      npmPackage: packageJson.name
+      npmPackage: packageJson.name,
     },
     repository: {
       type: 'git',
       url: repoUrl,
       commit,
-      commitUrl: `${repoUrl}/commit/${commit}`
+      commitUrl: `${repoUrl}/commit/${commit}`,
     },
     publisher: {
       name: codexPlugin.author?.name || packageJson.author?.name,
       email: codexPlugin.author?.email || packageJson.author?.email,
       url: codexPlugin.author?.url || packageJson.homepage,
-      packageRegistry: packageJson.publishConfig?.registry || 'https://registry.npmjs.org/'
+      packageRegistry: packageJson.publishConfig?.registry || 'https://registry.npmjs.org/',
     },
     support: {
       url: packageJson.bugs?.url || packageJson.homepage,
-      security: `${repoUrl}/security/advisories/new`
+      security: `${repoUrl}/security/advisories/new`,
     },
     marketplace: {
       name: marketplace.name,
-      plugin: marketplace.plugins?.find((plugin) => plugin.name === codexPlugin.name)?.name || codexPlugin.name
+      plugin:
+        marketplace.plugins?.find((plugin) => plugin.name === codexPlugin.name)?.name ||
+        codexPlugin.name,
     },
     manifests: MANIFEST_REFERENCES.map(sha256),
-    components: COMPONENT_REFERENCES.map(sha256)
+    components: COMPONENT_REFERENCES.map(sha256),
   };
 }
 
@@ -131,7 +134,9 @@ function verify() {
     process.exit(1);
   }
   if (commitUrl !== `${actual.repository?.url}/commit/${commit}`) {
-    console.error(`${PROVENANCE_PATH} repository.commitUrl must match repository.url and repository.commit`);
+    console.error(
+      `${PROVENANCE_PATH} repository.commitUrl must match repository.url and repository.commit`,
+    );
     process.exit(1);
   }
   const expected = stableStringify(buildProvenance({ commit }));

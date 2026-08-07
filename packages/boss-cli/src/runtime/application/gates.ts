@@ -7,13 +7,13 @@ import { EVENT_TYPES } from '../domain/event-types.js';
 import { materializeState } from '../projectors/materialize-state.js';
 import type { PipelinePackConfig } from './packs.js';
 import {
+  type ArtifactDag,
   appendRuntimeEvent,
   ensureFeatureName,
+  type PipelineExecutionState,
   readExecutionView,
   readJson,
   refreshMemory,
-  type ArtifactDag,
-  type PipelineExecutionState
 } from './state.js';
 
 const DEFAULT_DAG_PATH = resolveBuiltInAssetPath('artifact-dag.json');
@@ -23,14 +23,17 @@ const NPX_CMD = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 function resolveGateScript(cwd: string, gateName: string, skipOnError: boolean): string {
   const pluginDirs = [
     path.join(cwd, '.boss', 'plugins', gateName),
-    resolveBuiltInAssetPath('plugins', gateName)
+    resolveBuiltInAssetPath('plugins', gateName),
   ];
   for (const pluginDir of pluginDirs) {
     const pluginJson = path.join(pluginDir, 'plugin.json');
     if (fs.existsSync(pluginJson)) {
       try {
         const plugin = readJson<Record<string, unknown>>(pluginJson);
-        const hooks = plugin.hooks && typeof plugin.hooks === 'object' ? plugin.hooks as Record<string, unknown> : {};
+        const hooks =
+          plugin.hooks && typeof plugin.hooks === 'object'
+            ? (plugin.hooks as Record<string, unknown>)
+            : {};
         if (typeof hooks.gate === 'string' && hooks.gate.length > 0) {
           const hookPath = path.join(pluginDir, hooks.gate);
           if (fs.existsSync(hookPath)) return hookPath;
@@ -60,14 +63,16 @@ function resolveGateStage(cwd: string, gateName: string): number {
     if (gateDef && gateDef.type === 'gate' && typeof gateDef.stage === 'number') {
       return gateDef.stage;
     }
-  } catch { /* fall through to legacy resolution */ }
+  } catch {
+    /* fall through to legacy resolution */
+  }
 
   if (gateName === 'gate0' || gateName === 'gate1' || gateName === 'gate2') {
     return 3;
   }
   const pluginJsonPaths = [
     path.join(cwd, '.boss', 'plugins', gateName, 'plugin.json'),
-    path.join(resolveBuiltInAssetPath('plugins', gateName), 'plugin.json')
+    path.join(resolveBuiltInAssetPath('plugins', gateName), 'plugin.json'),
   ];
   for (const pluginJson of pluginJsonPaths) {
     if (!fs.existsSync(pluginJson)) continue;
@@ -119,23 +124,26 @@ function check(name: string, passed: boolean, detail?: string): GateCheck {
 }
 
 function commandExists(command: string): boolean {
-  const result = spawnSync(command, ['--version'], { encoding: 'utf8', stdio: ['ignore', 'ignore', 'ignore'] });
+  const result = spawnSync(command, ['--version'], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'ignore', 'ignore'],
+  });
   return !result.error;
 }
 
-function runCommand(command: string, args: string[], cwd: string): { status: number; output: string } {
+function runCommand(
+  command: string,
+  args: string[],
+  cwd: string,
+): { status: number; output: string } {
   const result = spawnSync(command, args, {
     cwd,
     encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
   return {
     status: result.status ?? 1,
-    output: `${result.stdout || ''}${result.stderr || ''}`
-      .trim()
-      .split('\n')
-      .slice(-30)
-      .join('\n')
+    output: `${result.stdout || ''}${result.stderr || ''}`.trim().split('\n').slice(-30).join('\n'),
   };
 }
 
@@ -150,8 +158,14 @@ function readPackageJson(cwd: string): Record<string, unknown> {
 }
 
 function depsContain(pkg: Record<string, unknown>, name: string): boolean {
-  const deps = pkg.dependencies && typeof pkg.dependencies === 'object' ? pkg.dependencies as Record<string, unknown> : {};
-  const devDeps = pkg.devDependencies && typeof pkg.devDependencies === 'object' ? pkg.devDependencies as Record<string, unknown> : {};
+  const deps =
+    pkg.dependencies && typeof pkg.dependencies === 'object'
+      ? (pkg.dependencies as Record<string, unknown>)
+      : {};
+  const devDeps =
+    pkg.devDependencies && typeof pkg.devDependencies === 'object'
+      ? (pkg.devDependencies as Record<string, unknown>)
+      : {};
   return name in deps || name in devDeps;
 }
 
@@ -175,14 +189,16 @@ function findFiles(dir: string, predicate: (file: string) => boolean, max = 1): 
 }
 
 function fileContains(cwd: string, extensions: string[], pattern: RegExp): boolean {
-  return findFiles(cwd, (file) => {
-    if (!extensions.some((ext) => file.endsWith(ext))) return false;
-    try {
-      return pattern.test(fs.readFileSync(file, 'utf8'));
-    } catch {
-      return false;
-    }
-  }).length > 0;
+  return (
+    findFiles(cwd, (file) => {
+      if (!extensions.some((ext) => file.endsWith(ext))) return false;
+      try {
+        return pattern.test(fs.readFileSync(file, 'utf8'));
+      } catch {
+        return false;
+      }
+    }).length > 0
+  );
 }
 
 function runGate0(cwd: string): GateExecution {
@@ -192,7 +208,13 @@ function runGate0(cwd: string): GateExecution {
 
   if (fs.existsSync(path.join(cwd, 'tsconfig.json')) && commandExists(NPX_CMD)) {
     const result = runCommand(NPX_CMD, ['tsc', '--noEmit'], cwd);
-    checks.push(check('typescript-compile', result.status === 0, result.status === 0 ? undefined : 'tsc --noEmit 失败'));
+    checks.push(
+      check(
+        'typescript-compile',
+        result.status === 0,
+        result.status === 0 ? undefined : 'tsc --noEmit 失败',
+      ),
+    );
     if (result.output) logs.push(result.output);
     passed &&= result.status === 0;
   } else {
@@ -203,47 +225,93 @@ function runGate0(cwd: string): GateExecution {
   if (fs.existsSync(path.join(cwd, 'biome.json')) || fs.existsSync(path.join(cwd, 'biome.jsonc'))) {
     lintFound = true;
     const result = runCommand(NPX_CMD, ['biome', 'check', '.'], cwd);
-    checks.push(check('lint', result.status === 0, result.status === 0 ? undefined : 'biome check 失败'));
+    checks.push(
+      check('lint', result.status === 0, result.status === 0 ? undefined : 'biome check 失败'),
+    );
     if (result.output) logs.push(result.output);
     passed &&= result.status === 0;
-  } else if (['.eslintrc', '.eslintrc.js', '.eslintrc.json', '.eslintrc.yml', 'eslint.config.js', 'eslint.config.mjs'].some((name) => fs.existsSync(path.join(cwd, name)))) {
+  } else if (
+    [
+      '.eslintrc',
+      '.eslintrc.js',
+      '.eslintrc.json',
+      '.eslintrc.yml',
+      'eslint.config.js',
+      'eslint.config.mjs',
+    ].some((name) => fs.existsSync(path.join(cwd, name)))
+  ) {
     lintFound = true;
     const result = runCommand(NPX_CMD, ['eslint', '.', '--max-warnings=0'], cwd);
-    checks.push(check('lint', result.status === 0, result.status === 0 ? undefined : 'eslint 有 error'));
+    checks.push(
+      check('lint', result.status === 0, result.status === 0 ? undefined : 'eslint 有 error'),
+    );
     if (result.output) logs.push(result.output);
     passed &&= result.status === 0;
   }
   if (!lintFound) checks.push(check('lint', true, '跳过：无 Lint 配置'));
 
   if (fs.existsSync(path.join(cwd, 'package.json')) && commandExists(NPM_CMD)) {
-    const audit = spawnSync(NPM_CMD, ['audit', '--json'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const audit = spawnSync(NPM_CMD, ['audit', '--json'], {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
     let severe = 0;
     try {
-      const parsed = JSON.parse(audit.stdout || '{}') as { metadata?: { vulnerabilities?: { high?: number; critical?: number } } };
-      severe = Number(parsed.metadata?.vulnerabilities?.high ?? 0) + Number(parsed.metadata?.vulnerabilities?.critical ?? 0);
+      const parsed = JSON.parse(audit.stdout || '{}') as {
+        metadata?: { vulnerabilities?: { high?: number; critical?: number } };
+      };
+      severe =
+        Number(parsed.metadata?.vulnerabilities?.high ?? 0) +
+        Number(parsed.metadata?.vulnerabilities?.critical ?? 0);
     } catch {
       severe = 0;
     }
-    checks.push(check('dependency-audit', severe === 0, severe > 0 ? `${severe} 个高危漏洞` : undefined));
+    checks.push(
+      check('dependency-audit', severe === 0, severe > 0 ? `${severe} 个高危漏洞` : undefined),
+    );
     passed &&= severe === 0;
   } else {
     checks.push(check('dependency-audit', true, '跳过：无 package.json'));
   }
 
-  const secretPatterns = [/AKIA[0-9A-Z]{16}/, /-----BEGIN (RSA |EC |DSA )?PRIVATE KEY-----/, /ghp_[a-zA-Z0-9]{36}/, /sk-[a-zA-Z0-9]{48}/];
-  const secretHits = secretPatterns.filter((pattern) => fileContains(cwd, ['.ts', '.js', '.py', '.go', '.env', '.yaml', '.yml'], pattern)).length;
-  checks.push(check('secrets-scan', secretHits === 0, secretHits > 0 ? `${secretHits} 类敏感信息模式` : undefined));
+  const secretPatterns = [
+    /AKIA[0-9A-Z]{16}/,
+    /-----BEGIN (RSA |EC |DSA )?PRIVATE KEY-----/,
+    /ghp_[a-zA-Z0-9]{36}/,
+    /sk-[a-zA-Z0-9]{48}/,
+  ];
+  const secretHits = secretPatterns.filter((pattern) =>
+    fileContains(cwd, ['.ts', '.js', '.py', '.go', '.env', '.yaml', '.yml'], pattern),
+  ).length;
+  checks.push(
+    check(
+      'secrets-scan',
+      secretHits === 0,
+      secretHits > 0 ? `${secretHits} 类敏感信息模式` : undefined,
+    ),
+  );
   passed &&= secretHits === 0;
 
   const unsafeHits = [
     fileContains(cwd, ['.js', '.ts'], /eval\(/),
     fileContains(cwd, ['.jsx', '.tsx'], /dangerouslySetInnerHTML/),
-    fileContains(cwd, ['.js', '.ts'], /innerHTML\s*=/)
+    fileContains(cwd, ['.js', '.ts'], /innerHTML\s*=/),
   ].filter(Boolean).length;
-  checks.push(check('unsafe-patterns', unsafeHits === 0, unsafeHits > 0 ? `发现 ${unsafeHits} 类不安全模式` : undefined));
+  checks.push(
+    check(
+      'unsafe-patterns',
+      unsafeHits === 0,
+      unsafeHits > 0 ? `发现 ${unsafeHits} 类不安全模式` : undefined,
+    ),
+  );
   passed &&= unsafeHits === 0;
 
-  return { status: passed ? 0 : 1, stdout: `${JSON.stringify(checks)}\n`, stderr: `${logs.join('\n')}\n` };
+  return {
+    status: passed ? 0 : 1,
+    stdout: `${JSON.stringify(checks)}\n`,
+    stderr: `${logs.join('\n')}\n`,
+  };
 }
 
 function runGate1(cwd: string, coverageThreshold: number): GateExecution {
@@ -262,8 +330,14 @@ function runGate1(cwd: string, coverageThreshold: number): GateExecution {
       testCommand = [NPX_CMD, ['jest']];
       coverageCommand = [NPX_CMD, ['jest', '--coverage', '--coverageReporters=json-summary']];
     } else {
-      const scripts = pkg.scripts && typeof pkg.scripts === 'object' ? pkg.scripts as Record<string, unknown> : {};
-      if (typeof scripts.test === 'string' && scripts.test !== 'echo "Error: no test specified" && exit 1') {
+      const scripts =
+        pkg.scripts && typeof pkg.scripts === 'object'
+          ? (pkg.scripts as Record<string, unknown>)
+          : {};
+      if (
+        typeof scripts.test === 'string' &&
+        scripts.test !== 'echo "Error: no test specified" && exit 1'
+      ) {
         testCommand = [NPM_CMD, ['test']];
       }
     }
@@ -285,7 +359,13 @@ function runGate1(cwd: string, coverageThreshold: number): GateExecution {
   }
 
   const testResult = runCommand(testCommand[0], testCommand[1], cwd);
-  checks.push(check('unit-tests', testResult.status === 0, testResult.status === 0 ? undefined : `${testCommand.join(' ')} 执行失败`));
+  checks.push(
+    check(
+      'unit-tests',
+      testResult.status === 0,
+      testResult.status === 0 ? undefined : `${testCommand.join(' ')} 执行失败`,
+    ),
+  );
   if (testResult.output) logs.push(testResult.output);
   passed &&= testResult.status === 0;
 
@@ -295,7 +375,9 @@ function runGate1(cwd: string, coverageThreshold: number): GateExecution {
     const summaryPath = path.join(cwd, 'coverage', 'coverage-summary.json');
     const coverageJson = path.join(cwd, 'coverage.json');
     if (fs.existsSync(summaryPath)) {
-      const summary = readJson<{ total?: { lines?: { pct?: number }; statements?: { pct?: number } } }>(summaryPath);
+      const summary = readJson<{
+        total?: { lines?: { pct?: number }; statements?: { pct?: number } };
+      }>(summaryPath);
       pct = Number(summary.total?.lines?.pct ?? summary.total?.statements?.pct ?? NaN);
     } else if (fs.existsSync(coverageJson)) {
       const summary = readJson<{ totals?: { percent_covered?: number } }>(coverageJson);
@@ -312,30 +394,66 @@ function runGate1(cwd: string, coverageThreshold: number): GateExecution {
     checks.push(check('coverage', true, '跳过：无覆盖率工具'));
   }
 
-  if (fs.existsSync(path.join(cwd, 'playwright.config.ts')) || fs.existsSync(path.join(cwd, 'playwright.config.js'))) {
+  if (
+    fs.existsSync(path.join(cwd, 'playwright.config.ts')) ||
+    fs.existsSync(path.join(cwd, 'playwright.config.js'))
+  ) {
     const result = runCommand(NPX_CMD, ['playwright', 'test'], cwd);
-    checks.push(check('e2e-tests', result.status === 0, result.status === 0 ? 'Playwright' : 'Playwright 测试失败'));
+    checks.push(
+      check(
+        'e2e-tests',
+        result.status === 0,
+        result.status === 0 ? 'Playwright' : 'Playwright 测试失败',
+      ),
+    );
     passed &&= result.status === 0;
-  } else if (fs.existsSync(path.join(cwd, 'cypress.config.ts')) || fs.existsSync(path.join(cwd, 'cypress.config.js'))) {
+  } else if (
+    fs.existsSync(path.join(cwd, 'cypress.config.ts')) ||
+    fs.existsSync(path.join(cwd, 'cypress.config.js'))
+  ) {
     const result = runCommand(NPX_CMD, ['cypress', 'run'], cwd);
-    checks.push(check('e2e-tests', result.status === 0, result.status === 0 ? 'Cypress' : 'Cypress 测试失败'));
+    checks.push(
+      check('e2e-tests', result.status === 0, result.status === 0 ? 'Cypress' : 'Cypress 测试失败'),
+    );
     passed &&= result.status === 0;
   } else {
     checks.push(check('e2e-tests', true, '跳过：未检测到 E2E 测试框架'));
   }
 
-  return { status: passed ? 0 : 1, stdout: `${JSON.stringify(checks)}\n`, stderr: `${logs.join('\n')}\n` };
+  return {
+    status: passed ? 0 : 1,
+    stdout: `${JSON.stringify(checks)}\n`,
+    stderr: `${logs.join('\n')}\n`,
+  };
 }
 
 function runGate2(cwd: string): GateExecution {
   const checks: GateCheck[] = [];
   const logs: string[] = ['[GATE2] Gate 2: 性能门禁'];
   const pkg = readPackageJson(cwd);
-  const isWeb = ['next', 'react', 'vue', 'svelte', '@angular/core'].some((dep) => depsContain(pkg, dep));
-  const hasApi = ['express', 'fastify', 'koa', 'hono'].some((dep) => depsContain(pkg, dep)) || ['go.mod', 'requirements.txt', 'pyproject.toml'].some((file) => fs.existsSync(path.join(cwd, file)));
+  const isWeb = ['next', 'react', 'vue', 'svelte', '@angular/core'].some((dep) =>
+    depsContain(pkg, dep),
+  );
+  const hasApi =
+    ['express', 'fastify', 'koa', 'hono'].some((dep) => depsContain(pkg, dep)) ||
+    ['go.mod', 'requirements.txt', 'pyproject.toml'].some((file) =>
+      fs.existsSync(path.join(cwd, file)),
+    );
 
-  checks.push(check('lighthouse', true, isWeb ? '跳过：未执行 Lighthouse（TS gate 暂不启动浏览器服务）' : '跳过：非 Web 前端项目'));
-  checks.push(check('api-p99', true, hasApi ? '跳过：未执行 API 压测（服务可能未启动）' : '跳过：无 API 框架'));
+  checks.push(
+    check(
+      'lighthouse',
+      true,
+      isWeb ? '跳过：未执行 Lighthouse（TS gate 暂不启动浏览器服务）' : '跳过：非 Web 前端项目',
+    ),
+  );
+  checks.push(
+    check(
+      'api-p99',
+      true,
+      hasApi ? '跳过：未执行 API 压测（服务可能未启动）' : '跳过：无 API 框架',
+    ),
+  );
   return { status: 0, stdout: `${JSON.stringify(checks)}\n`, stderr: `${logs.join('\n')}\n` };
 }
 
@@ -349,14 +467,16 @@ function runBuiltInGate(gateName: string, cwd: string, coverageThreshold: number
 export function resolveGateConfig(
   feature: string,
   _gateName: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): { coverage: number } {
   const defaults = { coverage: 70 };
   try {
     const execution = readExecutionView(cwd, feature);
     const packConfig = (execution as any).parameters?.packConfig as PipelinePackConfig | undefined;
     return { coverage: packConfig?.gateConfig?.coverage ?? defaults.coverage };
-  } catch { return defaults; }
+  } catch {
+    return defaults;
+  }
 }
 
 export function evaluateGates(
@@ -365,8 +485,8 @@ export function evaluateGates(
   {
     cwd = process.cwd(),
     dryRun = false,
-    skipOnError = false
-  }: { cwd?: string; dryRun?: boolean; skipOnError?: boolean } = {}
+    skipOnError = false,
+  }: { cwd?: string; dryRun?: boolean; skipOnError?: boolean } = {},
 ): {
   gate: string;
   passed: boolean;
@@ -391,7 +511,7 @@ export function evaluateGates(
         passed: true,
         checks: [],
         skipped: true,
-        execution: readExecutionView(cwd, feature)
+        execution: readExecutionView(cwd, feature),
       };
     }
 
@@ -401,7 +521,7 @@ export function evaluateGates(
       cwd,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, GATE_COVERAGE_THRESHOLD: String(gateConfig.coverage) }
+      env: { ...process.env, GATE_COVERAGE_THRESHOLD: String(gateConfig.coverage) },
     });
 
     if (external.error) {
@@ -410,7 +530,7 @@ export function evaluateGates(
     result = {
       status: external.status ?? 1,
       stdout: external.stdout || '',
-      stderr: external.stderr || ''
+      stderr: external.stderr || '',
     };
   }
 
@@ -428,7 +548,7 @@ export function evaluateGates(
       passed,
       checks,
       dryRun: true,
-      execution: readExecutionView(cwd, feature)
+      execution: readExecutionView(cwd, feature),
     };
   }
 
@@ -437,7 +557,7 @@ export function evaluateGates(
     gate: gateName,
     passed,
     stage,
-    checks
+    checks,
   });
 
   const { state } = materializeState(feature, cwd);
@@ -446,6 +566,6 @@ export function evaluateGates(
     gate: gateName,
     passed,
     checks,
-    execution: state as PipelineExecutionState
+    execution: state as PipelineExecutionState,
   };
 }

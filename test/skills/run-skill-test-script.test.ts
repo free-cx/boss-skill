@@ -1,11 +1,15 @@
-import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const SCRIPT = path.resolve(import.meta.dirname, 'run-skill-test.sh');
 const GOOD_TRANSCRIPT = path.resolve(import.meta.dirname, 'fixtures', 'claude-good.jsonl');
-const BAD_TRANSCRIPT = path.resolve(import.meta.dirname, 'fixtures', 'codex-premature-action.jsonl');
+const BAD_TRANSCRIPT = path.resolve(
+  import.meta.dirname,
+  'fixtures',
+  'codex-premature-action.jsonl',
+);
 
 describe('Boss skill behavior shell runner', () => {
   it('prints usage and exits non-zero without arguments', () => {
@@ -26,9 +30,9 @@ describe('Boss skill behavior shell runner', () => {
         '--transcript',
         GOOD_TRANSCRIPT,
         '--methodology',
-        'pm/requirement-penetration'
+        'pm/requirement-penetration',
       ],
-      { encoding: 'utf8' }
+      { encoding: 'utf8' },
     );
 
     expect(result.status, result.stderr).toBe(0);
@@ -38,7 +42,7 @@ describe('Boss skill behavior shell runner', () => {
 
   it('returns non-zero for premature action transcripts', () => {
     const result = spawnSync('bash', [SCRIPT, '--id', 'bad', '--transcript', BAD_TRANSCRIPT], {
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
 
     expect(result.status).toBe(1);

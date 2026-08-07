@@ -1,25 +1,24 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-import { EVENT_TYPES, EVENT_TYPE_VALUES, type EventType } from '../domain/event-types.js';
-import { computeNextNodeIds } from '../domain/scheduling.js';
 import { readJsonlTolerant } from '../../infrastructure/fs.js';
 import type {
   ConversationMessage,
   ConversationResolution,
   ConversationThread,
   DerivedTodo,
-  ResolutionTodo
+  ResolutionTodo,
 } from '../domain/conversation-types.js';
+import { EVENT_TYPE_VALUES, EVENT_TYPES, type EventType } from '../domain/event-types.js';
+import { computeNextNodeIds } from '../domain/scheduling.js';
 import {
-  PIPELINE_STATUS,
-  STAGE_STATUS,
   AGENT_STATUS,
-  DEFAULT_SCHEMA_VERSION,
   type AgentStatus,
+  DEFAULT_SCHEMA_VERSION,
+  PIPELINE_STATUS,
   type PipelineStatus,
-  type StageStatus
+  STAGE_STATUS,
+  type StageStatus,
 } from '../domain/state-constants.js';
 
 type UnknownRecord = Record<string, unknown>;
@@ -236,7 +235,7 @@ function defaultStageState(name = ''): StageState {
     maxRetries: 2,
     failureReason: null,
     artifacts: [],
-    gateResults: {}
+    gateResults: {},
   };
 }
 
@@ -245,7 +244,7 @@ function defaultGateState(): GateState {
     status: STAGE_STATUS.PENDING,
     passed: null,
     checks: [],
-    executedAt: null
+    executedAt: null,
   };
 }
 
@@ -258,7 +257,7 @@ function defaultAgentState(): AgentState {
     maxRetries: 2,
     failureReason: null,
     promptFingerprint: null,
-    inputDigest: null
+    inputDigest: null,
   };
 }
 
@@ -281,19 +280,19 @@ export function defaultExecutionState(feature = ''): ExecutionState {
       agentFailureCount: 0,
       meanRetriesPerStage: 0,
       revisionLoopCount: 0,
-      pluginFailureCount: 0
+      pluginFailureCount: 0,
     },
     plugins: [],
     pluginLifecycle: {
       discovered: [],
       activated: [],
       executed: [],
-      failed: []
+      failed: [],
     },
     conversations: {
       threads: [],
       messages: [],
-      resolutions: []
+      resolutions: [],
     },
     derivedTodos: [],
     conversationMetrics: {
@@ -301,19 +300,19 @@ export function defaultExecutionState(feature = ''): ExecutionState {
       resolved: 0,
       todos: 0,
       huddles: 0,
-      unresolved: 0
+      unresolved: 0,
     },
     humanInterventions: [],
     revisionRequests: [],
     feedbackLoops: { maxRounds: 2, currentRound: 0 },
     workflow: undefined,
-    pause: null
+    pause: null,
   };
 }
 
 function upsertThread(
   threads: ConversationThread[],
-  thread: ConversationThread
+  thread: ConversationThread,
 ): ConversationThread[] {
   const next = threads.filter((candidate) => candidate.id !== thread.id);
   next.push(clone(thread));
@@ -326,7 +325,7 @@ function closeThread(threads: ConversationThread[], threadId: string): Conversat
     return {
       ...thread,
       status: 'closed',
-      updatedAt: thread.updatedAt || thread.createdAt
+      updatedAt: thread.updatedAt || thread.createdAt,
     };
   });
 }
@@ -394,13 +393,13 @@ function normalizeWorkflowNode(node: WorkflowExecutionNode): WorkflowExecutionNo
     optional: node.optional === true,
     status: node.status ?? 'pending',
     phase: typeof node.phase === 'string' ? node.phase : `stage-${Number(node.stage) || 0}`,
-    stage: Number.isFinite(Number(node.stage)) ? Number(node.stage) : 0
+    stage: Number.isFinite(Number(node.stage)) ? Number(node.stage) : 0,
   };
 }
 
 function findWorkflowNodeIdByArtifact(
   workflow: WorkflowExecutionState,
-  artifact: string
+  artifact: string,
 ): string | null {
   for (const node of Object.values(workflow.nodes ?? {})) {
     if (node.artifact === artifact) return node.id;
@@ -408,7 +407,10 @@ function findWorkflowNodeIdByArtifact(
   return null;
 }
 
-function workflowInputsSatisfied(workflow: WorkflowExecutionState, node: WorkflowExecutionNode): boolean {
+function workflowInputsSatisfied(
+  workflow: WorkflowExecutionState,
+  node: WorkflowExecutionNode,
+): boolean {
   for (const input of node.inputs) {
     const inputNodeId = findWorkflowNodeIdByArtifact(workflow, input);
     if (!inputNodeId) continue;
@@ -428,17 +430,21 @@ function refreshWorkflowSchedule(state: ExecutionState, timestamp?: string): voi
         ...node,
         status: 'skipped',
         decision: node.decision ?? 'skip',
-        updatedAt: node.updatedAt ?? timestamp
+        updatedAt: node.updatedAt ?? timestamp,
       };
       continue;
     }
-    if (isSatisfiedWorkflowStatus(node.status) || node.status === 'running' || node.status === 'failed') {
+    if (
+      isSatisfiedWorkflowStatus(node.status) ||
+      node.status === 'running' ||
+      node.status === 'failed'
+    ) {
       workflow.nodes[id] = node;
       continue;
     }
     workflow.nodes[id] = {
       ...node,
-      status: workflowInputsSatisfied(workflow, node) ? 'ready' : 'blocked'
+      status: workflowInputsSatisfied(workflow, node) ? 'ready' : 'blocked',
     };
   }
 
@@ -451,7 +457,7 @@ function updateWorkflowNode(
   state: ExecutionState,
   nodeId: string,
   updates: Partial<WorkflowExecutionNode>,
-  timestamp: string
+  timestamp: string,
 ): void {
   if (!state.workflow) return;
   const current = state.workflow.nodes[nodeId];
@@ -459,7 +465,7 @@ function updateWorkflowNode(
   state.workflow.nodes[nodeId] = normalizeWorkflowNode({
     ...current,
     ...updates,
-    updatedAt: timestamp
+    updatedAt: timestamp,
   });
 }
 
@@ -467,7 +473,7 @@ function updateWorkflowArtifactNode(
   state: ExecutionState,
   artifact: string,
   updates: Partial<WorkflowExecutionNode>,
-  timestamp: string
+  timestamp: string,
 ): void {
   if (!state.workflow) return;
   const nodeId = findWorkflowNodeIdByArtifact(state.workflow, artifact);
@@ -486,7 +492,7 @@ function updateWorkflowAgentNodes(
   agent: string,
   updates: Partial<WorkflowExecutionNode>,
   timestamp: string,
-  artifact?: string
+  artifact?: string,
 ): void {
   if (!state.workflow) return;
   const stageNumber = Number(stage);
@@ -506,9 +512,10 @@ function updateWorkflowAgentNodes(
 function applyPipelineResumedWorkflow(state: ExecutionState, event: RuntimeEvent): void {
   if (!state.workflow) return;
   const decisions = Array.isArray(event.data.nodes) ? event.data.nodes : [];
-  state.workflow.resumedFromRunId = typeof event.data.fromRunId === 'string'
-    ? event.data.fromRunId
-    : state.workflow.resumedFromRunId;
+  state.workflow.resumedFromRunId =
+    typeof event.data.fromRunId === 'string'
+      ? event.data.fromRunId
+      : state.workflow.resumedFromRunId;
 
   for (const decision of decisions) {
     if (!isObject(decision) || !isNonEmptyString(decision.id)) continue;
@@ -524,9 +531,9 @@ function applyPipelineResumedWorkflow(state: ExecutionState, event: RuntimeEvent
       {
         status,
         decision: typeof decision.decision === 'string' ? decision.decision : undefined,
-        reason: typeof decision.reason === 'string' ? decision.reason : undefined
+        reason: typeof decision.reason === 'string' ? decision.reason : undefined,
       },
-      event.timestamp
+      event.timestamp,
     );
   }
 }
@@ -545,7 +552,7 @@ function upsertWorkflowWaveNode(state: ExecutionState, event: RuntimeEvent): voi
     optional: false,
     status: event.data.verified === true ? 'completed' : 'failed',
     reason: typeof event.data.phase === 'string' ? `wave-${event.data.phase}` : 'wave-verification',
-    updatedAt: event.timestamp
+    updatedAt: event.timestamp,
   };
 }
 
@@ -563,7 +570,7 @@ function normalizePlugins(plugins: unknown): PluginSummary[] {
     const normalized: PluginSummary = {
       name: typeof candidate.name === 'string' ? candidate.name : '',
       version: typeof candidate.version === 'string' ? candidate.version : '',
-      type: typeof candidate.type === 'string' ? candidate.type : ''
+      type: typeof candidate.type === 'string' ? candidate.type : '',
     };
     const dependencies = Array.isArray(candidate.dependencies)
       ? candidate.dependencies.filter((dep): dep is string => typeof dep === 'string')
@@ -863,7 +870,7 @@ function validateExecutionState(state: unknown, feature: string): asserts state 
     'agentFailureCount',
     'meanRetriesPerStage',
     'revisionLoopCount',
-    'pluginFailureCount'
+    'pluginFailureCount',
   ]) {
     if (!(key in state.metrics)) {
       failValidation(`execution.metrics.${key} 缺失`);
@@ -915,14 +922,17 @@ function validateExecutionState(state: unknown, feature: string): asserts state 
 export function applyEvent(
   currentState: ExecutionState,
   event: RuntimeEvent,
-  feature: string
+  feature: string,
 ): ExecutionState {
   const state = currentState;
   state.updatedAt = event.timestamp || state.updatedAt;
 
   switch (event.type) {
     case EVENT_TYPES.PIPELINE_INITIALIZED: {
-      const initial = mergeDeep(defaultExecutionState(feature), event.data.initialState ?? {}) as ExecutionState;
+      const initial = mergeDeep(
+        defaultExecutionState(feature),
+        event.data.initialState ?? {},
+      ) as ExecutionState;
       initial.updatedAt = event.timestamp || initial.updatedAt;
       if (!initial.createdAt) initial.createdAt = event.timestamp || '';
       if (!initial.feature) initial.feature = feature;
@@ -935,7 +945,7 @@ export function applyEvent(
         paused: true,
         reason: typeof event.data.reason === 'string' ? event.data.reason : '',
         requestedBy: typeof event.data.requestedBy === 'string' ? event.data.requestedBy : 'user',
-        pausedAt: event.timestamp
+        pausedAt: event.timestamp,
       };
       return state;
     }
@@ -958,11 +968,11 @@ export function applyEvent(
         enabledStages: Array.isArray(config.stages) ? clone(config.stages) : [],
         enabledGates: Array.isArray(config.gates) ? clone(config.gates) : [],
         activeAgents: Array.isArray(config.agents) ? clone(config.agents) : [],
-        packConfig: clone(config)
+        packConfig: clone(config),
       };
       state.parameters = mergeDeep(
         state.parameters ?? {},
-        mergeDeep(derived, parameters)
+        mergeDeep(derived, parameters),
       ) as UnknownRecord;
       return state;
     }
@@ -1016,7 +1026,7 @@ export function applyEvent(
         state,
         String(event.data.artifact),
         { status: 'completed', decision: undefined, reason: 'artifact-recorded' },
-        event.timestamp
+        event.timestamp,
       );
       refreshWorkflowSchedule(state, event.timestamp);
       return state;
@@ -1029,7 +1039,7 @@ export function applyEvent(
       stage.gateResults[gateName] = {
         passed: Boolean(event.data.passed),
         executedAt: event.timestamp,
-        checks
+        checks,
       };
       const gate = ensureGate(state, gateName);
       gate.status = STAGE_STATUS.COMPLETED;
@@ -1040,10 +1050,10 @@ export function applyEvent(
         state,
         `gate:${gateName}`,
         {
-          status: Boolean(event.data.passed) ? 'completed' : 'failed',
-          reason: Boolean(event.data.passed) ? 'gate-passed' : 'gate-failed'
+          status: event.data.passed ? 'completed' : 'failed',
+          reason: event.data.passed ? 'gate-passed' : 'gate-failed',
         },
-        event.timestamp
+        event.timestamp,
       );
       refreshWorkflowSchedule(state, event.timestamp);
       return state;
@@ -1066,7 +1076,7 @@ export function applyEvent(
         String(event.data.agent),
         { status: 'running', reason: 'agent-started' },
         event.timestamp,
-        typeof event.data.artifact === 'string' ? event.data.artifact : undefined
+        typeof event.data.artifact === 'string' ? event.data.artifact : undefined,
       );
       return state;
     }
@@ -1088,7 +1098,7 @@ export function applyEvent(
         String(event.data.agent),
         { status: 'completed', reason: 'agent-completed' },
         event.timestamp,
-        typeof event.data.artifact === 'string' ? event.data.artifact : undefined
+        typeof event.data.artifact === 'string' ? event.data.artifact : undefined,
       );
       refreshWorkflowSchedule(state, event.timestamp);
       return state;
@@ -1108,7 +1118,7 @@ export function applyEvent(
           String(event.data.agent),
           { status: 'failed', reason: (event.data.reason as string | undefined) ?? 'agent-failed' },
           event.timestamp,
-          typeof event.data.artifact === 'string' ? event.data.artifact : undefined
+          typeof event.data.artifact === 'string' ? event.data.artifact : undefined,
         );
       }
       return state;
@@ -1126,7 +1136,7 @@ export function applyEvent(
         String(event.data.agent),
         { status: 'pending', reason: 'agent-retry-scheduled' },
         event.timestamp,
-        typeof event.data.artifact === 'string' ? event.data.artifact : undefined
+        typeof event.data.artifact === 'string' ? event.data.artifact : undefined,
       );
       refreshWorkflowSchedule(state, event.timestamp);
       return state;
@@ -1144,7 +1154,7 @@ export function applyEvent(
         reason: String(event.data.reason),
         priority: typeof event.data.priority === 'string' ? event.data.priority : 'recommended',
         timestamp: event.timestamp,
-        resolved: false
+        resolved: false,
       });
       state.feedbackLoops.currentRound = (state.feedbackLoops.currentRound || 0) + 1;
       return state;
@@ -1163,16 +1173,21 @@ export function applyEvent(
 
     case EVENT_TYPES.CONVERSATION_MESSAGE_APPENDED: {
       ensureConversationSections(state);
-      const baseMessage = clone(event.data.message as Partial<ConversationMessage> & { id: string; threadId: string });
+      const baseMessage = clone(
+        event.data.message as Partial<ConversationMessage> & { id: string; threadId: string },
+      );
       const message: ConversationMessage = {
         id: baseMessage.id,
         threadId: baseMessage.threadId,
         from: typeof baseMessage.from === 'string' ? baseMessage.from : '',
-        to: Array.isArray(baseMessage.to) ? baseMessage.to.filter((value): value is string => typeof value === 'string') : [],
+        to: Array.isArray(baseMessage.to)
+          ? baseMessage.to.filter((value): value is string => typeof value === 'string')
+          : [],
         intent: (baseMessage.intent as ConversationMessage['intent']) ?? 'question',
         content: typeof baseMessage.content === 'string' ? baseMessage.content : '',
         evidence: Array.isArray(baseMessage.evidence) ? clone(baseMessage.evidence) : undefined,
-        createdAt: typeof baseMessage.createdAt === 'string' ? baseMessage.createdAt : event.timestamp
+        createdAt:
+          typeof baseMessage.createdAt === 'string' ? baseMessage.createdAt : event.timestamp,
       };
       state.conversations.messages = state.conversations.messages.concat(message);
       return state;
@@ -1180,13 +1195,15 @@ export function applyEvent(
 
     case EVENT_TYPES.CONVERSATION_RESOLVED: {
       ensureConversationSections(state);
-      const baseResolution = clone(event.data.resolution as Partial<ConversationResolution> & { threadId: string });
+      const baseResolution = clone(
+        event.data.resolution as Partial<ConversationResolution> & { threadId: string },
+      );
       const todos = Array.isArray(baseResolution.todos)
         ? baseResolution.todos.map((todo) => ({
             id: String(todo.id),
             owner: String(todo.owner),
             title: String(todo.title),
-            status: (todo.status ?? 'pending') as ResolutionTodo['status']
+            status: (todo.status ?? 'pending') as ResolutionTodo['status'],
           }))
         : [];
       const resolution: ConversationResolution = {
@@ -1194,7 +1211,8 @@ export function applyEvent(
         summary: typeof baseResolution.summary === 'string' ? baseResolution.summary : '',
         decision: typeof baseResolution.decision === 'string' ? baseResolution.decision : '',
         todos,
-        createdAt: typeof baseResolution.createdAt === 'string' ? baseResolution.createdAt : event.timestamp
+        createdAt:
+          typeof baseResolution.createdAt === 'string' ? baseResolution.createdAt : event.timestamp,
       };
       state.conversations.resolutions = state.conversations.resolutions.concat(resolution);
       state.conversations.threads = closeThread(state.conversations.threads, resolution.threadId);
@@ -1204,7 +1222,9 @@ export function applyEvent(
 
     case EVENT_TYPES.TODO_MATERIALIZED: {
       ensureConversationSections(state);
-      const baseTodo = clone(event.data.todo as Partial<DerivedTodo> & { id: string; owner: string; title: string });
+      const baseTodo = clone(
+        event.data.todo as Partial<DerivedTodo> & { id: string; owner: string; title: string },
+      );
       const derivedTodo: DerivedTodo = {
         id: baseTodo.id,
         sourceThreadId: typeof baseTodo.sourceThreadId === 'string' ? baseTodo.sourceThreadId : '',
@@ -1217,20 +1237,24 @@ export function applyEvent(
           : [],
         impact: {
           artifacts: Array.isArray(baseTodo.impact?.artifacts)
-            ? baseTodo.impact.artifacts.filter((value): value is string => typeof value === 'string')
+            ? baseTodo.impact.artifacts.filter(
+                (value): value is string => typeof value === 'string',
+              )
             : [],
           scope: Array.isArray(baseTodo.impact?.scope)
             ? baseTodo.impact.scope.filter((value): value is string => typeof value === 'string')
-            : []
+            : [],
         },
         dispatchHint: {
           stage:
-            typeof baseTodo.dispatchHint?.stage === 'number' && Number.isFinite(baseTodo.dispatchHint.stage)
+            typeof baseTodo.dispatchHint?.stage === 'number' &&
+            Number.isFinite(baseTodo.dispatchHint.stage)
               ? baseTodo.dispatchHint.stage
               : 0,
-          agent: typeof baseTodo.dispatchHint?.agent === 'string' ? baseTodo.dispatchHint.agent : ''
+          agent:
+            typeof baseTodo.dispatchHint?.agent === 'string' ? baseTodo.dispatchHint.agent : '',
         },
-        createdAt: typeof baseTodo.createdAt === 'string' ? baseTodo.createdAt : event.timestamp
+        createdAt: typeof baseTodo.createdAt === 'string' ? baseTodo.createdAt : event.timestamp,
       };
       state.derivedTodos = state.derivedTodos.concat(derivedTodo);
       state.conversationMetrics.todos += 1;
@@ -1243,7 +1267,7 @@ export function applyEvent(
       }
       state.pluginLifecycle.discovered = normalizePlugins([
         ...(state.pluginLifecycle.discovered ?? []),
-        event.data.plugin
+        event.data.plugin,
       ]);
       return state;
     }
@@ -1254,7 +1278,7 @@ export function applyEvent(
       }
       state.pluginLifecycle.activated = normalizePlugins([
         ...(state.pluginLifecycle.activated ?? []),
-        event.data.plugin
+        event.data.plugin,
       ]);
       state.plugins = normalizePlugins([...(state.plugins ?? []), event.data.plugin]);
       return state;
@@ -1269,7 +1293,7 @@ export function applyEvent(
         hook: String(event.data.hook),
         stage: event.data.stage == null ? null : Number(event.data.stage),
         exitCode: Number(event.data.exitCode),
-        timestamp: event.timestamp
+        timestamp: event.timestamp,
       });
       return state;
     }
@@ -1283,7 +1307,7 @@ export function applyEvent(
         hook: String(event.data.hook),
         stage: event.data.stage == null ? null : Number(event.data.stage),
         exitCode: Number(event.data.exitCode),
-        timestamp: event.timestamp
+        timestamp: event.timestamp,
       });
       return state;
     }
@@ -1356,11 +1380,11 @@ export function finalizeState(state: ExecutionState): ExecutionState {
   state.metrics.revisionLoopCount = Number(
     state.feedbackLoops && Number.isFinite(Number(state.feedbackLoops.currentRound))
       ? state.feedbackLoops.currentRound
-      : 0
+      : 0,
   );
 
   const completedGates = Object.values(state.qualityGates ?? {}).filter(
-    (gate) => gate.status === STAGE_STATUS.COMPLETED
+    (gate) => gate.status === STAGE_STATUS.COMPLETED,
   );
   if (completedGates.length > 0) {
     const passedCount = completedGates.filter((gate) => gate.passed === true).length;
@@ -1373,13 +1397,13 @@ export function finalizeState(state: ExecutionState): ExecutionState {
   if (
     stageStatuses.length > 0 &&
     stageStatuses.every(
-      (status) => status === STAGE_STATUS.COMPLETED || status === STAGE_STATUS.SKIPPED
+      (status) => status === STAGE_STATUS.COMPLETED || status === STAGE_STATUS.SKIPPED,
     )
   ) {
     state.status = PIPELINE_STATUS.COMPLETED;
   } else if (
     stageStatuses.some(
-      (status) => status === STAGE_STATUS.RUNNING || status === STAGE_STATUS.RETRYING
+      (status) => status === STAGE_STATUS.RUNNING || status === STAGE_STATUS.RETRYING,
     )
   ) {
     state.status = PIPELINE_STATUS.RUNNING;
@@ -1403,7 +1427,7 @@ export function finalizeState(state: ExecutionState): ExecutionState {
   ensureConversationSections(state);
   refreshWorkflowSchedule(state, state.updatedAt);
   state.conversationMetrics.unresolved = state.conversations.threads.filter(
-    (thread) => thread.status !== 'closed' && thread.status !== 'materialized'
+    (thread) => thread.status !== 'closed' && thread.status !== 'materialized',
   ).length;
   return state;
 }
@@ -1414,7 +1438,7 @@ export function readEvents(eventsFile: string): RuntimeEvent[] {
   const { records, corruptTail } = readJsonlTolerant(eventsFile);
   if (corruptTail !== undefined) {
     process.stderr.write(
-      `[boss-skill] 跳过 events.jsonl 末尾的损坏行（疑似写入中途崩溃，视作该事件未记录）: ${corruptTail.slice(0, 120)}\n`
+      `[boss-skill] 跳过 events.jsonl 末尾的损坏行（疑似写入中途崩溃，视作该事件未记录）: ${corruptTail.slice(0, 120)}\n`,
     );
   }
   return records.map((event) => {
@@ -1425,7 +1449,7 @@ export function readEvents(eventsFile: string): RuntimeEvent[] {
 
 export function materializeState(
   feature: string,
-  cwd = process.cwd()
+  cwd = process.cwd(),
 ): { eventCount: number; execJsonPath: string; state: ExecutionState } {
   if (!feature) {
     throw new Error('缺少 feature 参数');
@@ -1447,7 +1471,7 @@ export function materializeState(
   return {
     eventCount: events.length,
     execJsonPath,
-    state
+    state,
   };
 }
 
@@ -1469,7 +1493,7 @@ export function runCli(argv = process.argv.slice(2)): void {
   try {
     const result = materializeState(feature, process.cwd());
     process.stderr.write(
-      `[MATERIALIZE] 状态已从 ${result.eventCount} 条事件物化到 ${path.relative(process.cwd(), result.execJsonPath)}\n`
+      `[MATERIALIZE] 状态已从 ${result.eventCount} 条事件物化到 ${path.relative(process.cwd(), result.execJsonPath)}\n`,
     );
   } catch (err) {
     process.stderr.write(`[MATERIALIZE] ${(err as Error).message}\n`);

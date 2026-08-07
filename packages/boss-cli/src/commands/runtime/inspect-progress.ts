@@ -8,11 +8,11 @@ import {
   describeCommand,
   parseLimit,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import { printRuntimeHelp } from './agent-command-utils.js';
 import { inspectProgress } from '../../runtime/application/inspection.js';
+import { printRuntimeHelp } from './agent-command-utils.js';
 
 function printHelp(): void {
   printRuntimeHelp('inspect-progress', 'boss runtime inspect-progress FEATURE [options]');
@@ -87,19 +87,22 @@ function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline <feature> first'
+      suggestion: 'Run boss runtime init-pipeline <feature> first',
     });
   }
   return err;
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime inspect-progress' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['inspect-progress']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['inspect-progress'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['inspect-progress'], null, 2)}\n`,
     );
     return 0;
   }
@@ -114,7 +117,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
     const payload = inspectProgress(parsed.feature, {
       cwd,
       limit: parseLimit(parsed.limit ?? '20'),
-      type: parsed.type
+      type: parsed.type,
     });
     writeOutput(payload, context, (data) => renderText(data as ReturnType<typeof inspectProgress>));
     return 0;
@@ -124,6 +127,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime inspect-progress', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime inspect-progress',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

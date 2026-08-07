@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
 
@@ -20,13 +20,14 @@ function walkFiles(dir: string): string[] {
 
 describe('agent CLI safety source contract', () => {
   it('does not use console table, colors, or progress UI in boss cli source', () => {
-    const sourceFiles = walkFiles(path.join(REPO_ROOT, 'packages', 'boss-cli', 'src')).filter((file) =>
-      file.endsWith('.ts')
+    const sourceFiles = walkFiles(path.join(REPO_ROOT, 'packages', 'boss-cli', 'src')).filter(
+      (file) => file.endsWith('.ts'),
     );
 
     for (const file of sourceFiles) {
       const source = fs.readFileSync(file, 'utf8');
       expect(source, path.relative(REPO_ROOT, file)).not.toContain('console.table');
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: testing that sources don't contain ANSI escapes
       expect(source, path.relative(REPO_ROOT, file)).not.toMatch(/\x1b\[/);
       expect(source, path.relative(REPO_ROOT, file)).not.toContain('ora(');
     }
@@ -35,12 +36,12 @@ describe('agent CLI safety source contract', () => {
   it('routes command entrypoint errors through cli contract helpers', () => {
     const cliFiles = [
       path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'bin', 'boss.ts'),
-      ...walkFiles(path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'commands'))
+      ...walkFiles(path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'commands')),
     ].filter(
       (file) =>
         file.endsWith('.ts') &&
         !file.includes(`${path.sep}lib${path.sep}`) &&
-        path.basename(file) !== 'agent-command-utils.ts'
+        path.basename(file) !== 'agent-command-utils.ts',
     );
 
     for (const file of cliFiles) {
@@ -50,7 +51,7 @@ describe('agent CLI safety source contract', () => {
         expect(source, path.relative(REPO_ROOT, file)).toContain('runMain(');
       }
       expect(source, path.relative(REPO_ROOT, file)).not.toMatch(
-        /process\.stderr\.write\(`?\$\{\(err as Error\)\.message/
+        /process\.stderr\.write\(`?\$\{\(err as Error\)\.message/,
       );
     }
   });

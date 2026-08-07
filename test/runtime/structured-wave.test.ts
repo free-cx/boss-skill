@@ -1,31 +1,31 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  InvalidCommandError,
   formatCommand,
+  InvalidCommandError,
   normalizeCommand,
-  normalizeCommands
+  normalizeCommands,
 } from '../../packages/boss-cli/src/runtime/domain/structured-wave.js';
 
 describe('domain/structured-wave command normalization', () => {
   it('accepts an argv array', () => {
     expect(normalizeCommand(['npm', 'test', '--', 'data.test.ts'], 'redTests')).toEqual({
       command: 'npm',
-      args: ['test', '--', 'data.test.ts']
+      args: ['test', '--', 'data.test.ts'],
     });
   });
 
   it('accepts a { command, args } object', () => {
     expect(normalizeCommand({ command: 'npm', args: ['run', 'typecheck'] }, 'greenGates')).toEqual({
       command: 'npm',
-      args: ['run', 'typecheck']
+      args: ['run', 'typecheck'],
     });
   });
 
   it('defaults args to an empty array', () => {
     expect(normalizeCommand({ command: 'true' }, 'greenGates')).toEqual({
       command: 'true',
-      args: []
+      args: [],
     });
   });
 
@@ -42,7 +42,7 @@ describe('domain/structured-wave command normalization', () => {
     ['backtick', ['echo', '`id`']],
     ['semicolon', ['npm', 'test; rm -rf /']],
     ['newline', ['npm', 'test\nrm -rf /']],
-    ['glob', ['rm', '*.ts']]
+    ['glob', ['rm', '*.ts']],
   ])('rejects %s in any argv element', (_label, argv) => {
     // 核心安全不变量：任何 shell 元字符都必须在执行前被拒绝，
     // 因为命令来源（waves.json / tasks.md）可能来自不受信任的仓库。
@@ -68,7 +68,7 @@ describe('domain/structured-wave command normalization', () => {
       ['go', 'test', './...'],
       ['cargo', 'test', '--all-features'],
       ['./node_modules/.bin/vitest', 'run'],
-      ['python3', '-m', 'pytest']
+      ['python3', '-m', 'pytest'],
     ];
     for (const argv of cases) {
       expect(() => normalizeCommand(argv, 'redTests')).not.toThrow();
@@ -85,7 +85,7 @@ describe('domain/structured-wave command normalization', () => {
     expect(normalizeCommands(undefined, 'redTests')).toEqual([]);
     expect(normalizeCommands([['true'], { command: 'false' }], 'redTests')).toEqual([
       { command: 'true', args: [] },
-      { command: 'false', args: [] }
+      { command: 'false', args: [] },
     ]);
   });
 
@@ -95,7 +95,7 @@ describe('domain/structured-wave command normalization', () => {
 
   it('formats a command for display only', () => {
     expect(formatCommand({ command: 'npm', args: ['test', '--', 'a.ts'] })).toBe(
-      'npm test -- a.ts'
+      'npm test -- a.ts',
     );
   });
 });

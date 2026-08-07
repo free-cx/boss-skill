@@ -25,6 +25,9 @@ Thumbs.db
 node_modules/
 packages/*/dist/
 
+# Biome
+.biome/
+
 # Boss generated artifacts
 .boss/
 # ...except committed test fixtures, which intentionally ship a .boss workspace

@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cleanupTempDir, createExecData, createTempBossDir } from '../helpers/fixtures.js';
 
@@ -25,9 +25,9 @@ describe('post-tool-write hook', () => {
       hook.run(
         JSON.stringify({
           tool_input: { file_path: '/some/other/file.ts' },
-          cwd: '/tmp'
-        })
-      )
+          cwd: '/tmp',
+        }),
+      ),
     ).toBe('');
   });
 
@@ -36,9 +36,9 @@ describe('post-tool-write hook', () => {
       hook.run(
         JSON.stringify({
           tool_input: { file_path: '/proj/.boss/feat/.meta/execution.json' },
-          cwd: '/proj'
-        })
-      )
+          cwd: '/proj',
+        }),
+      ),
     ).toBe('');
   });
 
@@ -49,8 +49,8 @@ describe('post-tool-write hook', () => {
     const result = hook.run(
       JSON.stringify({
         tool_input: { file_path: path.join(tmpDir, '.boss', 'test-feat', 'prd.md') },
-        cwd: tmpDir
-      })
+        cwd: tmpDir,
+      }),
     );
 
     expect(result.length).toBeGreaterThan(0);
@@ -79,10 +79,10 @@ describe('post-tool-write hook', () => {
 @@
 -old
 +new
-*** End Patch`
+*** End Patch`,
         },
-        cwd: tmpDir
-      })
+        cwd: tmpDir,
+      }),
     );
 
     expect(result.length).toBeGreaterThan(0);
@@ -111,10 +111,10 @@ describe('post-tool-write hook', () => {
 @@
 -old
 +new
-*** End Patch`
+*** End Patch`,
         },
-        cwd: tmpDir
-      })
+        cwd: tmpDir,
+      }),
     );
 
     expect(result.length).toBeGreaterThan(0);
@@ -147,10 +147,10 @@ describe('post-tool-write hook', () => {
 @@
 -old
 +new
-*** End Patch`
+*** End Patch`,
         },
-        cwd: tmpDir
-      })
+        cwd: tmpDir,
+      }),
     );
 
     expect(result.length).toBeGreaterThan(0);
@@ -178,9 +178,9 @@ describe('post-tool-write hook', () => {
       hook.run(
         JSON.stringify({
           tool_input: { file_path: path.join(tmpDir, '.boss', 'test-feat', 'random-file.txt') },
-          cwd: tmpDir
-        })
-      )
+          cwd: tmpDir,
+        }),
+      ),
     ).toBe('');
   });
 
@@ -191,8 +191,8 @@ describe('post-tool-write hook', () => {
         '1': { name: 'Planning', status: 'running', artifacts: ['prd.md'] },
         '2': { name: 'Review', status: 'pending', artifacts: [] },
         '3': { name: 'Development', status: 'pending', artifacts: [] },
-        '4': { name: 'Deployment', status: 'pending', artifacts: [] }
-      }
+        '4': { name: 'Deployment', status: 'pending', artifacts: [] },
+      },
     });
     tmpDir = createTempBossDir('test-feat', execData);
 
@@ -200,9 +200,9 @@ describe('post-tool-write hook', () => {
       hook.run(
         JSON.stringify({
           tool_input: { file_path: path.join(tmpDir, '.boss', 'test-feat', 'prd.md') },
-          cwd: tmpDir
-        })
-      )
+          cwd: tmpDir,
+        }),
+      ),
     ).toBe('');
   });
 
@@ -213,8 +213,8 @@ describe('post-tool-write hook', () => {
         '1': { name: 'Planning', status: 'running', artifacts: ['prd.md'] },
         '2': { name: 'Review', status: 'pending', artifacts: [] },
         '3': { name: 'Development', status: 'pending', artifacts: [] },
-        '4': { name: 'Deployment', status: 'pending', artifacts: [] }
-      }
+        '4': { name: 'Deployment', status: 'pending', artifacts: [] },
+      },
     });
     tmpDir = createTempBossDir('test-feat', execData);
 
@@ -232,19 +232,19 @@ describe('post-tool-write hook', () => {
               '1': { name: 'Planning', status: 'running', artifacts: [] },
               '2': { name: 'Review', status: 'pending', artifacts: [] },
               '3': { name: 'Development', status: 'pending', artifacts: [] },
-              '4': { name: 'Deployment', status: 'pending', artifacts: [] }
-            }
-          })
-        }
+              '4': { name: 'Deployment', status: 'pending', artifacts: [] },
+            },
+          }),
+        },
       })}\n`,
-      'utf8'
+      'utf8',
     );
 
     const result = hook.run(
       JSON.stringify({
         tool_input: { file_path: path.join(tmpDir, '.boss', 'test-feat', 'prd.md') },
-        cwd: tmpDir
-      })
+        cwd: tmpDir,
+      }),
     );
 
     expect(result.length).toBeGreaterThan(0);

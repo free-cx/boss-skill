@@ -1,12 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  collectCompletedArtifactsVersioned,
+  getArtifactVersion,
   initPipeline,
   recordArtifact,
-  getArtifactVersion,
-  collectCompletedArtifactsVersioned
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -40,9 +40,12 @@ describe('artifact version control', () => {
     recordArtifact('test-feat', 'prd.md', 1, { cwd: tmpDir });
 
     const eventsPath = path.join(tmpDir, '.boss', 'test-feat', '.meta', 'events.jsonl');
-    const events = fs.readFileSync(eventsPath, 'utf8').trim().split('\n')
-      .map(line => JSON.parse(line))
-      .filter(e => e.type === 'ArtifactRecorded');
+    const events = fs
+      .readFileSync(eventsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line))
+      .filter((e) => e.type === 'ArtifactRecorded');
 
     expect(events[0].data.version).toBe(1);
     expect(events[1].data.version).toBe(2);

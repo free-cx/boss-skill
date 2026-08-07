@@ -37,7 +37,7 @@ function run(rawInput) {
 
   return JSON.stringify({
     decision: 'block',
-    reason
+    reason,
   });
 }
 

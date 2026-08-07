@@ -10,7 +10,7 @@ import {
   readJsonInput,
   runMain,
   validatePathInside,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { commandDescriptions } from '../../cli/registry.js';
 import { packageRootFromImportMeta } from '../../infrastructure/paths.js';
@@ -25,8 +25,8 @@ function showHelp(): void {
       'Boss Mode - 产物骨架准备',
       '',
       '用法: boss artifact prepare <feature-name> <artifact-name> [template-name]',
-      ''
-    ].join('\n')
+      '',
+    ].join('\n'),
   );
 }
 
@@ -42,7 +42,7 @@ function resolveTemplate(cwd: string, templateName: string): string {
     message: `未找到模板文件: ${templateName}`,
     input: { template: templateName },
     retryable: false,
-    suggestion: 'Create the project template or use a bundled template name'
+    suggestion: 'Create the project template or use a bundled template name',
   });
 }
 
@@ -52,7 +52,7 @@ function renderTemplate(content: string, feature: string): string {
     '{{FEATURE}}': feature,
     '{{PROJECT_NAME}}': feature,
     '{{DATE}}': new Date().toISOString().slice(0, 10),
-    '{{VERSION}}': '1.0'
+    '{{VERSION}}': '1.0',
   };
   let rendered = content;
   for (const [token, value] of Object.entries(replacements)) {
@@ -73,7 +73,7 @@ function validateRelativeName(input: string, label: 'artifact' | 'template'): vo
       message: `Path traversal rejected for ${label}: ${input}`,
       input: { path: input },
       retryable: false,
-      suggestion: `Use a relative ${label} name without path traversal`
+      suggestion: `Use a relative ${label} name without path traversal`,
     });
   }
 }
@@ -85,14 +85,22 @@ function validateFeatureName(feature: string): void {
       message: '功能名称格式无效（仅允许小写字母、数字和连字符，不能以连字符开头或结尾）',
       input: { feature },
       retryable: false,
-      suggestion: 'Use lowercase letters, numbers, and hyphens; do not start or end with a hyphen'
+      suggestion: 'Use lowercase letters, numbers, and hyphens; do not start or end with a hyphen',
     });
   }
 }
 
-function parseArtifactInput(argv: string[]): { feature: string; artifact: string; template?: string } {
-  const input: { feature: string; artifact: string; template?: string } = { feature: '', artifact: '' };
-  const jsonInputArg = createCliContext(argv, { command: 'boss artifact prepare' }).values.jsonInput;
+function parseArtifactInput(argv: string[]): {
+  feature: string;
+  artifact: string;
+  template?: string;
+} {
+  const input: { feature: string; artifact: string; template?: string } = {
+    feature: '',
+    artifact: '',
+  };
+  const jsonInputArg = createCliContext(argv, { command: 'boss artifact prepare' }).values
+    .jsonInput;
   const jsonInput = readJsonInput(jsonInputArg);
   if (jsonInput !== null) {
     if (!isJsonObject(jsonInput)) {
@@ -101,7 +109,7 @@ function parseArtifactInput(argv: string[]): { feature: string; artifact: string
         message: '--json-input for artifact prepare must be an object',
         input: { jsonInput },
         retryable: false,
-        suggestion: 'Use fields: feature, artifact, template'
+        suggestion: 'Use fields: feature, artifact, template',
       });
     }
     if (typeof jsonInput.feature === 'string') input.feature = jsonInput.feature;
@@ -126,7 +134,11 @@ function parseArtifactInput(argv: string[]): { feature: string; artifact: string
       index += 1;
       continue;
     }
-    if (arg.startsWith('--fields=') || arg.startsWith('--limit=') || arg.startsWith('--json-input=')) {
+    if (
+      arg.startsWith('--fields=') ||
+      arg.startsWith('--limit=') ||
+      arg.startsWith('--json-input=')
+    ) {
       continue;
     }
     if (arg.startsWith('-')) {
@@ -135,7 +147,7 @@ function parseArtifactInput(argv: string[]): { feature: string; artifact: string
         message: `未知选项: ${arg}`,
         input: { option: arg },
         retryable: false,
-        suggestion: 'Run boss artifact prepare --describe to verify supported options'
+        suggestion: 'Run boss artifact prepare --describe to verify supported options',
       });
     }
     positionals.push(arg);
@@ -150,17 +162,24 @@ function parseArtifactInput(argv: string[]): { feature: string; artifact: string
       message: `多余的参数: ${positionals[3]}`,
       input: { argument: positionals[3] },
       retryable: false,
-      suggestion: 'Pass feature, artifact, and an optional template name'
+      suggestion: 'Pass feature, artifact, and an optional template name',
     });
   }
 
   return input;
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss artifact prepare' });
   if (context.values.describe) {
-    writeOutput(describeCommand(artifactPrepareDescription), context, (data) => `${JSON.stringify(data, null, 2)}\n`);
+    writeOutput(
+      describeCommand(artifactPrepareDescription),
+      context,
+      (data) => `${JSON.stringify(data, null, 2)}\n`,
+    );
     return 0;
   }
 
@@ -176,7 +195,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       message: '用法: boss artifact prepare <feature-name> <artifact-name> [template-name]',
       input: { feature, artifact },
       retryable: false,
-      suggestion: 'Pass feature and artifact, or provide them with --json-input'
+      suggestion: 'Pass feature and artifact, or provide them with --json-input',
     });
   }
 
@@ -191,7 +210,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       message: `目标目录不存在: .boss/${feature}，请先执行 boss project init ${feature}`,
       input: { feature },
       retryable: false,
-      suggestion: `Run boss project init ${feature}`
+      suggestion: `Run boss project init ${feature}`,
     });
   }
 
@@ -204,16 +223,21 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       {
         type: 'write_artifact',
         path: path.relative(cwd, targetPath),
-        template: path.relative(cwd, templatePath)
-      }
+        template: path.relative(cwd, templatePath),
+      },
     ],
     risk_tier: 'medium',
-    requires_approval: false
+    requires_approval: false,
   };
 
   if (context.values.dryRun) {
     const action = payload.actions[0]!;
-    writeOutput(payload, context, () => `  [dry-run] write_artifact: ${action.path} <- ${action.template}\nDry-run complete. No files were modified.\n`);
+    writeOutput(
+      payload,
+      context,
+      () =>
+        `  [dry-run] write_artifact: ${action.path} <- ${action.template}\nDry-run complete. No files were modified.\n`,
+    );
     return 0;
   }
 
@@ -223,15 +247,19 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
     {
       path: path.relative(cwd, targetPath),
       template: path.relative(cwd, templatePath),
-      written: true
+      written: true,
     },
     context,
-    () => `已按模板优先级准备产物骨架: ${path.relative(cwd, targetPath)} <- ${path.relative(cwd, templatePath)}\n`
+    () =>
+      `已按模板优先级准备产物骨架: ${path.relative(cwd, targetPath)} <- ${path.relative(cwd, templatePath)}\n`,
   );
   return 0;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss artifact prepare', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss artifact prepare',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

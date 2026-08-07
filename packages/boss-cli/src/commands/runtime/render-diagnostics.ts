@@ -9,13 +9,17 @@ import {
   createCliContext,
   describeCommand,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import { printRuntimeHelp } from './agent-command-utils.js';
+import {
+  inspectEvents,
+  inspectPipeline,
+  inspectProgress,
+} from '../../runtime/application/inspection.js';
 import { renderHtml } from '../../runtime/report/render-html.js';
 import { buildSummaryModel } from '../../runtime/report/summary-model.js';
-import { inspectEvents, inspectPipeline, inspectProgress } from '../../runtime/application/inspection.js';
+import { printRuntimeHelp } from './agent-command-utils.js';
 
 function printHelp(): void {
   printRuntimeHelp('render-diagnostics', 'boss runtime render-diagnostics FEATURE [options]');
@@ -62,13 +66,16 @@ function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline <feature> first'
+      suggestion: 'Run boss runtime init-pipeline <feature> first',
     });
   }
   return err;
 }
 
-export function buildDiagnosticsModel(feature: string, { cwd = process.cwd() }: { cwd?: string } = {}) {
+export function buildDiagnosticsModel(
+  feature: string,
+  { cwd = process.cwd() }: { cwd?: string } = {},
+) {
   const summary = buildSummaryModel(feature, { cwd });
   const inspection = inspectPipeline(feature, { cwd });
   let events: ReturnType<typeof inspectEvents>['events'] = [];
@@ -93,18 +100,21 @@ export function buildDiagnosticsModel(feature: string, { cwd = process.cwd() }: 
     recentEvents: events,
     progressEvents: progress.map((event) => ({
       type: String(event.type || ''),
-      timestamp: String(event.timestamp || '')
-    }))
+      timestamp: String(event.timestamp || ''),
+    })),
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime render-diagnostics' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['render-diagnostics']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['render-diagnostics'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['render-diagnostics'], null, 2)}\n`,
     );
     return 0;
   }
@@ -124,10 +134,10 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         {
           actions: [{ type: 'write_file', path: relativeOutputPath, format: 'html' }],
           risk_tier: 'medium',
-          requires_approval: false
+          requires_approval: false,
         },
         context,
-        () => `would write ${relativeOutputPath}\n`
+        () => `would write ${relativeOutputPath}\n`,
       );
       return 0;
     }
@@ -143,7 +153,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
     writeOutput(
       { feature: parsed.feature, outputPath: relativeOutputPath, format: 'html' },
       context,
-      () => `诊断页已生成: ${outputPath}\n`
+      () => `诊断页已生成: ${outputPath}\n`,
     );
     return 0;
   } catch (err) {
@@ -152,6 +162,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime render-diagnostics', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime render-diagnostics',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

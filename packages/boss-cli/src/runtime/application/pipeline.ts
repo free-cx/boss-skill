@@ -1,33 +1,36 @@
+import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { createHash } from 'node:crypto';
-
-import { resolveArtifactDagPath } from '../assets.js';
 import { appendLineSync } from '../../infrastructure/fs.js';
+import { emitProgress } from '../../infrastructure/process.js';
+import { resolveArtifactDagPath } from '../assets.js';
 import { EVENT_TYPES, type EventType } from '../domain/event-types.js';
 import {
+  type GateState,
   materializeState,
   type RuntimeEvent,
-  type GateState,
-  type StageState
+  type StageState,
 } from '../projectors/materialize-state.js';
 import { getPackStateParameters, resolvePipelinePack } from './packs.js';
 import { registerPlugins as registerPluginsRuntime } from './plugins.js';
-import { compileWorkflowPlan, createWorkflowExecutionState, persistWorkflowPlan } from './workflow.js';
-import { emitProgress } from '../../infrastructure/process.js';
 import {
+  type ArtifactDag,
   appendEvent,
   appendRuntimeEvent,
   ensureDir,
   ensureFeatureName,
-  type ArtifactDag,
+  type PipelineExecutionState,
+  type PipelineParameters,
   readExecutionView,
   readJson,
   refreshMemory,
-  type PipelineExecutionState,
-  type PipelineParameters,
-  writeJson
+  writeJson,
 } from './state.js';
+import {
+  compileWorkflowPlan,
+  createWorkflowExecutionState,
+  persistWorkflowPlan,
+} from './workflow.js';
 
 export interface ReadyArtifact {
   artifact: string;
@@ -73,17 +76,17 @@ export const FORMAL_SOURCE_OF_TRUTH_ARTIFACTS = Object.freeze([
   'ui-spec.md',
   'ui-design.json',
   'tech-review.md',
-  'tasks.md'
+  'tasks.md',
 ] as const);
 const OPT_IN_OPTIONAL_ARTIFACTS = new Set([
   'strategic-review.md',
   'ui-design-variants.json',
-  'changelog.md'
+  'changelog.md',
 ]);
 
 export function isFormalSourceOfTruthArtifact(artifact: string): boolean {
   return FORMAL_SOURCE_OF_TRUTH_ARTIFACTS.includes(
-    artifact as (typeof FORMAL_SOURCE_OF_TRUTH_ARTIFACTS)[number]
+    artifact as (typeof FORMAL_SOURCE_OF_TRUTH_ARTIFACTS)[number],
   );
 }
 
@@ -95,7 +98,8 @@ function resolveDagPath(cwd: string, feature: string, dagPath?: string): string 
   let packDagPath = '';
   try {
     const execution = readExecutionView(cwd, feature);
-    const configuredDag = (execution.parameters?.packConfig as Record<string, unknown> | undefined)?.artifactDag;
+    const configuredDag = (execution.parameters?.packConfig as Record<string, unknown> | undefined)
+      ?.artifactDag;
     if (typeof configuredDag === 'string' && configuredDag.length > 0) {
       packDagPath = configuredDag;
     }
@@ -106,7 +110,11 @@ function resolveDagPath(cwd: string, feature: string, dagPath?: string): string 
   return resolveArtifactDagPath({ cwd, packDagPath });
 }
 
-function loadDagForFeature(cwd: string, feature: string, dagPath?: string): { dag: ArtifactDag; dagPath: string } {
+function loadDagForFeature(
+  cwd: string,
+  feature: string,
+  dagPath?: string,
+): { dag: ArtifactDag; dagPath: string } {
   const resolvedPath = resolveDagPath(cwd, feature, dagPath);
   if (!fs.existsSync(resolvedPath)) {
     throw new Error(`未找到 DAG 文件: ${path.relative(cwd, resolvedPath)}`);
@@ -136,18 +144,22 @@ function stableStringify(value: unknown): string {
 export function hashRuntimeValue(value: unknown): RuntimeHashDescriptor {
   return {
     algorithm: 'sha256',
-    value: sha256Hex(stableStringify(value))
+    value: sha256Hex(stableStringify(value)),
   };
 }
 
 function hashFile(filePath: string): RuntimeHashDescriptor {
   return {
     algorithm: 'sha256',
-    value: sha256Hex(fs.readFileSync(filePath))
+    value: sha256Hex(fs.readFileSync(filePath)),
   };
 }
 
-function describeArtifactDag(cwd: string, feature: string, packDagPath?: string): ArtifactDagFingerprint {
+function describeArtifactDag(
+  cwd: string,
+  feature: string,
+  packDagPath?: string,
+): ArtifactDagFingerprint {
   const { dag, dagPath } = packDagPath
     ? (() => {
         const resolvedPath = resolveArtifactDagPath({ cwd, packDagPath });
@@ -157,13 +169,13 @@ function describeArtifactDag(cwd: string, feature: string, packDagPath?: string)
   return {
     path: path.relative(cwd, dagPath) || path.basename(dagPath),
     version: typeof dag.version === 'string' ? dag.version : '',
-    hash: hashFile(dagPath)
+    hash: hashFile(dagPath),
   };
 }
 
 export function getArtifactDagFingerprint(
   feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): ArtifactDagFingerprint {
   ensureFeatureName(feature);
   return describeArtifactDag(cwd, feature);
@@ -180,7 +192,11 @@ function readRuntimeEvents(cwd: string, feature: string): RuntimeEvent[] {
     .map((line) => JSON.parse(line) as RuntimeEvent);
 }
 
-function isArtifactDagStale(cwd: string, feature: string, execution = readExecutionView(cwd, feature)): boolean {
+function isArtifactDagStale(
+  cwd: string,
+  feature: string,
+  execution = readExecutionView(cwd, feature),
+): boolean {
   const initializedDag = execution.parameters?.artifactDag;
   if (!initializedDag || typeof initializedDag !== 'object') return false;
   const initialHash = (initializedDag as { hash?: { value?: unknown } }).hash?.value;
@@ -212,7 +228,7 @@ function isArtifactDone(
     feature: string;
     execution: PipelineExecutionState;
     completedArtifacts: Set<string>;
-  }
+  },
 ): boolean {
   if (artifact === 'design-brief') {
     const designBriefPath = path.join(context.cwd, '.boss', context.feature, 'design-brief.md');
@@ -238,12 +254,14 @@ function isArtifactDone(
 
 function isArtifactSkipped(
   artifact: string,
-  context: { execution: PipelineExecutionState }
+  context: { execution: PipelineExecutionState },
 ): boolean {
   const params = context.execution.parameters || ({} as PipelineParameters);
-  if ((artifact === 'ui-spec.md' || artifact === 'ui-design.json') && params.skipUI === true) return true;
+  if ((artifact === 'ui-spec.md' || artifact === 'ui-design.json') && params.skipUI === true)
+    return true;
   if (artifact === 'deploy-report.md' && params.skipDeploy === true) return true;
-  if ((artifact === 'tech-review.md' || artifact === 'tasks.md') && params.skipReview === true) return true;
+  if ((artifact === 'tech-review.md' || artifact === 'tasks.md') && params.skipReview === true)
+    return true;
   return false;
 }
 
@@ -255,7 +273,7 @@ function isInputSatisfied(
     execution: PipelineExecutionState;
     dag: ArtifactDag;
     completedArtifacts: Set<string>;
-  }
+  },
 ): boolean {
   if (isArtifactDone(input, context)) return true;
   if (isArtifactSkipped(input, context)) return true;
@@ -296,7 +314,7 @@ function resolveReadyArtifacts(context: {
       results.push({
         artifact: name,
         agent: def.agent,
-        stage: def.stage
+        stage: def.stage,
       });
     }
   }
@@ -314,8 +332,8 @@ export function getArtifactStatus(
   {
     cwd = process.cwd(),
     dagPath,
-    ignoreSkipped = false
-  }: { cwd?: string; dagPath?: string; ignoreSkipped?: boolean } = {}
+    ignoreSkipped = false,
+  }: { cwd?: string; dagPath?: string; ignoreSkipped?: boolean } = {},
 ): ArtifactStatus {
   ensureFeatureName(feature);
   if (!artifact) throw new Error('缺少 artifact 参数');
@@ -331,7 +349,7 @@ export function getArtifactStatus(
     feature,
     execution,
     dag,
-    completedArtifacts: collectCompletedArtifacts(execution)
+    completedArtifacts: collectCompletedArtifacts(execution),
   };
 
   if (isArtifactDone(artifact, context)) {
@@ -352,13 +370,13 @@ export function getArtifactStatus(
 
 export function listArtifactStatuses(
   feature: string,
-  { cwd = process.cwd(), dagPath }: { cwd?: string; dagPath?: string } = {}
+  { cwd = process.cwd(), dagPath }: { cwd?: string; dagPath?: string } = {},
 ): Array<{ artifact: string } & ArtifactStatus> {
   ensureFeatureName(feature);
   const { dag } = loadDagForFeature(cwd, feature, dagPath);
   return Object.keys(dag.artifacts || {}).map((artifact) => ({
     artifact,
-    ...getArtifactStatus(feature, artifact, { cwd, dagPath })
+    ...getArtifactStatus(feature, artifact, { cwd, dagPath }),
   }));
 }
 
@@ -372,7 +390,7 @@ function buildStageState(name: string): StageState {
     maxRetries: 2,
     failureReason: null,
     artifacts: [],
-    gateResults: {}
+    gateResults: {},
   };
 }
 
@@ -381,13 +399,13 @@ function buildGateState(): GateState {
     status: 'pending',
     passed: null,
     checks: [],
-    executedAt: null
+    executedAt: null,
   };
 }
 
 export function initPipeline(
   feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): PipelineExecutionState {
   ensureFeatureName(feature);
   const bossDir = path.join(cwd, '.boss', feature);
@@ -423,18 +441,18 @@ export function initPipeline(
       skipDeploy: false,
       quick: false,
       hitlLevel: 'auto',
-      roles: 'full'
+      roles: 'full',
     },
     stages: {
       '1': buildStageState('planning'),
       '2': buildStageState('review'),
       '3': buildStageState('development'),
-      '4': buildStageState('deployment')
+      '4': buildStageState('deployment'),
     },
     qualityGates: {
       gate0: buildGateState(),
       gate1: buildGateState(),
-      gate2: buildGateState()
+      gate2: buildGateState(),
     },
     metrics: {
       totalDuration: null,
@@ -445,19 +463,19 @@ export function initPipeline(
       agentFailureCount: 0,
       meanRetriesPerStage: 0,
       revisionLoopCount: 0,
-      pluginFailureCount: 0
+      pluginFailureCount: 0,
     },
     plugins: [],
     pluginLifecycle: {
       discovered: [],
       activated: [],
       executed: [],
-      failed: []
+      failed: [],
     },
     conversations: {
       threads: [],
       messages: [],
-      resolutions: []
+      resolutions: [],
     },
     derivedTodos: [],
     conversationMetrics: {
@@ -465,12 +483,12 @@ export function initPipeline(
       resolved: 0,
       todos: 0,
       huddles: 0,
-      unresolved: 0
+      unresolved: 0,
     },
     humanInterventions: [],
     revisionRequests: [],
     feedbackLoops: { maxRounds: 2, currentRound: 0 },
-    pause: null
+    pause: null,
   };
 
   const pack = resolvePipelinePack(cwd);
@@ -487,21 +505,21 @@ export function initPipeline(
     feature,
     pack,
     artifactDag: readJson<ArtifactDag>(artifactDagPath),
-    artifactDagFingerprint: artifactDag
+    artifactDagFingerprint: artifactDag,
   });
   const workflow = persistWorkflowPlan({ cwd, feature, plan: workflowPlan });
   const runId = hashRuntimeValue({
     feature,
     createdAt: now,
     workflowHash: workflow.workflowHash,
-    artifactDag
+    artifactDag,
   }).value;
   const initializedWithPack: PipelineExecutionState = {
     ...initialState,
     workflow: createWorkflowExecutionState({
       plan: workflow.plan,
       workflowPlanPath: workflow.workflowPlanPath,
-      workflowHash: workflow.workflowHash
+      workflowHash: workflow.workflowHash,
     }),
     parameters: {
       ...initialState.parameters,
@@ -511,8 +529,8 @@ export function initPipeline(
       workflowHash: workflow.workflowHash.value,
       packHash: workflow.packHash.value,
       artifactDagHash: workflow.artifactDagHash.value,
-      runId
-    }
+      runId,
+    },
   };
 
   writeJson(execJsonPath, initializedWithPack);
@@ -525,10 +543,10 @@ export function initPipeline(
       artifactDag,
       workflowPlan: {
         path: workflow.workflowPlanPath,
-        hash: workflow.workflowHash
+        hash: workflow.workflowHash,
       },
-      runId
-    }
+      runId,
+    },
   };
   const events: RuntimeEvent[] = [initEvent];
   if (pack.name !== 'default') {
@@ -540,11 +558,15 @@ export function initPipeline(
         pack: pack.name,
         version: pack.version,
         config: pack.config,
-        parameters: packParameters
-      }
+        parameters: packParameters,
+      },
     });
   }
-  fs.writeFileSync(eventsFile, `${events.map((event) => JSON.stringify(event)).join('\n')}\n`, 'utf8');
+  fs.writeFileSync(
+    eventsFile,
+    `${events.map((event) => JSON.stringify(event)).join('\n')}\n`,
+    'utf8',
+  );
   const { state } = materializeState(feature, cwd);
   refreshMemory(feature, cwd);
   return state as PipelineExecutionState;
@@ -553,22 +575,24 @@ export function initPipeline(
 export function getArtifactVersion(
   feature: string,
   artifactName: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): number {
   ensureFeatureName(feature);
   const eventsFile = path.join(cwd, '.boss', feature, '.meta', 'events.jsonl');
   if (!fs.existsSync(eventsFile)) return 0;
   const raw = fs.readFileSync(eventsFile, 'utf8').trim();
   if (!raw) return 0;
-  return raw.split('\n').filter(Boolean)
-    .map(line => JSON.parse(line) as RuntimeEvent)
-    .filter(e => e.type === EVENT_TYPES.ARTIFACT_RECORDED && e.data.artifact === artifactName)
+  return raw
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as RuntimeEvent)
+    .filter((e) => e.type === EVENT_TYPES.ARTIFACT_RECORDED && e.data.artifact === artifactName)
     .length;
 }
 
 export function collectCompletedArtifactsVersioned(
   feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): Map<string, number> {
   ensureFeatureName(feature);
   const eventsFile = path.join(cwd, '.boss', feature, '.meta', 'events.jsonl');
@@ -586,7 +610,12 @@ export function collectCompletedArtifactsVersioned(
   return map;
 }
 
-function backupArtifactVersion(cwd: string, feature: string, artifactName: string, version: number): void {
+function backupArtifactVersion(
+  cwd: string,
+  feature: string,
+  artifactName: string,
+  version: number,
+): void {
   const artifactPath = path.join(cwd, '.boss', feature, artifactName);
   if (!fs.existsSync(artifactPath)) return;
   const versionsDir = path.join(cwd, '.boss', feature, '.versions');
@@ -616,7 +645,7 @@ export function recordArtifact(
   feature: string,
   artifact: string,
   stage: number | string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): PipelineExecutionState {
   ensureFeatureName(feature);
   if (!artifact) throw new Error('缺少 artifact 参数');
@@ -629,11 +658,11 @@ export function recordArtifacts(
   stage: number | string,
   {
     cwd = process.cwd(),
-    beforeAppend
+    beforeAppend,
   }: {
     cwd?: string;
-    beforeAppend?: () => void | (() => void);
-  } = {}
+    beforeAppend?: () => undefined | (() => void);
+  } = {},
 ): PipelineExecutionState {
   ensureFeatureName(feature);
   if (artifacts.length === 0) throw new Error('缺少 artifact 参数');
@@ -660,7 +689,7 @@ export function recordArtifacts(
 
   const versions = artifacts.map((artifact) => ({
     artifact,
-    currentVersion: getArtifactVersion(feature, artifact, { cwd })
+    currentVersion: getArtifactVersion(feature, artifact, { cwd }),
   }));
   for (const version of versions) {
     if (version.currentVersion >= 1) {
@@ -677,8 +706,8 @@ export function recordArtifacts(
     data: {
       artifact: version.artifact,
       stage: stageNumber,
-      version: version.currentVersion + 1
-    }
+      version: version.currentVersion + 1,
+    },
   }));
   const rollback = beforeAppend?.();
   try {
@@ -701,7 +730,7 @@ export function recordArtifacts(
 export function skipUpTo(
   feature: string,
   artifactName: string,
-  { cwd = process.cwd(), dagPath }: { cwd?: string; dagPath?: string } = {}
+  { cwd = process.cwd(), dagPath }: { cwd?: string; dagPath?: string } = {},
 ): string[] {
   ensureFeatureName(feature);
   if (!artifactName) throw new Error('缺少 artifact 参数');
@@ -745,7 +774,7 @@ export function skipUpTo(
     appendEvent(eventsFile, {
       type: EVENT_TYPES.ARTIFACT_RECORDED,
       timestamp: new Date().toISOString(),
-      data: { artifact: name, stage, version: 1 }
+      data: { artifact: name, stage, version: 1 },
     });
   }
 
@@ -757,9 +786,13 @@ export function skipUpTo(
 export function recordFeedback(
   feature: string,
   opts: {
-    from: string; to: string; artifact: string; reason: string;
-    priority?: string; cwd?: string;
-  }
+    from: string;
+    to: string;
+    artifact: string;
+    reason: string;
+    priority?: string;
+    cwd?: string;
+  },
 ): PipelineExecutionState {
   const { cwd = process.cwd(), from, to, artifact, reason, priority = 'recommended' } = opts;
   ensureFeatureName(feature);
@@ -776,7 +809,11 @@ export function recordFeedback(
   }
 
   appendRuntimeEvent(cwd, feature, EVENT_TYPES.REVISION_REQUESTED, {
-    from, to, artifact, reason, priority
+    from,
+    to,
+    artifact,
+    reason,
+    priority,
   });
 
   const { state } = materializeState(feature, cwd);
@@ -794,7 +831,7 @@ export function recordUserChoice(
     agent?: string;
     stage?: number | null;
     cwd?: string;
-  }
+  },
 ): PipelineExecutionState {
   const { cwd = process.cwd(), choiceType, selected, options, reason, agent, stage } = opts;
   ensureFeatureName(feature);
@@ -807,7 +844,7 @@ export function recordUserChoice(
     ...(options ? { options } : {}),
     ...(reason ? { reason } : {}),
     ...(agent ? { agent } : {}),
-    ...(stage != null ? { stage } : {})
+    ...(stage != null ? { stage } : {}),
   });
 
   const { state } = materializeState(feature, cwd);
@@ -819,7 +856,7 @@ export function retryAgent(
   feature: string,
   stage: number | string,
   agentName: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): PipelineExecutionState {
   ensureFeatureName(feature);
   if (!agentName) throw new Error('缺少 agent 参数');
@@ -828,15 +865,25 @@ export function retryAgent(
   const { state: cur } = materializeState(feature, cwd);
   const agentState = cur.stages?.[String(stageNum)]?.agents?.[agentName];
   if (!agentState || agentState.status !== 'failed') {
-    throw new Error(`Agent ${agentName} 状态为 ${agentState?.status ?? 'unknown'}，只有 failed 状态可以重试`);
+    throw new Error(
+      `Agent ${agentName} 状态为 ${agentState?.status ?? 'unknown'}，只有 failed 状态可以重试`,
+    );
   }
   const maxRetries = agentState.maxRetries ?? 2;
   if ((agentState.retryCount ?? 0) >= maxRetries) {
-    throw new Error(`Agent ${agentName} 已达最大重试次数（${agentState.retryCount}/${maxRetries}）`);
+    throw new Error(
+      `Agent ${agentName} 已达最大重试次数（${agentState.retryCount}/${maxRetries}）`,
+    );
   }
 
-  appendRuntimeEvent(cwd, feature, EVENT_TYPES.AGENT_RETRY_SCHEDULED, { agent: agentName, stage: stageNum });
-  appendRuntimeEvent(cwd, feature, EVENT_TYPES.AGENT_STARTED, { agent: agentName, stage: stageNum });
+  appendRuntimeEvent(cwd, feature, EVENT_TYPES.AGENT_RETRY_SCHEDULED, {
+    agent: agentName,
+    stage: stageNum,
+  });
+  appendRuntimeEvent(cwd, feature, EVENT_TYPES.AGENT_STARTED, {
+    agent: agentName,
+    stage: stageNum,
+  });
 
   const { state } = materializeState(feature, cwd);
   refreshMemory(feature, cwd);
@@ -846,7 +893,7 @@ export function retryAgent(
 export function retryStage(
   feature: string,
   stage: number | string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): PipelineExecutionState {
   ensureFeatureName(feature);
   const stageNum = Number(stage);
@@ -854,7 +901,9 @@ export function retryStage(
   const { state: cur } = materializeState(feature, cwd);
   const stageState = cur.stages?.[String(stageNum)];
   if (!stageState || stageState.status !== 'failed') {
-    throw new Error(`阶段 ${stageNum} 状态为 ${stageState?.status ?? 'pending'}，只有 failed 状态可以重试`);
+    throw new Error(
+      `阶段 ${stageNum} 状态为 ${stageState?.status ?? 'pending'}，只有 failed 状态可以重试`,
+    );
   }
   const maxRetries = stageState.maxRetries ?? 2;
   if ((stageState.retryCount ?? 0) >= maxRetries) {
@@ -957,14 +1006,14 @@ export function updateStage(
     reason,
     artifacts,
     gate,
-    gatePassed
+    gatePassed,
   }: {
     cwd?: string;
     reason?: string;
     artifacts?: string | string[];
     gate?: string;
     gatePassed?: boolean | string | null;
-  } = {}
+  } = {},
 ): PipelineExecutionState {
   ensureFeatureName(feature);
   if (!status) throw new Error('缺少 status 参数');
@@ -987,13 +1036,13 @@ export function updateStage(
   if (status === 'running' && currentState.status === 'paused') {
     appendRuntimeEvent(cwd, feature, EVENT_TYPES.PIPELINE_RESUMED, {
       stage: stageNumber,
-      requestedBy: 'runtime'
+      requestedBy: 'runtime',
     });
   }
 
   appendRuntimeEvent(cwd, feature, eventType, {
     stage: stageNumber,
-    ...(reason ? { reason } : {})
+    ...(reason ? { reason } : {}),
   });
 
   if (status === 'running') {
@@ -1008,7 +1057,7 @@ export function updateStage(
   for (const artifact of artifactList) {
     appendRuntimeEvent(cwd, feature, EVENT_TYPES.ARTIFACT_RECORDED, {
       artifact,
-      stage: stageNumber
+      stage: stageNumber,
     });
   }
 
@@ -1017,7 +1066,7 @@ export function updateStage(
     appendRuntimeEvent(cwd, feature, EVENT_TYPES.GATE_EVALUATED, {
       gate,
       passed,
-      stage: stageNumber
+      stage: stageNumber,
     });
   }
 
@@ -1037,7 +1086,7 @@ export function updateAgent(
     prompt,
     promptFingerprint,
     dependencyArtifacts,
-    opts
+    opts,
   }: {
     cwd?: string;
     reason?: string;
@@ -1045,7 +1094,7 @@ export function updateAgent(
     promptFingerprint?: string;
     dependencyArtifacts?: string[];
     opts?: Record<string, unknown>;
-  } = {}
+  } = {},
 ): PipelineExecutionState {
   ensureFeatureName(feature);
   if (!agent) throw new Error('缺少 agent 参数');
@@ -1068,15 +1117,18 @@ export function updateAgent(
   const fingerprints =
     !hasFingerprintInput && currentAgent?.promptFingerprint && currentAgent?.inputDigest
       ? {
-          promptFingerprint: { algorithm: 'sha256' as const, value: currentAgent.promptFingerprint },
-          inputDigest: { algorithm: 'sha256' as const, value: currentAgent.inputDigest }
+          promptFingerprint: {
+            algorithm: 'sha256' as const,
+            value: currentAgent.promptFingerprint,
+          },
+          inputDigest: { algorithm: 'sha256' as const, value: currentAgent.inputDigest },
         }
       : buildAgentFingerprints(feature, agent, stageNumber, {
           cwd,
           prompt,
           promptFingerprint,
           dependencyArtifacts,
-          opts
+          opts,
         });
 
   appendRuntimeEvent(cwd, feature, eventType, {
@@ -1084,8 +1136,10 @@ export function updateAgent(
     stage: stageNumber,
     promptFingerprint: fingerprints.promptFingerprint.value,
     inputDigest: fingerprints.inputDigest.value,
-    ...(inferArtifactFromPrompt(agent, prompt) ? { artifact: inferArtifactFromPrompt(agent, prompt) } : {}),
-    ...(reason ? { reason } : {})
+    ...(inferArtifactFromPrompt(agent, prompt)
+      ? { artifact: inferArtifactFromPrompt(agent, prompt) }
+      : {}),
+    ...(reason ? { reason } : {}),
   });
 
   const { state } = materializeState(feature, cwd);
@@ -1093,7 +1147,11 @@ export function updateAgent(
   return state as PipelineExecutionState;
 }
 
-function readArtifactDigest(cwd: string, feature: string, artifact: string): RuntimeHashDescriptor | null {
+function readArtifactDigest(
+  cwd: string,
+  feature: string,
+  artifact: string,
+): RuntimeHashDescriptor | null {
   const artifactPath = path.join(cwd, '.boss', feature, artifact);
   if (!fs.existsSync(artifactPath) || !fs.statSync(artifactPath).isFile()) return null;
   return hashFile(artifactPath);
@@ -1108,26 +1166,26 @@ function buildAgentFingerprints(
     prompt,
     promptFingerprint,
     dependencyArtifacts = [],
-    opts = {}
-  }: AgentReuseInput & { cwd: string }
+    opts = {},
+  }: AgentReuseInput & { cwd: string },
 ): { promptFingerprint: RuntimeHashDescriptor; inputDigest: RuntimeHashDescriptor } {
   const promptHash: RuntimeHashDescriptor = {
     algorithm: 'sha256',
-    value: promptFingerprint || sha256Hex(prompt || '')
+    value: promptFingerprint || sha256Hex(prompt || ''),
   };
   const dependencies = dependencyArtifacts
     .slice()
     .sort()
     .map((artifact) => ({
       artifact,
-      hash: readArtifactDigest(cwd, feature, artifact)
+      hash: readArtifactDigest(cwd, feature, artifact),
     }));
   const inputDigest = hashRuntimeValue({
     agent,
     stage,
     promptFingerprint: promptHash,
     opts,
-    dependencies
+    dependencies,
   });
   return { promptFingerprint: promptHash, inputDigest };
 }
@@ -1141,8 +1199,8 @@ export function evaluateAgentReuse(
     prompt,
     promptFingerprint,
     dependencyArtifacts = [],
-    opts = {}
-  }: AgentReuseInput & { cwd?: string } = {}
+    opts = {},
+  }: AgentReuseInput & { cwd?: string } = {},
 ): AgentReuseDecision {
   ensureFeatureName(feature);
   const stageNumber = normalizeStageNumber(stage);
@@ -1153,16 +1211,17 @@ export function evaluateAgentReuse(
     prompt,
     promptFingerprint,
     dependencyArtifacts,
-    opts
+    opts,
   });
 
   const completed = readRuntimeEvents(cwd, feature)
     .slice()
     .reverse()
-    .find((event) =>
-      event.type === EVENT_TYPES.AGENT_COMPLETED &&
-      event.data.agent === agent &&
-      Number(event.data.stage) === stageNumber
+    .find(
+      (event) =>
+        event.type === EVENT_TYPES.AGENT_COMPLETED &&
+        event.data.agent === agent &&
+        Number(event.data.stage) === stageNumber,
     );
 
   if (!completed) {
@@ -1170,7 +1229,7 @@ export function evaluateAgentReuse(
       reusable: false,
       reason: 'no-completed-agent-event',
       dagStale,
-      ...fingerprints
+      ...fingerprints,
     };
   }
 
@@ -1180,7 +1239,7 @@ export function evaluateAgentReuse(
       reason: 'prompt-fingerprint-changed',
       dagStale,
       completedEventId: completed.id,
-      ...fingerprints
+      ...fingerprints,
     };
   }
 
@@ -1190,7 +1249,7 @@ export function evaluateAgentReuse(
       reason: 'input-digest-changed',
       dagStale,
       completedEventId: completed.id,
-      ...fingerprints
+      ...fingerprints,
     };
   }
 
@@ -1199,7 +1258,7 @@ export function evaluateAgentReuse(
     reason: dagStale ? 'artifact-dag-stale' : 'input-digest-matched',
     dagStale,
     completedEventId: completed.id,
-    ...fingerprints
+    ...fingerprints,
   };
 }
 
@@ -1208,8 +1267,8 @@ export function pausePipeline(
   {
     cwd = process.cwd(),
     reason = '',
-    requestedBy = 'user'
-  }: { cwd?: string; reason?: string; requestedBy?: string } = {}
+    requestedBy = 'user',
+  }: { cwd?: string; reason?: string; requestedBy?: string } = {},
 ): PipelineExecutionState {
   ensureFeatureName(feature);
   const execution = readExecutionView(cwd, feature);
@@ -1221,7 +1280,7 @@ export function pausePipeline(
   }
   appendRuntimeEvent(cwd, feature, EVENT_TYPES.PIPELINE_PAUSED, {
     reason,
-    requestedBy
+    requestedBy,
   });
   const { state } = materializeState(feature, cwd);
   refreshMemory(feature, cwd);
@@ -1230,7 +1289,7 @@ export function pausePipeline(
 
 export function getReadyArtifacts(
   feature: string,
-  { cwd = process.cwd(), dagPath }: { cwd?: string; dagPath?: string } = {}
+  { cwd = process.cwd(), dagPath }: { cwd?: string; dagPath?: string } = {},
 ): ReadyArtifact[] {
   ensureFeatureName(feature);
   const execution = readExecutionView(cwd, feature);
@@ -1240,14 +1299,14 @@ export function getReadyArtifacts(
     feature,
     execution,
     dag,
-    completedArtifacts: collectCompletedArtifacts(execution)
+    completedArtifacts: collectCompletedArtifacts(execution),
   };
   return resolveReadyArtifacts(context);
 }
 
 export function registerPlugins(
   feature: string,
-  { cwd = process.cwd(), type }: { cwd?: string; type?: string } = {}
+  { cwd = process.cwd(), type }: { cwd?: string; type?: string } = {},
 ): ReturnType<typeof registerPluginsRuntime> {
   ensureFeatureName(feature);
   return registerPluginsRuntime(feature, { cwd, type });
@@ -1258,7 +1317,7 @@ export function registerPlugins(
 export function cacheTechStack(
   feature: string,
   techStack: Record<string, unknown>,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): void {
   ensureFeatureName(feature);
   const metaDir = path.join(cwd, '.boss', feature, '.meta');
@@ -1268,7 +1327,7 @@ export function cacheTechStack(
 
 export function readCachedTechStack(
   feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): Record<string, unknown> | null {
   ensureFeatureName(feature);
   const filePath = path.join(cwd, '.boss', feature, '.meta', 'tech-stack.json');
@@ -1297,8 +1356,8 @@ export function checkStall(
   {
     cwd = process.cwd(),
     maxDurationMs = DEFAULT_MAX_DURATION_MS,
-    autoFail = false
-  }: { cwd?: string; maxDurationMs?: number; autoFail?: boolean } = {}
+    autoFail = false,
+  }: { cwd?: string; maxDurationMs?: number; autoFail?: boolean } = {},
 ): CheckStallResult {
   ensureFeatureName(feature);
   const execution = readExecutionView(cwd, feature);
@@ -1315,13 +1374,13 @@ export function checkStall(
           agent: agentName,
           stage: Number(stageKey),
           startTime: agentState.startTime,
-          elapsedMs: elapsed
+          elapsedMs: elapsed,
         };
         if (autoFail) {
           appendRuntimeEvent(cwd, feature, EVENT_TYPES.AGENT_FAILED, {
             agent: agentName,
             stage: Number(stageKey),
-            reason: 'timeout'
+            reason: 'timeout',
           });
           entry.failed = true;
         }

@@ -3,21 +3,21 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { inspectPipeline } from '../../runtime/application/inspection.js';
 import {
   printRuntimeHelp,
   requireInputString,
-  toFeatureNotFoundError
+  toFeatureNotFoundError,
 } from './agent-command-utils.js';
-import { inspectPipeline } from '../../runtime/application/inspection.js';
 
 interface AttachInput {
   feature: string;
@@ -46,18 +46,23 @@ function parseFlatInput(argv: string[]): AttachInput {
 function resolveInput(argv: string[], context: CliContext): AttachInput {
   const jsonInput = readJsonInput(context.values.jsonInput);
   if (jsonInput) {
-    return { feature: requireInputString((jsonInput as Record<string, unknown>).feature, 'feature') };
+    return {
+      feature: requireInputString((jsonInput as Record<string, unknown>).feature, 'feature'),
+    };
   }
   return parseFlatInput(argv);
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime attach' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions.attach!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions.attach, null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions.attach, null, 2)}\n`,
     );
     return 0;
   }
@@ -80,10 +85,10 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         activeAgents: summary.activeAgents,
         readyArtifacts: summary.readyArtifacts,
         pause: summary.pause,
-        artifactDag: summary.artifactDag
+        artifactDag: summary.artifactDag,
       },
       context,
-      () => `Pipeline ${input.feature}: ${summary.status}\n`
+      () => `Pipeline ${input.feature}: ${summary.status}\n`,
     );
     return 0;
   } catch (err) {
@@ -92,6 +97,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime attach', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime attach',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

@@ -16,9 +16,7 @@ export default defineConfig({
     baseURL: 'http://localhost:4567',
   },
 
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-  ],
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 
   webServer: {
     command: 'API_KEYS=smoke-test-key node ../../examples/api-auth/src/server.js',

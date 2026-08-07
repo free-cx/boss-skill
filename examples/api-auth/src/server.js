@@ -25,7 +25,10 @@ function createApp({ keys } = {}) {
 
 function parseKeysFromEnv(raw) {
   if (!raw) return [];
-  return raw.split(',').map((s) => s.trim()).filter(Boolean);
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 if (require.main === module) {

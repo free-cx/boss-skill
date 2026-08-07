@@ -1,10 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import {
-  normalizeCommands,
-  type StructuredCommand
-} from '../domain/structured-wave.js';
+import { normalizeCommands, type StructuredCommand } from '../domain/structured-wave.js';
 
 export type EvidenceWaveStatus = 'pending' | 'running' | 'completed' | 'blocked' | 'failed';
 
@@ -26,7 +23,7 @@ const WAVE_STATUSES: ReadonlySet<string> = new Set<string>([
   'running',
   'completed',
   'blocked',
-  'failed'
+  'failed',
 ]);
 
 function normalizeStatus(value: unknown): EvidenceWaveStatus {
@@ -39,7 +36,6 @@ function normalizeStringList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === 'string' && item.length > 0);
 }
-
 
 function splitMarkdownRow(line: string): string[] {
   const cells: string[] = [];
@@ -78,7 +74,10 @@ function isSeparatorRow(cells: string[]): boolean {
 }
 
 function cleanCell(value: string): string {
-  return value.trim().replace(/^`+|`+$/g, '').trim();
+  return value
+    .trim()
+    .replace(/^`+|`+$/g, '')
+    .trim();
 }
 
 function splitListCell(value: string): string[] {
@@ -111,7 +110,7 @@ function parseTitleAndStatus(rawTitle: string): { title: string; status: Evidenc
   }
   return {
     title: rawTitle.slice(marker[0].length).trim(),
-    status: marker[1]!.toLowerCase() as EvidenceWaveStatus
+    status: marker[1]!.toLowerCase() as EvidenceWaveStatus,
   };
 }
 
@@ -156,7 +155,7 @@ function readStructuredWaves(feature: string, cwd: string): EvidenceWave[] | nul
       contractRows: normalizeStringList(record.contractRows),
       rollbackRisk: typeof record.stopCondition === 'string' ? record.stopCondition : '',
       pausePolicy: typeof record.stopCondition === 'string' ? record.stopCondition : '',
-      status: normalizeStatus(record.status)
+      status: normalizeStatus(record.status),
     };
   });
 }
@@ -219,7 +218,7 @@ function readMarkdownWaves(feature: string, cwd: string): EvidenceWave[] {
       contractRows: splitListCell(contractRows ?? ''),
       rollbackRisk: cleanedStopCondition,
       pausePolicy: cleanedStopCondition,
-      status: parsedTitle.status
+      status: parsedTitle.status,
     });
   }
 
@@ -232,8 +231,7 @@ function readMarkdownWaves(feature: string, cwd: string): EvidenceWave[] {
  */
 export function readWaves(
   feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): EvidenceWave[] {
   return readStructuredWaves(feature, cwd) ?? readMarkdownWaves(feature, cwd);
 }
-

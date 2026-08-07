@@ -1,12 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   initPipeline,
   recordArtifact,
-  updateStage
+  updateStage,
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -79,8 +79,8 @@ describe('concurrent append to events.jsonl', () => {
     // Since recordArtifact uses sync fs, these are interleaved at the event loop level
     const promises = Array.from({ length: N }, (_, i) =>
       Promise.resolve().then(() =>
-        recordArtifact('conc-feature', `par-${i}.md`, 1, { cwd: tmpDir })
-      )
+        recordArtifact('conc-feature', `par-${i}.md`, 1, { cwd: tmpDir }),
+      ),
     );
 
     await Promise.all(promises);
@@ -97,13 +97,16 @@ describe('concurrent append to events.jsonl', () => {
       fs.writeFileSync(
         path.join(tmpDir, '.boss', 'conc-feature', artifactName),
         `# ${i}\n`,
-        'utf8'
+        'utf8',
       );
       recordArtifact('conc-feature', artifactName, 1, { cwd: tmpDir });
     }
 
     const raw = fs.readFileSync(eventsFile(), 'utf8').trim();
-    const ids = raw.split('\n').filter(Boolean).map(line => (JSON.parse(line) as { id: number }).id);
+    const ids = raw
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => (JSON.parse(line) as { id: number }).id);
 
     for (let i = 1; i < ids.length; i++) {
       expect(ids[i]).toBeGreaterThan(ids[i - 1]);

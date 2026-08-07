@@ -1,17 +1,17 @@
-import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
 import {
+  EVENT_TYPE_VALUES,
   EVENT_TYPES,
-  EVENT_TYPE_VALUES
 } from '../../packages/boss-cli/src/runtime/domain/event-types.js';
 import {
   AGENT_STATUS,
   DEFAULT_SCHEMA_VERSION,
   PIPELINE_STATUS,
-  STAGE_STATUS
+  STAGE_STATUS,
 } from '../../packages/boss-cli/src/runtime/domain/state-constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,7 +19,10 @@ const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 
 function loadJson(relativePath: string) {
-  return JSON.parse(fs.readFileSync(path.join(REPO_ROOT, relativePath), 'utf8')) as Record<string, any>;
+  return JSON.parse(fs.readFileSync(path.join(REPO_ROOT, relativePath), 'utf8')) as Record<
+    string,
+    any
+  >;
 }
 
 describe('runtime schema contract', () => {
@@ -29,14 +32,16 @@ describe('runtime schema contract', () => {
     expect(EVENT_TYPES.ARTIFACT_RECORDED).toBe('ArtifactRecorded');
     expect(EVENT_TYPES.PLUGIN_HOOK_FAILED).toBe('PluginHookFailed');
     expect(new Set(EVENT_TYPE_VALUES).size).toBe(EVENT_TYPE_VALUES.length);
-    expect([...EVENT_TYPE_VALUES].sort()).toEqual([...(schema.properties.type.enum as string[])].sort());
+    expect([...EVENT_TYPE_VALUES].sort()).toEqual(
+      [...(schema.properties.type.enum as string[])].sort(),
+    );
 
     expect(PIPELINE_STATUS).toEqual({
       INITIALIZED: 'initialized',
       RUNNING: 'running',
       PAUSED: 'paused',
       COMPLETED: 'completed',
-      FAILED: 'failed'
+      FAILED: 'failed',
     });
     expect(STAGE_STATUS.RETRYING).toBe('retrying');
     expect(AGENT_STATUS.FAILED).toBe('failed');
@@ -48,32 +53,37 @@ describe('runtime schema contract', () => {
     const clauses = Array.isArray(schema.allOf) ? schema.allOf : [];
 
     const artifactClause = clauses.find(
-      (clause) => clause?.if?.properties?.type?.const === 'ArtifactRecorded'
+      (clause) => clause?.if?.properties?.type?.const === 'ArtifactRecorded',
     );
     const gateClause = clauses.find(
-      (clause) => clause?.if?.properties?.type?.const === 'GateEvaluated'
+      (clause) => clause?.if?.properties?.type?.const === 'GateEvaluated',
     );
 
     expect(artifactClause).toBeTruthy();
-    expect(artifactClause.then.properties.data.required.slice().sort()).toEqual(['artifact', 'stage']);
+    expect(artifactClause.then.properties.data.required.slice().sort()).toEqual([
+      'artifact',
+      'stage',
+    ]);
 
     expect(gateClause).toBeTruthy();
     expect(gateClause.then.properties.data.required.slice().sort()).toEqual([
       'gate',
       'passed',
-      'stage'
+      'stage',
     ]);
   });
 
   it('execution schema requires plugin lifecycle and expanded metrics fields', () => {
     const schema = loadJson('packages/boss-cli/src/runtime/schema/execution-schema.json');
 
-    expect(Array.isArray(schema.required) && schema.required.includes('pluginLifecycle')).toBe(true);
+    expect(Array.isArray(schema.required) && schema.required.includes('pluginLifecycle')).toBe(
+      true,
+    );
     expect(schema.properties.pluginLifecycle.required.slice().sort()).toEqual([
       'activated',
       'discovered',
       'executed',
-      'failed'
+      'failed',
     ]);
     expect(schema.properties.metrics.required.slice().sort()).toEqual([
       'agentFailureCount',
@@ -84,7 +94,7 @@ describe('runtime schema contract', () => {
       'retryTotal',
       'revisionLoopCount',
       'stageTimings',
-      'totalDuration'
+      'totalDuration',
     ]);
   });
 
@@ -92,7 +102,9 @@ describe('runtime schema contract', () => {
     const schema = loadJson('packages/boss-cli/src/runtime/schema/execution-schema.json');
 
     expect(schema.properties.workflow.properties.nextNodeIds.items.type).toBe('string');
-    expect(schema.properties.workflow.properties.nodes.additionalProperties.properties.status.enum).toEqual([
+    expect(
+      schema.properties.workflow.properties.nodes.additionalProperties.properties.status.enum,
+    ).toEqual([
       'pending',
       'ready',
       'running',
@@ -100,7 +112,7 @@ describe('runtime schema contract', () => {
       'failed',
       'skipped',
       'reused',
-      'blocked'
+      'blocked',
     ]);
   });
 
@@ -109,22 +121,20 @@ describe('runtime schema contract', () => {
     const clauses = Array.isArray(schema.allOf) ? schema.allOf : [];
 
     const resumeClause = clauses.find(
-      (clause) => clause?.if?.properties?.type?.const === 'PipelineResumed'
+      (clause) => clause?.if?.properties?.type?.const === 'PipelineResumed',
     );
     const waveClause = clauses.find(
-      (clause) => clause?.if?.properties?.type?.const === 'WaveVerified'
+      (clause) => clause?.if?.properties?.type?.const === 'WaveVerified',
     );
 
-    expect(resumeClause.then.properties.data.properties.nodes.items.properties.decision.enum).toEqual([
-      'reuse',
-      'run',
-      'skip'
-    ]);
+    expect(
+      resumeClause.then.properties.data.properties.nodes.items.properties.decision.enum,
+    ).toEqual(['reuse', 'run', 'skip']);
     expect(resumeClause.then.properties.data.properties.nextNodeIds.items.type).toBe('string');
     expect(waveClause.then.properties.data.required.slice().sort()).toEqual([
       'phase',
       'verified',
-      'waveId'
+      'waveId',
     ]);
   });
 
@@ -137,11 +147,11 @@ describe('runtime schema contract', () => {
         'ConversationOpened',
         'ConversationMessageAppended',
         'ConversationResolved',
-        'TodoMaterialized'
-      ])
+        'TodoMaterialized',
+      ]),
     );
     expect(executionSchema.required).toEqual(
-      expect.arrayContaining(['conversations', 'derivedTodos', 'conversationMetrics'])
+      expect.arrayContaining(['conversations', 'derivedTodos', 'conversationMetrics']),
     );
   });
 
@@ -157,30 +167,32 @@ describe('runtime schema contract', () => {
     const clauses = Array.isArray(schema.allOf) ? schema.allOf : [];
 
     const executedClause = clauses.find(
-      (clause) => clause?.if?.properties?.type?.const === 'PluginHookExecuted'
+      (clause) => clause?.if?.properties?.type?.const === 'PluginHookExecuted',
     );
     const failedClause = clauses.find(
-      (clause) => clause?.if?.properties?.type?.const === 'PluginHookFailed'
+      (clause) => clause?.if?.properties?.type?.const === 'PluginHookFailed',
     );
 
     expect(executedClause).toBeTruthy();
     expect(executedClause.then.properties.data.required.slice().sort()).toEqual([
       'exitCode',
       'hook',
-      'plugin'
+      'plugin',
     ]);
 
     expect(failedClause).toBeTruthy();
     expect(failedClause.then.properties.data.required.slice().sort()).toEqual([
       'exitCode',
       'hook',
-      'plugin'
+      'plugin',
     ]);
   });
 
   it('memory schemas require traceable records and injected summary views', () => {
     const recordSchema = loadJson('packages/boss-cli/src/runtime/schema/memory-record-schema.json');
-    const summarySchema = loadJson('packages/boss-cli/src/runtime/schema/memory-summary-schema.json');
+    const summarySchema = loadJson(
+      'packages/boss-cli/src/runtime/schema/memory-summary-schema.json',
+    );
 
     expect(recordSchema.required.slice().sort()).toEqual([
       'category',
@@ -196,7 +208,7 @@ describe('runtime schema contract', () => {
       'scope',
       'source',
       'summary',
-      'tags'
+      'tags',
     ]);
     expect(recordSchema.properties.scope.enum).toEqual(['global', 'feature']);
     expect(recordSchema.properties.kind.enum).toEqual(['execution', 'long_term']);
@@ -206,7 +218,7 @@ describe('runtime schema contract', () => {
       'agentSections',
       'feature',
       'generatedAt',
-      'startupSummary'
+      'startupSummary',
     ]);
     expect(summarySchema.properties.startupSummary.type).toBe('array');
     expect(summarySchema.properties.agentSections.type).toBe('object');
@@ -227,7 +239,7 @@ describe('runtime schema contract', () => {
       'pages',
       'components',
       'prototype',
-      'implementationHints'
+      'implementationHints',
     ]);
   });
 
@@ -245,7 +257,7 @@ describe('runtime schema contract', () => {
       'sourceArtifact',
       'summaryItems',
       'title',
-      'toc'
+      'toc',
     ]);
     expect(new RegExp(schema.properties.sourceArtifact.pattern).test('prd.md')).toBe(true);
     expect(new RegExp(schema.properties.sourceArtifact.pattern).test('prd.html')).toBe(false);
@@ -257,7 +269,7 @@ describe('runtime schema contract', () => {
   it('artifact html template includes required render placeholders', () => {
     const template = fs.readFileSync(
       path.join(REPO_ROOT, 'skill/templates/artifact.html.template'),
-      'utf8'
+      'utf8',
     );
 
     for (const token of [
@@ -267,7 +279,7 @@ describe('runtime schema contract', () => {
       '{{GENERATED_AT}}',
       '{{SUMMARY_HTML}}',
       '{{TOC_HTML}}',
-      '{{BODY_HTML}}'
+      '{{BODY_HTML}}',
     ]) {
       expect(template).toContain(token);
     }

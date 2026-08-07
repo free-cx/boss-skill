@@ -4,22 +4,22 @@ import { fileURLToPath } from 'node:url';
 
 import {
   assertConfirmed,
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { retryAgent } from '../../runtime/application/pipeline.js';
 import {
   printRuntimeHelp,
   requireInputString,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { retryAgent } from '../../runtime/application/pipeline.js';
 
 interface RetryAgentInput {
   feature: string;
@@ -51,7 +51,7 @@ function parseFlatInput(argv: string[]): RetryAgentInput {
   return {
     feature: requireInputString(feature, 'feature'),
     stage: requireInputString(stage, 'stage'),
-    agent: requireInputString(agent, 'agent')
+    agent: requireInputString(agent, 'agent'),
   };
 }
 
@@ -62,7 +62,7 @@ function resolveInput(argv: string[], context: CliContext): RetryAgentInput {
     return {
       feature: requireInputString(input.feature, 'feature'),
       stage: requireInputString(input.stage, 'stage'),
-      agent: requireInputString(input.agent, 'agent')
+      agent: requireInputString(input.agent, 'agent'),
     };
   }
   return parseFlatInput(argv);
@@ -73,17 +73,20 @@ function actionFor(input: RetryAgentInput) {
     type: 'retry_agent',
     feature: input.feature,
     stage: Number(input.stage),
-    agent: input.agent
+    agent: input.agent,
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime retry-agent' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['retry-agent']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['retry-agent'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['retry-agent'], null, 2)}\n`,
     );
     return 0;
   }
@@ -110,10 +113,11 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         stage: Number(input.stage),
         agent: input.agent,
         status: agentState?.status,
-        retryCount: agentState?.retryCount
+        retryCount: agentState?.retryCount,
       },
       context,
-      () => `${JSON.stringify({ feature: input.feature, stage: Number(input.stage), agent: input.agent, status: agentState?.status, retryCount: agentState?.retryCount }, null, 2)}\n`
+      () =>
+        `${JSON.stringify({ feature: input.feature, stage: Number(input.stage), agent: input.agent, status: agentState?.status, retryCount: agentState?.retryCount }, null, 2)}\n`,
     );
     return 0;
   } catch (err) {
@@ -122,6 +126,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime retry-agent', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime retry-agent',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

@@ -13,9 +13,9 @@ describe('post-tool-bash hook', () => {
       hook.run(
         JSON.stringify({
           tool_input: { command: '' },
-          cwd: '/tmp'
-        })
-      )
+          cwd: '/tmp',
+        }),
+      ),
     ).toBe('');
   });
 
@@ -24,9 +24,9 @@ describe('post-tool-bash hook', () => {
       hook.run(
         JSON.stringify({
           tool_input: { command: 'ls -la' },
-          cwd: '/tmp'
-        })
-      )
+          cwd: '/tmp',
+        }),
+      ),
     ).toBe('');
   });
 
@@ -35,9 +35,9 @@ describe('post-tool-bash hook', () => {
       hook.run(
         JSON.stringify({
           tool_input: { command: 'boss runtime evaluate-gates my-feat gate0' },
-          cwd: '/tmp'
-        })
-      )
+          cwd: '/tmp',
+        }),
+      ),
     ) as {
       hookSpecificOutput: { additionalContext: string };
     };
@@ -51,9 +51,9 @@ describe('post-tool-bash hook', () => {
       hook.run(
         JSON.stringify({
           tool_input: { command: 'boss runtime update-stage my-feat 1 running' },
-          cwd: '/tmp'
-        })
-      )
+          cwd: '/tmp',
+        }),
+      ),
     ) as {
       hookSpecificOutput: { additionalContext: string };
     };
@@ -67,9 +67,9 @@ describe('post-tool-bash hook', () => {
         JSON.stringify({
           tool_name: 'Bash',
           arguments: { command: 'boss runtime update-stage my-feat 1 running' },
-          cwd: '/tmp'
-        })
-      )
+          cwd: '/tmp',
+        }),
+      ),
     ) as {
       hookSpecificOutput: { additionalContext: string };
     };

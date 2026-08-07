@@ -3,15 +3,15 @@ import { describe, expect, it } from 'vitest';
 import {
   computeNextNodeIds,
   resolveWriteSet,
+  type SchedulableNode,
   selectParallelSafeBatch,
-  type SchedulableNode
 } from '../../packages/boss-cli/src/runtime/domain/scheduling.js';
 
 function node(partial: Partial<SchedulableNode> & { id: string }): SchedulableNode {
   return {
     stage: 0,
     status: 'ready',
-    ...partial
+    ...partial,
   };
 }
 
@@ -22,14 +22,10 @@ describe('domain/scheduling write-set batching', () => {
     const nodes = [
       node({ id: 'artifact:a.md', stage: 1, artifact: 'a.md' }),
       node({ id: 'artifact:b.md', stage: 3, artifact: 'b.md' }),
-      node({ id: 'artifact:c.md', stage: 4, artifact: 'c.md' })
+      node({ id: 'artifact:c.md', stage: 4, artifact: 'c.md' }),
     ];
 
-    expect(computeNextNodeIds(nodes)).toEqual([
-      'artifact:a.md',
-      'artifact:b.md',
-      'artifact:c.md'
-    ]);
+    expect(computeNextNodeIds(nodes)).toEqual(['artifact:a.md', 'artifact:b.md', 'artifact:c.md']);
   });
 
   it('excludes nodes whose write sets overlap an already-claimed target', () => {
@@ -37,7 +33,7 @@ describe('domain/scheduling write-set batching', () => {
       node({ id: 'artifact:api', stage: 3, writes: ['src/api.ts', 'src/shared.ts'] }),
       node({ id: 'artifact:web', stage: 3, writes: ['src/web.ts'] }),
       // 与第一个节点共享 src/shared.ts，必须退到下一批
-      node({ id: 'artifact:worker', stage: 3, writes: ['src/shared.ts'] })
+      node({ id: 'artifact:worker', stage: 3, writes: ['src/shared.ts'] }),
     ];
 
     expect(selectParallelSafeBatch(nodes)).toEqual(['artifact:api', 'artifact:web']);
@@ -58,22 +54,18 @@ describe('domain/scheduling write-set batching', () => {
     const nodes = [
       node({ id: 'gate:gate0', stage: 3, gate: 'gate0' }),
       node({ id: 'gate:gate1', stage: 3, gate: 'gate1' }),
-      node({ id: 'gate:owasp-scan', stage: 3, gate: 'owasp-scan' })
+      node({ id: 'gate:owasp-scan', stage: 3, gate: 'owasp-scan' }),
     ];
 
     expect(resolveWriteSet(nodes[0]!)).toEqual([]);
-    expect(computeNextNodeIds(nodes)).toEqual([
-      'gate:gate0',
-      'gate:gate1',
-      'gate:owasp-scan'
-    ]);
+    expect(computeNextNodeIds(nodes)).toEqual(['gate:gate0', 'gate:gate1', 'gate:owasp-scan']);
   });
 
   it('falls back to the artifact name when no explicit write set is declared', () => {
     const nodes = [
       node({ id: 'artifact:prd.md', artifact: 'prd.md' }),
       // 同一产物的两个写入者不得并行
-      node({ id: 'artifact:prd.md#retry', artifact: 'prd.md' })
+      node({ id: 'artifact:prd.md#retry', artifact: 'prd.md' }),
     ];
 
     expect(resolveWriteSet(nodes[0]!)).toEqual(['prd.md']);
@@ -85,7 +77,7 @@ describe('domain/scheduling write-set batching', () => {
       node({ id: 'artifact:a', status: 'blocked', artifact: 'a' }),
       node({ id: 'artifact:b', status: 'completed', artifact: 'b' }),
       node({ id: 'artifact:c', status: 'running', artifact: 'c' }),
-      node({ id: 'artifact:d', status: 'ready', artifact: 'd' })
+      node({ id: 'artifact:d', status: 'ready', artifact: 'd' }),
     ];
 
     expect(computeNextNodeIds(nodes)).toEqual(['artifact:d']);
@@ -100,7 +92,7 @@ describe('domain/scheduling write-set batching', () => {
     const nodes = [
       node({ id: 'artifact:z', stage: 1, artifact: 'z' }),
       node({ id: 'artifact:a', stage: 4, artifact: 'a' }),
-      node({ id: 'artifact:m', stage: 1, artifact: 'm' })
+      node({ id: 'artifact:m', stage: 1, artifact: 'm' }),
     ];
 
     // 同一输入的两次调度必须得到同一顺序

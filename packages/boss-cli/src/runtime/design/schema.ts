@@ -217,7 +217,11 @@ export function validateUiDesignArtifact(value: unknown): UiDesignValidationResu
     if (!isObject(link) || !isString(link.sourceId)) {
       errors.push(`prototype.links[${index}].sourceId is required`);
     }
-    if (!isObject(link) || typeof link.targetPageId !== 'string' || !pageIds.has(link.targetPageId)) {
+    if (
+      !isObject(link) ||
+      typeof link.targetPageId !== 'string' ||
+      !pageIds.has(link.targetPageId)
+    ) {
       errors.push(`prototype.links[${index}].targetPageId must reference an existing page id`);
     }
   }
@@ -225,7 +229,8 @@ export function validateUiDesignArtifact(value: unknown): UiDesignValidationResu
   if (artifact.mode === 'hifi') {
     for (const section of ['colors', 'typography', 'spacing', 'radius'] as const) {
       const tokens = artifact.tokens?.[section];
-      if (!tokens || !hasKeys(tokens)) errors.push(`hifi mode requires non-empty tokens.${section}`);
+      if (!tokens || !hasKeys(tokens))
+        errors.push(`hifi mode requires non-empty tokens.${section}`);
     }
   }
 

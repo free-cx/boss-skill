@@ -6,7 +6,7 @@
 
 [English README](./README.md)
 
-![boss-skill 宣传图](boss-skill-promo.png)
+![boss-skill 宣传图](https://raw.githubusercontent.com/echoVic/boss-skill/main/boss-skill-promo.png)
 
 **Boss 是面向 Coding Agent 的可审计 Agent 团队工作流。** 它把一个 Coding Agent 组织成结构化研发团队：PM、Architect、UI Designer、Tech Lead、Scrum Master、Frontend、Backend、QA、DevOps。和只靠 prompt 的 Agent 团队不同，Boss 提供 runtime 状态、追加式事件流、质量门禁、确定性 eval、hooks，以及可回放的产物目录。
 

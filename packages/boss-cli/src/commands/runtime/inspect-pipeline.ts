@@ -8,11 +8,11 @@ import {
   createCliContext,
   describeCommand,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import { printRuntimeHelp } from './agent-command-utils.js';
 import { inspectPipeline } from '../../runtime/application/inspection.js';
+import { printRuntimeHelp } from './agent-command-utils.js';
 
 function printHelp(): void {
   printRuntimeHelp('inspect-pipeline', 'boss runtime inspect-pipeline FEATURE [options]');
@@ -25,7 +25,7 @@ export function parseArgs(argv: string[]) {
 
   const parsed = {
     feature: '',
-    json: false
+    json: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -58,11 +58,13 @@ function renderText(summary: ReturnType<typeof inspectPipeline>): string {
   lines.push(`status: ${summary.status}`);
   if (summary.currentStage) {
     lines.push(
-      `currentStage: ${summary.currentStage.id} (${summary.currentStage.name}) ${summary.currentStage.status}\n`
+      `currentStage: ${summary.currentStage.id} (${summary.currentStage.name}) ${summary.currentStage.status}\n`,
     );
   }
   lines.push(`readyArtifacts: ${summary.readyArtifacts.join(', ') || 'none'}`);
-  lines.push(`activeAgents: ${summary.activeAgents.map((item) => `${item.agent}@${item.stage}`).join(', ') || 'none'}`);
+  lines.push(
+    `activeAgents: ${summary.activeAgents.map((item) => `${item.agent}@${item.stage}`).join(', ') || 'none'}`,
+  );
   lines.push(`pack: ${summary.pack.name}`);
   if (summary.artifactDag.warning) {
     lines.push(`artifactDagWarning: ${summary.artifactDag.warning}`);
@@ -70,10 +72,16 @@ function renderText(summary: ReturnType<typeof inspectPipeline>): string {
   if (summary.pause?.paused) {
     lines.push(`pause: ${summary.pause.reason || 'paused'}`);
   }
-  lines.push(`plugins: ${summary.plugins.active.map((plugin) => plugin.name).join(', ') || 'none'}`);
-  lines.push(`conversationMetrics: opened=${summary.conversationMetrics.opened} resolved=${summary.conversationMetrics.resolved} todos=${summary.conversationMetrics.todos} huddles=${summary.conversationMetrics.huddles} unresolved=${summary.conversationMetrics.unresolved}`);
+  lines.push(
+    `plugins: ${summary.plugins.active.map((plugin) => plugin.name).join(', ') || 'none'}`,
+  );
+  lines.push(
+    `conversationMetrics: opened=${summary.conversationMetrics.opened} resolved=${summary.conversationMetrics.resolved} todos=${summary.conversationMetrics.todos} huddles=${summary.conversationMetrics.huddles} unresolved=${summary.conversationMetrics.unresolved}`,
+  );
   lines.push(`derivedTodos: ${summary.derivedTodos.length}`);
-  lines.push(`memoryStartup: ${((summary.memory && summary.memory.startupSummary) || []).map((item) => item.summary).join(' | ') || 'none'}`);
+  lines.push(
+    `memoryStartup: ${((summary.memory && summary.memory.startupSummary) || []).map((item) => item.summary).join(' | ') || 'none'}`,
+  );
   return `${lines.join('\n')}\n`;
 }
 
@@ -85,19 +93,22 @@ function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline <feature> first'
+      suggestion: 'Run boss runtime init-pipeline <feature> first',
     });
   }
   return err;
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime inspect-pipeline' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['inspect-pipeline']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['inspect-pipeline'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['inspect-pipeline'], null, 2)}\n`,
     );
     return 0;
   }
@@ -118,6 +129,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime inspect-pipeline', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime inspect-pipeline',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

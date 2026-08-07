@@ -11,23 +11,25 @@ export const AGENT_REPORT_STATUS = Object.freeze({
   DONE_WITH_CONCERNS: 'DONE_WITH_CONCERNS',
   NEEDS_CONTEXT: 'NEEDS_CONTEXT',
   BLOCKED: 'BLOCKED',
-  REVISION_NEEDED: 'REVISION_NEEDED'
+  REVISION_NEEDED: 'REVISION_NEEDED',
 } as const);
 
 export type AgentReportStatus = (typeof AGENT_REPORT_STATUS)[keyof typeof AGENT_REPORT_STATUS];
 
 export const AGENT_REPORT_STATUS_VALUES: readonly AgentReportStatus[] = Object.freeze(
-  Object.values(AGENT_REPORT_STATUS)
+  Object.values(AGENT_REPORT_STATUS),
 );
 
 /** 视为「推进成功」的状态；其余一律映射为 failed。 */
 const SUCCESS_STATUSES: ReadonlySet<string> = new Set<string>([
   AGENT_REPORT_STATUS.DONE,
-  AGENT_REPORT_STATUS.DONE_WITH_CONCERNS
+  AGENT_REPORT_STATUS.DONE_WITH_CONCERNS,
 ]);
 
 export function isAgentReportStatus(value: unknown): value is AgentReportStatus {
-  return typeof value === 'string' && (AGENT_REPORT_STATUS_VALUES as readonly string[]).includes(value);
+  return (
+    typeof value === 'string' && (AGENT_REPORT_STATUS_VALUES as readonly string[]).includes(value)
+  );
 }
 
 /**

@@ -7,18 +7,21 @@ import {
   createCliContext,
   describeCommand,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import { printRuntimeHelp } from './agent-command-utils.js';
 import {
   getArtifactStatus,
   getReadyArtifacts,
-  listArtifactStatuses
+  listArtifactStatuses,
 } from '../../runtime/application/pipeline.js';
+import { printRuntimeHelp } from './agent-command-utils.js';
 
 function showHelp(): void {
-  printRuntimeHelp('get-ready-artifacts', 'boss runtime get-ready-artifacts FEATURE [ARTIFACT] [options]');
+  printRuntimeHelp(
+    'get-ready-artifacts',
+    'boss runtime get-ready-artifacts FEATURE [ARTIFACT] [options]',
+  );
 }
 
 function exitError(message: string): never {
@@ -33,19 +36,22 @@ function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline <feature> first'
+      suggestion: 'Run boss runtime init-pipeline <feature> first',
     });
   }
   return err;
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime get-ready-artifacts' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['get-ready-artifacts']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['get-ready-artifacts'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['get-ready-artifacts'], null, 2)}\n`,
     );
     return 0;
   }
@@ -92,7 +98,11 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       if (argv[i + 1] && !argv[i + 1]!.startsWith('-')) i += 1;
       continue;
     }
-    if (arg.startsWith('--fields=') || arg.startsWith('--limit=') || arg.startsWith('--json-input=')) {
+    if (
+      arg.startsWith('--fields=') ||
+      arg.startsWith('--limit=') ||
+      arg.startsWith('--json-input=')
+    ) {
       continue;
     }
     if (arg.startsWith('-')) {
@@ -119,7 +129,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       const status = getArtifactStatus(feature, artifact, {
         cwd,
         dagPath,
-        ignoreSkipped: true
+        ignoreSkipped: true,
       });
       if (status.status === 'completed') {
         writeOutput(status, context, () => `${artifact} 已完成\n`);
@@ -148,25 +158,40 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         writeOutput(payload, context, () => `${JSON.stringify(payload)}\n`);
         return 0;
       }
-      writeOutput(payload, context, () =>
-        `就绪的产物：\n${readyList.map((item) => `  ✅ ${item.artifact} (Agent: ${item.agent}, 阶段: ${item.stage})`).join('\n')}\n`
+      writeOutput(
+        payload,
+        context,
+        () =>
+          `就绪的产物：\n${readyList.map((item) => `  ✅ ${item.artifact} (Agent: ${item.agent}, 阶段: ${item.stage})`).join('\n')}\n`,
       );
       return 0;
     }
 
     if (artifact) {
       const status = getArtifactStatus(feature, artifact, { cwd, dagPath });
-      writeOutput(status, context, () => `${artifact}: ${status.status === 'skipped' ? 'skipped' : status.status === 'completed' ? 'completed' : 'pending'}\n`);
+      writeOutput(
+        status,
+        context,
+        () =>
+          `${artifact}: ${status.status === 'skipped' ? 'skipped' : status.status === 'completed' ? 'completed' : 'pending'}\n`,
+      );
       return 0;
     }
 
     const statuses = listArtifactStatuses(feature, { cwd, dagPath });
-    writeOutput(statuses, context, () =>
-      statuses
-        .map(({ artifact: name, status }) =>
-          status === 'completed' ? `  ✅ ${name}` : status === 'skipped' ? `  ⏭️  ${name} (skipped)` : `  ⏳ ${name}`
-        )
-        .join('\n') + '\n'
+    writeOutput(
+      statuses,
+      context,
+      () =>
+        statuses
+          .map(({ artifact: name, status }) =>
+            status === 'completed'
+              ? `  ✅ ${name}`
+              : status === 'skipped'
+                ? `  ⏭️  ${name} (skipped)`
+                : `  ⏳ ${name}`,
+          )
+          .join('\n') + '\n',
     );
     return 0;
   } catch (err) {
@@ -175,6 +200,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime get-ready-artifacts', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime get-ready-artifacts',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

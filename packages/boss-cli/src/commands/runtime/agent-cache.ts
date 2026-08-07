@@ -3,23 +3,23 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { evaluateAgentReuse } from '../../runtime/application/pipeline.js';
 import {
   optionalInputString,
   printRuntimeHelp,
   requireInputString,
   requireOptionValue,
-  toFeatureNotFoundError
+  toFeatureNotFoundError,
 } from './agent-command-utils.js';
-import { evaluateAgentReuse } from '../../runtime/application/pipeline.js';
 
 interface AgentCacheInput {
   feature: string;
@@ -37,10 +37,16 @@ function showHelp(): void {
 
 function parseCsv(value: string | undefined): string[] {
   if (!value) return [];
-  return value.split(',').map((item) => item.trim()).filter(Boolean);
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
-function parseJsonObject(value: string | undefined, label: string): Record<string, unknown> | undefined {
+function parseJsonObject(
+  value: string | undefined,
+  label: string,
+): Record<string, unknown> | undefined {
   if (!value) return undefined;
   let parsed: unknown;
   try {
@@ -104,7 +110,7 @@ function parseFlatInput(argv: string[]): AgentCacheInput {
     prompt,
     promptFingerprint,
     dependencyArtifacts,
-    opts
+    opts,
   };
 }
 
@@ -119,24 +125,29 @@ function resolveInput(argv: string[], context: CliContext): AgentCacheInput {
       prompt: optionalInputString(input.prompt),
       promptFingerprint: optionalInputString(input.promptFingerprint),
       dependencyArtifacts: Array.isArray(input.dependencyArtifacts)
-        ? input.dependencyArtifacts.filter((item): item is string => typeof item === 'string' && item.length > 0)
+        ? input.dependencyArtifacts.filter(
+            (item): item is string => typeof item === 'string' && item.length > 0,
+          )
         : [],
       opts:
         input.opts && typeof input.opts === 'object' && !Array.isArray(input.opts)
           ? (input.opts as Record<string, unknown>)
-          : undefined
+          : undefined,
     };
   }
   return parseFlatInput(argv);
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime agent-cache' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['agent-cache']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['agent-cache'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['agent-cache'], null, 2)}\n`,
     );
     return 0;
   }
@@ -153,20 +164,20 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       prompt: input.prompt,
       promptFingerprint: input.promptFingerprint,
       dependencyArtifacts: input.dependencyArtifacts,
-      opts: input.opts || {}
+      opts: input.opts || {},
     });
     writeOutput(
       {
         feature: input.feature,
         stage: Number(input.stage),
         agent: input.agent,
-        ...decision
+        ...decision,
       },
       context,
       (data) => {
         const payload = data as { reusable: boolean; reason: string };
         return `Agent ${input.agent}: ${payload.reusable ? 'reusable' : 'rerun'} (${payload.reason})\n`;
-      }
+      },
     );
     return 0;
   } catch (err) {
@@ -175,6 +186,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime agent-cache', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime agent-cache',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

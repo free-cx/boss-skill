@@ -25,18 +25,19 @@ function createTempBossDir(feature: string, execData?: ExecData | null) {
     fs.writeFileSync(
       path.join(metaDir, 'execution.json'),
       `${JSON.stringify(execData, null, 2)}\n`,
-      'utf8'
+      'utf8',
     );
-    const timestamp = typeof execData.createdAt === 'string' ? execData.createdAt : '2024-01-01T00:00:00Z';
+    const timestamp =
+      typeof execData.createdAt === 'string' ? execData.createdAt : '2024-01-01T00:00:00Z';
     fs.writeFileSync(
       path.join(metaDir, 'events.jsonl'),
       `${JSON.stringify({
         id: 1,
         type: 'PipelineInitialized',
         timestamp,
-        data: { initialState: execData }
+        data: { initialState: execData },
       })}\n`,
-      'utf8'
+      'utf8',
     );
   }
 
@@ -52,9 +53,9 @@ function createExecData(overrides: Record<string, unknown> = {}) {
       '1': { name: 'Planning', status: 'completed', artifacts: [] },
       '2': { name: 'Review', status: 'running', artifacts: [] },
       '3': { name: 'Development', status: 'pending', artifacts: [] },
-      '4': { name: 'Deployment', status: 'pending', artifacts: [] }
+      '4': { name: 'Deployment', status: 'pending', artifacts: [] },
     },
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -63,11 +64,13 @@ function cleanupTempDir(dir: string) {
     try {
       fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
       return;
-    } catch (err: unknown) {
+    } catch (_err: unknown) {
       if (attempt === 4) return; // best-effort: don't fail tests on cleanup
       const ms = (attempt + 1) * 200;
       const start = Date.now();
-      while (Date.now() - start < ms) { /* spin wait */ }
+      while (Date.now() - start < ms) {
+        /* spin wait */
+      }
     }
   }
 }

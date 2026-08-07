@@ -13,7 +13,7 @@ export const color = {
   cyan: (s: string) => `${show('36m')}${s}${show('39m')}`,
   green: (s: string) => `${show('32m')}${s}${show('39m')}`,
   yellow: (s: string) => `${show('33m')}${s}${show('39m')}`,
-  gray: (s: string) => `${show('90m')}${s}${show('39m')}`
+  gray: (s: string) => `${show('90m')}${s}${show('39m')}`,
 };
 
 const S_BAR = color.gray('│');
@@ -61,8 +61,17 @@ function summarize(labels: string[], max = 3): string {
   return `${labels.slice(0, max).join(', ')} +${labels.length - max} more`;
 }
 
-export function searchMultiselect(options: SearchMultiselectOptions): Promise<string[] | typeof PROMPT_CANCELLED> {
-  const { message, items, maxVisible = 8, initialSelected = [], required = false, lockedSection } = options;
+export function searchMultiselect(
+  options: SearchMultiselectOptions,
+): Promise<string[] | typeof PROMPT_CANCELLED> {
+  const {
+    message,
+    items,
+    maxVisible = 8,
+    initialSelected = [],
+    required = false,
+    lockedSection,
+  } = options;
 
   return new Promise((resolvePromise) => {
     const stdin = process.stdin;
@@ -73,7 +82,9 @@ export function searchMultiselect(options: SearchMultiselectOptions): Promise<st
 
     let query = '';
     let cursor = 0;
-    const selected = new Set(initialSelected.filter((value) => items.some((item) => item.value === value)));
+    const selected = new Set(
+      initialSelected.filter((value) => items.some((item) => item.value === value)),
+    );
     let lastRenderHeight = 0;
 
     const columns = () => (stdout.columns && stdout.columns > 0 ? stdout.columns : 80);
@@ -81,7 +92,9 @@ export function searchMultiselect(options: SearchMultiselectOptions): Promise<st
     const filtered = () => {
       if (!query) return items;
       const q = query.toLowerCase();
-      return items.filter((item) => item.label.toLowerCase().includes(q) || item.value.toLowerCase().includes(q));
+      return items.filter(
+        (item) => item.label.toLowerCase().includes(q) || item.value.toLowerCase().includes(q),
+      );
     };
 
     const clearRender = () => {
@@ -94,7 +107,9 @@ export function searchMultiselect(options: SearchMultiselectOptions): Promise<st
 
     const selectionSummary = () => {
       const lockedLabels = lockedSection ? lockedSection.items.map((item) => item.label) : [];
-      const pickedLabels = items.filter((item) => selected.has(item.value)).map((item) => item.label);
+      const pickedLabels = items
+        .filter((item) => selected.has(item.value))
+        .map((item) => item.label);
       return [...lockedLabels, ...pickedLabels];
     };
 
@@ -116,7 +131,9 @@ export function searchMultiselect(options: SearchMultiselectOptions): Promise<st
             lines.push(`${S_BAR}    ${color.dim(`...and ${lockedSection.hiddenCount} more`)}`);
           }
           lines.push(S_BAR);
-          lines.push(`${S_BAR}  ${color.gray(`${RULE.repeat(2)} ${color.bold('Additional agents')} ${RULE.repeat(29)}`)}`);
+          lines.push(
+            `${S_BAR}  ${color.gray(`${RULE.repeat(2)} ${color.bold('Additional agents')} ${RULE.repeat(29)}`)}`,
+          );
         }
 
         lines.push(`${S_BAR}  ${color.dim('Search:')} ${query}${color.reset('█')}`);
@@ -125,7 +142,10 @@ export function searchMultiselect(options: SearchMultiselectOptions): Promise<st
 
         const list = filtered();
         if (cursor >= list.length) cursor = Math.max(0, list.length - 1);
-        const windowStart = Math.max(0, Math.min(cursor - Math.floor(maxVisible / 2), list.length - maxVisible));
+        const windowStart = Math.max(
+          0,
+          Math.min(cursor - Math.floor(maxVisible / 2), list.length - maxVisible),
+        );
         const visible = list.slice(windowStart, windowStart + maxVisible);
 
         if (list.length === 0) {
@@ -139,7 +159,9 @@ export function searchMultiselect(options: SearchMultiselectOptions): Promise<st
           const isCursor = absolute === cursor;
           const box = selected.has(item.value) ? S_CHECKBOX_ON : S_CHECKBOX_OFF;
           const label = isCursor ? color.cyan(item.label) : item.label;
-          const hint = item.hint ? ` ${color.dim(`(${truncate(item.hint, columns() - item.label.length - 12)})`)}` : '';
+          const hint = item.hint
+            ? ` ${color.dim(`(${truncate(item.hint, columns() - item.label.length - 12)})`)}`
+            : '';
           lines.push(`${isCursor ? S_POINTER : ' '} ${box} ${label}${hint}`);
         });
         const below = list.length - windowStart - visible.length;
@@ -157,7 +179,9 @@ export function searchMultiselect(options: SearchMultiselectOptions): Promise<st
         lines.push(S_BAR_END);
       } else {
         const summary = selectionSummary();
-        lines.push(`${S_BAR}  ${color.dim(state === 'cancel' ? 'Cancelled' : summarize(summary) || 'none')}`);
+        lines.push(
+          `${S_BAR}  ${color.dim(state === 'cancel' ? 'Cancelled' : summarize(summary) || 'none')}`,
+        );
       }
 
       stdout.write(`${lines.join('\n')}\n`);

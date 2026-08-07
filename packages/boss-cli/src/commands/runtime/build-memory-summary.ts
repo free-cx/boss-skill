@@ -2,27 +2,25 @@
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  createCliContext,
-  describeCommand,
-  runMain,
-  writeOutput
-} from '../../cli/contract.js';
+import { createCliContext, describeCommand, runMain, writeOutput } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import { printRuntimeHelp } from './agent-command-utils.js';
 import { buildFeatureSummary } from '../../runtime/application/memory.js';
+import { printRuntimeHelp } from './agent-command-utils.js';
 
 function printHelp(): void {
   printRuntimeHelp('build-memory-summary', 'boss runtime build-memory-summary FEATURE [options]');
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime build-memory-summary' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['build-memory-summary']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['build-memory-summary'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['build-memory-summary'], null, 2)}\n`,
     );
     return 0;
   }
@@ -44,10 +42,10 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       {
         actions: [{ type: 'write_file', path: outputPath }],
         risk_tier: 'medium',
-        requires_approval: false
+        requires_approval: false,
       },
       context,
-      () => `would write ${outputPath}\n`
+      () => `would write ${outputPath}\n`,
     );
     return 0;
   }
@@ -58,6 +56,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime build-memory-summary', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime build-memory-summary',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

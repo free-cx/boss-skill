@@ -8,11 +8,11 @@ import {
   describeCommand,
   parseLimit,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import { printRuntimeHelp } from './agent-command-utils.js';
 import { replayEvents, replaySnapshot } from '../../runtime/application/inspection.js';
+import { printRuntimeHelp } from './agent-command-utils.js';
 
 function printHelp(): void {
   printRuntimeHelp('replay-events', 'boss runtime replay-events FEATURE [options]');
@@ -29,7 +29,7 @@ export function parseArgs(argv: string[]) {
     type: '',
     limit: undefined as string | undefined,
     compact: false,
-    json: false
+    json: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -99,14 +99,18 @@ function renderVerbose(payload: unknown): string {
   return `${JSON.stringify(payload, null, 2)}\n`;
 }
 
-function renderCompactText(payload: { events?: Array<{ id: number; timestamp: string; type: string; data?: Record<string, unknown> }> }): string {
-  return (payload.events || [])
-    .map((event) => {
-      const stage = event.data && event.data.stage != null ? event.data.stage : '-';
-      const agent = event.data && event.data.agent ? event.data.agent : '-';
-      return `#${event.id} [${event.timestamp}] ${event.type} stage=${stage} agent=${agent}`;
-    })
-    .join('\n') + ((payload.events || []).length ? '\n' : '');
+function renderCompactText(payload: {
+  events?: Array<{ id: number; timestamp: string; type: string; data?: Record<string, unknown> }>;
+}): string {
+  return (
+    (payload.events || [])
+      .map((event) => {
+        const stage = event.data && event.data.stage != null ? event.data.stage : '-';
+        const agent = event.data && event.data.agent ? event.data.agent : '-';
+        return `#${event.id} [${event.timestamp}] ${event.type} stage=${stage} agent=${agent}`;
+      })
+      .join('\n') + ((payload.events || []).length ? '\n' : '')
+  );
 }
 
 function toFeatureNotFoundError(err: unknown, feature: string): unknown {
@@ -117,19 +121,22 @@ function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline <feature> first'
+      suggestion: 'Run boss runtime init-pipeline <feature> first',
     });
   }
   return err;
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime replay-events' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['replay-events']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['replay-events'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['replay-events'], null, 2)}\n`,
     );
     return 0;
   }
@@ -150,11 +157,11 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
     const payload = replayEvents(parsed.feature, {
       cwd,
       limit: parseLimit(parsed.limit ?? '20'),
-      type: parsed.type
+      type: parsed.type,
     });
 
     writeOutput(payload, context, (data) =>
-      parsed.compact ? renderCompactText(data as typeof payload) : renderVerbose(data)
+      parsed.compact ? renderCompactText(data as typeof payload) : renderVerbose(data),
     );
     return 0;
   } catch (err) {
@@ -163,6 +170,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime replay-events', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime replay-events',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

@@ -80,19 +80,23 @@ function listPackDefinitions(projectDir = process.cwd()): PipelinePackDefinition
     if (pipeline.enabled === false) continue;
 
     packs.push({
-      name: typeof pipeline.name === 'string' && pipeline.name.length > 0 ? pipeline.name : item.name,
+      name:
+        typeof pipeline.name === 'string' && pipeline.name.length > 0 ? pipeline.name : item.name,
       version: typeof pipeline.version === 'string' ? pipeline.version : '',
       type: typeof pipeline.type === 'string' ? pipeline.type : '',
       priority: Number.isFinite(Number(pipeline.priority)) ? Number(pipeline.priority) : 0,
       when: isObject(pipeline.when) ? (pipeline.when as PipelinePackWhen) : null,
-      config: isObject(pipeline.config) ? (pipeline.config as PipelinePackConfig) : {}
+      config: isObject(pipeline.config) ? (pipeline.config as PipelinePackConfig) : {},
     });
   }
 
   return packs;
 }
 
-function getPackageDeps(projectDir: string): { dependencies: Record<string, unknown>; devDependencies: Record<string, unknown> } {
+function getPackageDeps(projectDir: string): {
+  dependencies: Record<string, unknown>;
+  devDependencies: Record<string, unknown>;
+} {
   const packageJsonPath = path.join(projectDir, 'package.json');
   if (!fs.existsSync(packageJsonPath)) {
     return { dependencies: {}, devDependencies: {} };
@@ -102,14 +106,17 @@ function getPackageDeps(projectDir: string): { dependencies: Record<string, unkn
     const pkg = readJson<Record<string, unknown>>(packageJsonPath);
     return {
       dependencies: isObject(pkg.dependencies) ? pkg.dependencies : {},
-      devDependencies: isObject(pkg.devDependencies) ? pkg.devDependencies : {}
+      devDependencies: isObject(pkg.devDependencies) ? pkg.devDependencies : {},
     };
   } catch {
     return { dependencies: {}, devDependencies: {} };
   }
 }
 
-function evaluateWhen(projectDir: string, when: PipelinePackWhen | null): { matched: boolean; evidence: PipelinePackEvidence[] } {
+function evaluateWhen(
+  projectDir: string,
+  when: PipelinePackWhen | null,
+): { matched: boolean; evidence: PipelinePackEvidence[] } {
   if (!when || typeof when !== 'object') return { matched: false, evidence: [] };
 
   const evidence: PipelinePackEvidence[] = [];
@@ -119,7 +126,7 @@ function evaluateWhen(projectDir: string, when: PipelinePackWhen | null): { matc
       evidence.push({
         type: 'fileExists',
         value: relPath,
-        matched: fs.existsSync(path.join(projectDir, relPath))
+        matched: fs.existsSync(path.join(projectDir, relPath)),
       });
     }
   }
@@ -129,7 +136,7 @@ function evaluateWhen(projectDir: string, when: PipelinePackWhen | null): { matc
       evidence.push({
         type: 'noFileExists',
         value: relPath,
-        matched: !fs.existsSync(path.join(projectDir, relPath))
+        matched: !fs.existsSync(path.join(projectDir, relPath)),
       });
     }
   }
@@ -140,14 +147,14 @@ function evaluateWhen(projectDir: string, when: PipelinePackWhen | null): { matc
       evidence.push({
         type: 'packageJsonHas',
         value: dep,
-        matched: dep in deps.dependencies || dep in deps.devDependencies
+        matched: dep in deps.dependencies || dep in deps.devDependencies,
       });
     }
   }
 
   return {
     matched: evidence.length > 0 && evidence.every((item) => item.matched),
-    evidence
+    evidence,
   };
 }
 
@@ -157,19 +164,18 @@ export function resolvePipelinePack(projectDir = process.cwd()): PipelinePackDef
 
 export function detectPipelinePacks(projectDir = process.cwd()): PipelinePackDetectionResult {
   const packs = listPackDefinitions(projectDir);
-  const defaultPack =
-    packs.find((pack) => pack.name === 'default') ?? {
-      name: 'default',
-      version: '',
-      type: 'pipeline-pack',
-      priority: 0,
-      when: null,
-      config: {}
-    };
+  const defaultPack = packs.find((pack) => pack.name === 'default') ?? {
+    name: 'default',
+    version: '',
+    type: 'pipeline-pack',
+    priority: 0,
+    when: null,
+    config: {},
+  };
 
   const evaluated = packs.map((pack) => ({
     pack,
-    evaluation: evaluateWhen(projectDir, pack.when)
+    evaluation: evaluateWhen(projectDir, pack.when),
   }));
 
   const matched = evaluated
@@ -185,7 +191,7 @@ export function detectPipelinePacks(projectDir = process.cwd()): PipelinePackDet
     priority: selected.priority,
     when: selected.when,
     evidence: clone(selected.evidence ?? []),
-    config: clone(selected.config ?? {})
+    config: clone(selected.config ?? {}),
   };
   return {
     detected,
@@ -196,12 +202,14 @@ export function detectPipelinePacks(projectDir = process.cwd()): PipelinePackDet
       priority: pack.priority,
       when: pack.when,
       evidence: clone(pack.evidence ?? []),
-      config: clone(pack.config ?? {})
-    }))
+      config: clone(pack.config ?? {}),
+    })),
   };
 }
 
-export function getPackStateParameters(pack: PipelinePackDefinition | null | undefined): PipelinePackStateParameters {
+export function getPackStateParameters(
+  pack: PipelinePackDefinition | null | undefined,
+): PipelinePackStateParameters {
   const config =
     pack && pack.config && typeof pack.config === 'object'
       ? pack.config
@@ -212,7 +220,7 @@ export function getPackStateParameters(pack: PipelinePackDefinition | null | und
     enabledStages: Array.isArray(config.stages) ? clone(config.stages) : [],
     enabledGates: Array.isArray(config.gates) ? clone(config.gates) : [],
     activeAgents: Array.isArray(config.agents) ? clone(config.agents) : [],
-    packConfig: clone(config)
+    packConfig: clone(config),
   };
 
   if (config.roles !== undefined) parameters.roles = config.roles;

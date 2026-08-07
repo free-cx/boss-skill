@@ -1,6 +1,4 @@
 import { randomUUID } from 'node:crypto';
-
-import { EVENT_TYPES } from '../domain/event-types.js';
 import type {
   ConversationAnchor,
   ConversationEvidence,
@@ -8,18 +6,12 @@ import type {
   ConversationResolution,
   ConversationThread,
   DerivedTodo,
-  ResolutionTodo
+  ResolutionTodo,
 } from '../domain/conversation-types.js';
-import { materializeState, type ExecutionState } from '../projectors/materialize-state.js';
-import {
-  isFormalSourceOfTruthArtifact,
-  recordFeedback
-} from './pipeline.js';
-import {
-  appendRuntimeEvent,
-  ensureFeatureName,
-  refreshMemory
-} from './state.js';
+import { EVENT_TYPES } from '../domain/event-types.js';
+import { type ExecutionState, materializeState } from '../projectors/materialize-state.js';
+import { isFormalSourceOfTruthArtifact, recordFeedback } from './pipeline.js';
+import { appendRuntimeEvent, ensureFeatureName, refreshMemory } from './state.js';
 
 type ConversationKind = ConversationThread['kind'];
 type ConversationPriority = ConversationThread['priority'];
@@ -27,9 +19,22 @@ type ConversationStatus = ConversationThread['status'];
 type MessageIntent = ConversationMessage['intent'];
 type TodoType = DerivedTodo['type'];
 
-const THREAD_KINDS: ConversationKind[] = ['ask', 'challenge', 'propose', 'request_change', 'escalate', 'huddle'];
+const THREAD_KINDS: ConversationKind[] = [
+  'ask',
+  'challenge',
+  'propose',
+  'request_change',
+  'escalate',
+  'huddle',
+];
 const THREAD_PRIORITIES: ConversationPriority[] = ['low', 'medium', 'high', 'critical'];
-const MESSAGE_INTENTS: MessageIntent[] = ['question', 'objection', 'proposal', 'evidence', 'decision'];
+const MESSAGE_INTENTS: MessageIntent[] = [
+  'question',
+  'objection',
+  'proposal',
+  'evidence',
+  'decision',
+];
 const TODO_TYPES: TodoType[] = ['change', 'clarify', 'verify', 'doc_update', 'followup'];
 
 const HINT_STAGES: Record<TodoType, number> = {
@@ -37,7 +42,7 @@ const HINT_STAGES: Record<TodoType, number> = {
   clarify: 2,
   verify: 3,
   doc_update: 2,
-  followup: 3
+  followup: 3,
 };
 
 export interface OpenConversationInput {
@@ -181,10 +186,12 @@ function normalizeTodoType(type: string): TodoType {
 
 function normalizeAnchor(anchor: ConversationAnchor): ConversationAnchor {
   const normalized: ConversationAnchor = {};
-  if (anchor.artifact) normalized.artifact = ensureNonEmptyString(anchor.artifact, 'anchor.artifact');
+  if (anchor.artifact)
+    normalized.artifact = ensureNonEmptyString(anchor.artifact, 'anchor.artifact');
   if (anchor.task) normalized.task = ensureNonEmptyString(anchor.task, 'anchor.task');
   if (anchor.scope) normalized.scope = ensureNonEmptyString(anchor.scope, 'anchor.scope');
-  if (anchor.decision) normalized.decision = ensureNonEmptyString(anchor.decision, 'anchor.decision');
+  if (anchor.decision)
+    normalized.decision = ensureNonEmptyString(anchor.decision, 'anchor.decision');
   if (Object.keys(normalized).length === 0) {
     throw new Error('conversation anchor 必须至少包含 artifact、task、scope、decision 之一');
   }
@@ -201,7 +208,7 @@ function buildThread(input: OpenConversationInput, now: string): ConversationThr
     status: 'open',
     priority: normalizePriority(input.priority),
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
   };
 }
 
@@ -213,13 +220,14 @@ function buildMessage(input: AppendConversationMessageInput, now: string): Conve
     to: ensureStringArray(input.to, 'to'),
     intent: normalizeIntent(input.intent),
     content: ensureNonEmptyString(input.content, 'content'),
-    evidence: Array.isArray(input.evidence) && input.evidence.length > 0
-      ? input.evidence.map((item) => ({
-          type: item.type,
-          ref: ensureNonEmptyString(item.ref, 'evidence.ref')
-        }))
-      : undefined,
-    createdAt: now
+    evidence:
+      Array.isArray(input.evidence) && input.evidence.length > 0
+        ? input.evidence.map((item) => ({
+            type: item.type,
+            ref: ensureNonEmptyString(item.ref, 'evidence.ref'),
+          }))
+        : undefined,
+    createdAt: now,
   };
 }
 
@@ -233,7 +241,7 @@ function findThread(state: ExecutionState, threadId: string): ConversationThread
 
 function normalizeResolutionTodos(
   input: ResolveConversationInput,
-  thread: ConversationThread
+  thread: ConversationThread,
 ): ResolveConversationTodoInput[] {
   const todos = Array.isArray(input.todos) ? input.todos : [];
   if (todos.length === 0) return [];
@@ -247,13 +255,17 @@ function normalizeResolutionTodos(
     impact: {
       artifacts: [
         ...(thread.anchor.artifact ? [thread.anchor.artifact] : []),
-        ...((todo.impact?.artifacts ?? []).map((item) => ensureNonEmptyString(item, 'todo.impact.artifacts')))
+        ...(todo.impact?.artifacts ?? []).map((item) =>
+          ensureNonEmptyString(item, 'todo.impact.artifacts'),
+        ),
       ].filter((item, index, items) => items.indexOf(item) === index),
       scope: [
         ...(thread.anchor.scope ? [thread.anchor.scope] : []),
-        ...((todo.impact?.scope ?? []).map((item) => ensureNonEmptyString(item, 'todo.impact.scope')))
-      ].filter((item, index, items) => items.indexOf(item) === index)
-    }
+        ...(todo.impact?.scope ?? []).map((item) =>
+          ensureNonEmptyString(item, 'todo.impact.scope'),
+        ),
+      ].filter((item, index, items) => items.indexOf(item) === index),
+    },
   }));
 }
 
@@ -262,14 +274,14 @@ function buildResolutionTodo(todo: ResolveConversationTodoInput): ResolutionTodo
     id: `todo-${randomUUID()}`,
     owner: todo.owner,
     title: todo.title,
-    status: 'pending'
+    status: 'pending',
   };
 }
 
 function buildResolution(
   input: ResolveConversationInput,
   thread: ConversationThread,
-  now: string
+  now: string,
 ): ConversationResolution {
   const todos = normalizeResolutionTodos(input, thread).map(buildResolutionTodo);
   return {
@@ -277,7 +289,7 @@ function buildResolution(
     summary: ensureNonEmptyString(input.summary, 'summary'),
     decision: ensureNonEmptyString(input.decision, 'decision'),
     todos,
-    createdAt: now
+    createdAt: now,
   };
 }
 
@@ -285,7 +297,7 @@ function buildDerivedTodo(
   thread: ConversationThread,
   resolutionTodo: ResolutionTodo,
   todoInput: ResolveConversationTodoInput,
-  createdAt: string
+  createdAt: string,
 ): DerivedTodo {
   const type = normalizeTodoType(todoInput.type);
   return {
@@ -298,17 +310,21 @@ function buildDerivedTodo(
     successCriteria: todoInput.successCriteria ?? [],
     impact: {
       artifacts: todoInput.impact?.artifacts ?? [],
-      scope: todoInput.impact?.scope ?? []
+      scope: todoInput.impact?.scope ?? [],
     },
     dispatchHint: {
       stage: HINT_STAGES[type],
-      agent: resolutionTodo.owner
+      agent: resolutionTodo.owner,
     },
-    createdAt
+    createdAt,
   };
 }
 
-function buildStandaloneTodo(input: MaterializeConversationTodoInput, thread: ConversationThread, now: string): DerivedTodo {
+function buildStandaloneTodo(
+  input: MaterializeConversationTodoInput,
+  thread: ConversationThread,
+  now: string,
+): DerivedTodo {
   const type = normalizeTodoType(input.type);
   const title = ensureNonEmptyString(input.title, 'title');
   const owner = ensureNonEmptyString(input.owner, 'owner');
@@ -328,20 +344,23 @@ function buildStandaloneTodo(input: MaterializeConversationTodoInput, thread: Co
         : [],
       scope: Array.isArray(input.scope)
         ? input.scope.map((item) => ensureNonEmptyString(item, 'scope'))
-        : []
+        : [],
     },
     dispatchHint: {
-      stage: typeof input.stage === 'number' && Number.isFinite(input.stage) ? input.stage : HINT_STAGES[type],
-      agent: ensureNonEmptyString(input.agent ?? owner, 'agent')
+      stage:
+        typeof input.stage === 'number' && Number.isFinite(input.stage)
+          ? input.stage
+          : HINT_STAGES[type],
+      agent: ensureNonEmptyString(input.agent ?? owner, 'agent'),
     },
-    createdAt: now
+    createdAt: now,
   };
 }
 
 function resolvePolicy(
   thread: ConversationThread,
   input: ResolveConversationInput,
-  todos: ResolveConversationTodoInput[]
+  todos: ResolveConversationTodoInput[],
 ): 'direct_todo' | 'huddle_recommended' | 'revision_escalated' {
   if (input.escalation) {
     return 'revision_escalated';
@@ -354,7 +373,7 @@ function resolvePolicy(
 
 function normalizeEscalation(
   escalation: ResolveConversationEscalationInput | undefined,
-  thread: ConversationThread
+  thread: ConversationThread,
 ): ResolveConversationEscalationInput | undefined {
   if (!escalation) return undefined;
   const artifact = ensureNonEmptyString(escalation.artifact, 'escalation.artifact');
@@ -369,20 +388,20 @@ function normalizeEscalation(
     from: ensureNonEmptyString(escalation.from, 'escalation.from'),
     to: ensureNonEmptyString(escalation.to, 'escalation.to'),
     reason: ensureNonEmptyString(escalation.reason, 'escalation.reason'),
-    priority: escalation.priority?.trim() || 'recommended'
+    priority: escalation.priority?.trim() || 'recommended',
   };
 }
 
 function listResolutionMap(state: ExecutionState): Map<string, ConversationResolution> {
   return new Map(
-    state.conversations.resolutions.map((resolution) => [resolution.threadId, resolution])
+    state.conversations.resolutions.map((resolution) => [resolution.threadId, resolution]),
   );
 }
 
 export function openConversation(
   feature: string,
   input: OpenConversationInput,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): OpenConversationResult {
   ensureFeatureName(feature);
   const now = new Date().toISOString();
@@ -394,14 +413,14 @@ export function openConversation(
   return {
     feature,
     threadId: persisted.id,
-    status: persisted.status
+    status: persisted.status,
   };
 }
 
 export function appendConversationMessage(
   feature: string,
   input: AppendConversationMessageInput,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): AppendConversationMessageResult {
   ensureFeatureName(feature);
   const currentState = materializeState(feature, cwd).state;
@@ -415,14 +434,15 @@ export function appendConversationMessage(
     feature,
     threadId: message.threadId,
     messageId: message.id,
-    messageCount: state.conversations.messages.filter((item) => item.threadId === message.threadId).length
+    messageCount: state.conversations.messages.filter((item) => item.threadId === message.threadId)
+      .length,
   };
 }
 
 export function resolveConversation(
   feature: string,
   input: ResolveConversationInput,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): ResolveConversationResult {
   ensureFeatureName(feature);
   const currentState = materializeState(feature, cwd).state;
@@ -440,7 +460,7 @@ export function resolveConversation(
   if (escalation) {
     recordFeedback(feature, {
       ...escalation,
-      cwd
+      cwd,
     });
   } else {
     resolution.todos.forEach((resolutionTodo, index) => {
@@ -456,16 +476,17 @@ export function resolveConversation(
     feature,
     threadId: thread.id,
     policy: resolvePolicy(thread, input, normalizedTodos),
-    resolution: state.conversations.resolutions.find((item) => item.threadId === thread.id) ?? resolution,
+    resolution:
+      state.conversations.resolutions.find((item) => item.threadId === thread.id) ?? resolution,
     todos: state.derivedTodos.filter((todo) => todo.sourceThreadId === thread.id),
-    escalation
+    escalation,
   };
 }
 
 export function materializeTodo(
   feature: string,
   input: MaterializeConversationTodoInput,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): MaterializeConversationTodoResult {
   ensureFeatureName(feature);
   const currentState = materializeState(feature, cwd).state;
@@ -478,26 +499,26 @@ export function materializeTodo(
   return {
     feature,
     threadId: thread.id,
-    todo: state.derivedTodos.find((item) => item.id === todo.id) ?? todo
+    todo: state.derivedTodos.find((item) => item.id === todo.id) ?? todo,
   };
 }
 
 export function listConversations(
   feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): ConversationListItem[] {
   ensureFeatureName(feature);
   const { state } = materializeState(feature, cwd);
   const resolutionMap = listResolutionMap(state);
   return state.conversations.threads.map((thread) => ({
     ...thread,
-    latestResolution: resolutionMap.get(thread.id)
+    latestResolution: resolutionMap.get(thread.id),
   }));
 }
 
 export function listTodos(
   feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): DerivedTodo[] {
   ensureFeatureName(feature);
   const { state } = materializeState(feature, cwd);

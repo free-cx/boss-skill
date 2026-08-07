@@ -153,11 +153,15 @@ function renderTable(lines: string[], start: number): { html: string; nextIndex:
 
   return {
     html: `<table><thead><tr>${headerHtml}</tr></thead><tbody>${rowHtml}</tbody></table>`,
-    nextIndex: index
+    nextIndex: index,
   };
 }
 
-function renderList(lines: string[], start: number, ordered: boolean): { html: string; nextIndex: number } {
+function renderList(
+  lines: string[],
+  start: number,
+  ordered: boolean,
+): { html: string; nextIndex: number } {
   const tag = ordered ? 'ol' : 'ul';
   const matcher = ordered ? isOrderedListItem : isUnorderedListItem;
   const marker = ordered ? /^\s*\d+[.)]\s+/ : /^\s*[-*+]\s+/;
@@ -175,7 +179,7 @@ function renderList(lines: string[], start: number, ordered: boolean): { html: s
 
   return {
     html: `<${tag}>${items.map((item) => `<li>${inlineMarkdown(item)}</li>`).join('')}</${tag}>`,
-    nextIndex: index
+    nextIndex: index,
   };
 }
 
@@ -194,7 +198,7 @@ function renderBlockquote(lines: string[], start: number): { html: string; nextI
 
   return {
     html: `<blockquote>${quoteLines.map((line) => `<p>${inlineMarkdown(line)}</p>`).join('')}</blockquote>`,
-    nextIndex: index
+    nextIndex: index,
   };
 }
 
@@ -217,7 +221,7 @@ function renderCodeBlock(lines: string[], start: number): { html: string; nextIn
   const className = language ? ` class="language-${escapeAttribute(language)}"` : '';
   return {
     html: `<pre><code${className}>${escapeHtml(codeLines.join('\n'))}</code></pre>`,
-    nextIndex: index
+    nextIndex: index,
   };
 }
 
@@ -231,7 +235,7 @@ function isBlockStart(lines: string[], index: number): boolean {
       isUnorderedListItem(line) ||
       isOrderedListItem(line) ||
       isBlockquote(line) ||
-      isHorizontalRule(line)
+      isHorizontalRule(line),
   );
 }
 
@@ -246,7 +250,7 @@ function renderParagraph(lines: string[], start: number): { html: string; nextIn
 
   return {
     html: `<p>${inlineMarkdown(paragraphLines.join(' '))}</p>`,
-    nextIndex: index
+    nextIndex: index,
   };
 }
 
@@ -275,7 +279,9 @@ function renderMarkdownBody(markdown: string, headings: ArtifactHtmlTocItem[]): 
     if (heading) {
       const id = uniqueSlug(heading.text, seenHeadings);
       headings.push({ id, level: heading.level, text: heading.text });
-      blocks.push(`<h${heading.level} id="${escapeAttribute(id)}">${inlineMarkdown(heading.text)}</h${heading.level}>`);
+      blocks.push(
+        `<h${heading.level} id="${escapeAttribute(id)}">${inlineMarkdown(heading.text)}</h${heading.level}>`,
+      );
       index += 1;
       continue;
     }
@@ -360,7 +366,9 @@ function readTemplate(cwd: string): string {
 
 function isInsideDirectory(child: string, parent: string): boolean {
   const relative = path.relative(parent, child);
-  return relative === '' || Boolean(relative && !relative.startsWith('..') && !path.isAbsolute(relative));
+  return (
+    relative === '' || Boolean(relative && !relative.startsWith('..') && !path.isAbsolute(relative))
+  );
 }
 
 function validateSourceArtifactName(sourceArtifact: string): void {
@@ -390,7 +398,7 @@ function renderTocHtml(items: ArtifactHtmlTocItem[]): string {
   return `<ul>${items
     .map(
       (item) =>
-        `<li class="toc-level-${item.level}"><a href="#${escapeAttribute(item.id)}">${escapeHtml(item.text)}</a></li>`
+        `<li class="toc-level-${item.level}"><a href="#${escapeAttribute(item.id)}">${escapeHtml(item.text)}</a></li>`,
     )
     .join('')}</ul>`;
 }
@@ -402,7 +410,8 @@ export function buildArtifactHtmlModel(input: ArtifactHtmlInput): ArtifactHtmlMo
   validateSourceArtifactName(input.sourceArtifact);
 
   const headings: ArtifactHtmlTocItem[] = [];
-  const title = input.markdown.match(/^#\s+(.+)$/m)?.[1]?.trim() || input.sourceArtifact.replace(/\.md$/, '');
+  const title =
+    input.markdown.match(/^#\s+(.+)$/m)?.[1]?.trim() || input.sourceArtifact.replace(/\.md$/, '');
   const summaryItems = extractSummaryItems(input.markdown);
   const bodyHtml = renderMarkdownBody(input.markdown, headings);
 
@@ -415,7 +424,7 @@ export function buildArtifactHtmlModel(input: ArtifactHtmlInput): ArtifactHtmlMo
     generatedAt: input.generatedAt ?? new Date().toISOString(),
     summaryItems,
     toc: headings,
-    bodyHtml
+    bodyHtml,
   };
 }
 
@@ -441,10 +450,14 @@ export function renderArtifactHtml(input: ArtifactHtmlInput): string {
     .join(model.bodyHtml);
 }
 
-export function writeArtifactHtmlCompanion(input: ArtifactHtmlInput & { featureDir?: string }): string {
+export function writeArtifactHtmlCompanion(
+  input: ArtifactHtmlInput & { featureDir?: string },
+): string {
   const cwd = input.cwd ?? process.cwd();
   const bossDir = path.resolve(cwd, '.boss');
-  const featureDir = input.featureDir ? path.resolve(input.featureDir) : path.resolve(bossDir, input.feature);
+  const featureDir = input.featureDir
+    ? path.resolve(input.featureDir)
+    : path.resolve(bossDir, input.feature);
   if (!input.featureDir && !isInsideDirectory(featureDir, bossDir)) {
     throw new Error('featureDir must stay inside cwd/.boss');
   }

@@ -8,11 +8,11 @@ import {
   createCliContext,
   describeCommand,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { type VerifyPhase, verifyWave } from '../../runtime/application/wave-verification.js';
 import { printRuntimeHelp } from './agent-command-utils.js';
-import { verifyWave, type VerifyPhase } from '../../runtime/application/wave-verification.js';
 
 function printHelp(): void {
   printRuntimeHelp('verify-wave', 'boss runtime verify-wave FEATURE WAVE_ID [options]');
@@ -27,7 +27,7 @@ export function parseArgs(argv: string[]) {
     feature: '',
     waveId: '',
     phase: 'full' as VerifyPhase,
-    dryRun: false
+    dryRun: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -105,19 +105,22 @@ function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline <feature> first'
+      suggestion: 'Run boss runtime init-pipeline <feature> first',
     });
   }
   return err;
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime verify-wave' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['verify-wave']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['verify-wave'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['verify-wave'], null, 2)}\n`,
     );
     return 0;
   }
@@ -131,7 +134,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
   try {
     const result = verifyWave(parsed.feature, parsed.waveId, parsed.phase, {
       cwd,
-      dryRun: parsed.dryRun
+      dryRun: parsed.dryRun,
     });
 
     writeOutput(result, context, (data) => renderText(data as ReturnType<typeof verifyWave>));
@@ -144,7 +147,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const context = createCliContext(process.argv.slice(2), {
     command: 'boss runtime verify-wave',
-    validateOptionValues: false
+    validateOptionValues: false,
   });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

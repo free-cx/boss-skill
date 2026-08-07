@@ -22,7 +22,7 @@ const CHOICE_TYPE_TO_CATEGORY: Record<string, string> = {
   'design-variant': 'design-style',
   'review-decision': 'review-preference',
   'config-preference': 'config-preference',
-  'gate-override': 'quality-threshold'
+  'gate-override': 'quality-threshold',
 };
 
 // 置信度演化：同一选择重复 → 升；同类别的对立选择 → 降。
@@ -45,7 +45,11 @@ function preferenceId(category: string, subject: string): string {
   // 被 `replace(/[^a-z0-9-]/g, '-')` 统一抹除后塌缩成同一 id、进而被误判为重复确认。
   const encode = (value: string): string =>
     [...value]
-      .map((char) => (/[a-z0-9-]/.test(char.toLowerCase()) ? char.toLowerCase() : `u${char.codePointAt(0)!.toString(36)}`))
+      .map((char) =>
+        /[a-z0-9-]/.test(char.toLowerCase())
+          ? char.toLowerCase()
+          : `u${char.codePointAt(0)!.toString(36)}`,
+      )
       .join('');
   return `pref-${encode(category)}-${encode(subject)}`;
 }
@@ -83,10 +87,12 @@ function normalizeChoice(data: Record<string, unknown> | undefined): UserChoiceE
   return {
     choiceType,
     selected,
-    options: Array.isArray(data.options) ? data.options.filter((o): o is string => typeof o === 'string') : undefined,
+    options: Array.isArray(data.options)
+      ? data.options.filter((o): o is string => typeof o === 'string')
+      : undefined,
     reason: typeof data.reason === 'string' ? data.reason : undefined,
     agent: typeof data.agent === 'string' ? data.agent : null,
-    stage: typeof data.stage === 'number' ? data.stage : null
+    stage: typeof data.stage === 'number' ? data.stage : null,
   };
 }
 
@@ -106,7 +112,7 @@ interface PreferenceAccumulator {
  */
 export function extractPreferenceMemories(
   feature: string,
-  events: UserChoiceEvent[]
+  events: UserChoiceEvent[],
 ): PersistedMemoryRecord[] {
   // key = 偏好 id；同时按 category 索引以便处理对立选择
   const byId = new Map<string, PreferenceAccumulator>();
@@ -130,7 +136,7 @@ export function extractPreferenceMemories(
         decayScore: Math.min(DECAY_MAX, existing.record.decayScore + 2),
         lastSeenAt: timestamp,
         evidence: [...existing.record.evidence, { type: 'user-choice', ref: evidenceRef }],
-        summary: buildSummary(choice, existing.confirmations)
+        summary: buildSummary(choice, existing.confirmations),
       };
       continue;
     }
@@ -141,7 +147,7 @@ export function extractPreferenceMemories(
         acc.record = {
           ...acc.record,
           confidence: Math.max(CONFIDENCE_MIN, acc.record.confidence - CONFIDENCE_DECREMENT),
-          decayScore: Math.max(DECAY_MIN, acc.record.decayScore - 1)
+          decayScore: Math.max(DECAY_MIN, acc.record.decayScore - 1),
         };
       }
     }
@@ -165,8 +171,8 @@ export function extractPreferenceMemories(
         lastSeenAt: timestamp,
         expiresAt: null,
         decayScore: DECAY_START,
-        influence: 'preference'
-      }
+        influence: 'preference',
+      },
     });
   }
 

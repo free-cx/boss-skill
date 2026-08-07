@@ -9,11 +9,11 @@ import {
   describeCommand,
   readJsonInput,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { commandDescriptions } from '../../cli/registry.js';
-import { initPipeline } from '../../runtime/application/pipeline.js';
 import { packageRootFromImportMeta } from '../../infrastructure/paths.js';
+import { initPipeline } from '../../runtime/application/pipeline.js';
 
 const PKG_ROOT = packageRootFromImportMeta(import.meta.url, 5);
 const DEFAULT_TEMPLATE_DIR = path.join(PKG_ROOT, 'skill', 'templates');
@@ -22,13 +22,38 @@ const projectInitDescription = commandDescriptions['boss project init']!;
 
 const PLACEHOLDERS: Array<{ file: string; title: string; infoTitle: string; agent: string }> = [
   { file: 'prd.md', title: '产品需求文档 (PRD)', infoTitle: '文档信息', agent: 'PM Agent' },
-  { file: 'architecture.md', title: '系统架构文档', infoTitle: '文档信息', agent: 'Architect Agent' },
-  { file: 'ui-spec.md', title: 'UI/UX 规范文档', infoTitle: '文档信息', agent: 'UI Designer Agent' },
-  { file: 'ui-design.json', title: 'UI Design JSON', infoTitle: 'Artifact Info', agent: 'UI Designer Agent' },
-  { file: 'tech-review.md', title: '技术评审报告', infoTitle: '文档信息', agent: 'Tech Lead Agent' },
-  { file: 'tasks.md', title: '开发任务规格文档', infoTitle: '文档信息', agent: 'Scrum Master Agent' },
+  {
+    file: 'architecture.md',
+    title: '系统架构文档',
+    infoTitle: '文档信息',
+    agent: 'Architect Agent',
+  },
+  {
+    file: 'ui-spec.md',
+    title: 'UI/UX 规范文档',
+    infoTitle: '文档信息',
+    agent: 'UI Designer Agent',
+  },
+  {
+    file: 'ui-design.json',
+    title: 'UI Design JSON',
+    infoTitle: 'Artifact Info',
+    agent: 'UI Designer Agent',
+  },
+  {
+    file: 'tech-review.md',
+    title: '技术评审报告',
+    infoTitle: '文档信息',
+    agent: 'Tech Lead Agent',
+  },
+  {
+    file: 'tasks.md',
+    title: '开发任务规格文档',
+    infoTitle: '文档信息',
+    agent: 'Scrum Master Agent',
+  },
   { file: 'qa-report.md', title: 'QA 测试报告', infoTitle: '报告信息', agent: 'QA Agent' },
-  { file: 'deploy-report.md', title: '部署报告', infoTitle: '报告信息', agent: 'DevOps Agent' }
+  { file: 'deploy-report.md', title: '部署报告', infoTitle: '报告信息', agent: 'DevOps Agent' },
 ];
 
 function showHelp(): void {
@@ -42,8 +67,8 @@ function showHelp(): void {
       '  -h, --help      显示帮助信息',
       '  -t, --template  初始化项目级模板目录（.boss/templates）',
       '  -f, --force     强制覆盖已存在的目录',
-      ''
-    ].join('\n')
+      '',
+    ].join('\n'),
   );
 }
 
@@ -54,7 +79,7 @@ function validateFeatureName(feature: string): void {
       message: '请提供功能名称',
       input: { feature },
       retryable: false,
-      suggestion: 'Pass a feature name, or provide {"feature":"name"} with --json-input'
+      suggestion: 'Pass a feature name, or provide {"feature":"name"} with --json-input',
     });
   }
   if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(feature)) {
@@ -63,7 +88,7 @@ function validateFeatureName(feature: string): void {
       message: '功能名称格式无效（仅允许小写字母、数字和连字符，不能以连字符开头或结尾）',
       input: { feature },
       retryable: false,
-      suggestion: 'Use lowercase letters, numbers, and hyphens; do not start or end with a hyphen'
+      suggestion: 'Use lowercase letters, numbers, and hyphens; do not start or end with a hyphen',
     });
   }
 }
@@ -72,44 +97,53 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function writePlaceholder(targetDir: string, feature: string, date: string, item: (typeof PLACEHOLDERS)[number]): void {
+function writePlaceholder(
+  targetDir: string,
+  feature: string,
+  date: string,
+  item: (typeof PLACEHOLDERS)[number],
+): void {
   if (item.file.endsWith('.json')) {
     fs.writeFileSync(
       path.join(targetDir, item.file),
-      `${JSON.stringify({
-        schemaVersion: '1.0.0',
-        artifact: 'ui-design',
-        mode: 'wireframe',
-        feature,
-        updatedAt: `${date}T00:00:00Z`,
-        tokens: { colors: {}, typography: {}, spacing: {}, radius: {} },
-        pages: [
-          {
-            id: 'main',
-            name: feature,
-            route: '/',
-            viewport: { width: 1440, height: 960 },
-            frames: [
-              {
-                id: 'main-page',
-                type: 'page',
-                name: feature,
-                layout: 'vertical',
-                children: []
-              }
-            ],
-            states: []
-          }
-        ],
-        components: [],
-        prototype: { startPageId: 'main', links: [] },
-        implementationHints: {
-          preferredFramework: '',
-          requiredComponents: [],
-          accessibilityNotes: []
-        }
-      }, null, 2)}\n`,
-      'utf8'
+      `${JSON.stringify(
+        {
+          schemaVersion: '1.0.0',
+          artifact: 'ui-design',
+          mode: 'wireframe',
+          feature,
+          updatedAt: `${date}T00:00:00Z`,
+          tokens: { colors: {}, typography: {}, spacing: {}, radius: {} },
+          pages: [
+            {
+              id: 'main',
+              name: feature,
+              route: '/',
+              viewport: { width: 1440, height: 960 },
+              frames: [
+                {
+                  id: 'main-page',
+                  type: 'page',
+                  name: feature,
+                  layout: 'vertical',
+                  children: [],
+                },
+              ],
+              states: [],
+            },
+          ],
+          components: [],
+          prototype: { startPageId: 'main', links: [] },
+          implementationHints: {
+            preferredFramework: '',
+            requiredComponents: [],
+            accessibilityNotes: [],
+          },
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
     );
     return;
   }
@@ -125,7 +159,7 @@ function writePlaceholder(targetDir: string, feature: string, date: string, item
     '---',
     '',
     `> 此文件将由 ${item.agent} 自动填充`,
-    ''
+    '',
   ].join('\n');
   fs.writeFileSync(path.join(targetDir, item.file), content, 'utf8');
 }
@@ -137,7 +171,7 @@ function copyTemplates(cwd: string, force: boolean): void {
       message: `未找到内置模板目录: ${DEFAULT_TEMPLATE_DIR}`,
       input: { path: DEFAULT_TEMPLATE_DIR },
       retryable: false,
-      suggestion: 'Rebuild or reinstall boss-skill so bundled templates are present'
+      suggestion: 'Rebuild or reinstall boss-skill so bundled templates are present',
     });
   }
 
@@ -149,14 +183,17 @@ function copyTemplates(cwd: string, force: boolean): void {
         message: `模板目录已存在: '${PROJECT_TEMPLATE_DIR}'. 为避免覆盖，已停止初始化。`,
         input: { path: PROJECT_TEMPLATE_DIR },
         retryable: false,
-        suggestion: 'Use --force after reviewing --dry-run output'
+        suggestion: 'Use --force after reviewing --dry-run output',
       });
     }
     fs.rmSync(projectTemplateDir, { recursive: true, force: true });
   }
 
   fs.mkdirSync(projectTemplateDir, { recursive: true });
-  for (const file of fs.readdirSync(DEFAULT_TEMPLATE_DIR).filter((name) => name.endsWith('.template')).sort()) {
+  for (const file of fs
+    .readdirSync(DEFAULT_TEMPLATE_DIR)
+    .filter((name) => name.endsWith('.template'))
+    .sort()) {
     fs.copyFileSync(path.join(DEFAULT_TEMPLATE_DIR, file), path.join(projectTemplateDir, file));
   }
 
@@ -174,9 +211,9 @@ function copyTemplates(cwd: string, force: boolean): void {
       '说明：',
       '- `boss project init` 只负责初始化轻量占位文件',
       '- Boss 在真正生成某个产物前，会调用 `boss artifact prepare` 按相同优先级准备当前文档骨架',
-      ''
+      '',
     ].join('\n'),
-    'utf8'
+    'utf8',
   );
 }
 
@@ -191,7 +228,12 @@ function readProjectPackageJson(cwd: string): Record<string, unknown> | null {
 }
 
 function projectDependencyVersion(pkg: Record<string, unknown>, name: string): string {
-  const dependencyGroups = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
+  const dependencyGroups = [
+    'dependencies',
+    'devDependencies',
+    'peerDependencies',
+    'optionalDependencies',
+  ];
   for (const groupName of dependencyGroups) {
     const group = pkg[groupName];
     if (group && typeof group === 'object' && !Array.isArray(group)) {
@@ -208,13 +250,18 @@ function isTailwindV4Version(version: string): boolean {
 }
 
 function cssUsesTailwind(content: string): boolean {
-  return /@import\s+["']tailwindcss["']/.test(content) || /@tailwind\s+(base|components|utilities)/.test(content);
+  return (
+    /@import\s+["']tailwindcss["']/.test(content) ||
+    /@tailwind\s+(base|components|utilities)/.test(content)
+  );
 }
 
 function isTailwindV4Project(cwd: string, cssFiles: string[]): boolean {
   const pkg = readProjectPackageJson(cwd);
   if (pkg && isTailwindV4Version(projectDependencyVersion(pkg, 'tailwindcss'))) return true;
-  return cssFiles.some((file) => /@import\s+["']tailwindcss["']/.test(fs.readFileSync(file, 'utf8')));
+  return cssFiles.some((file) =>
+    /@import\s+["']tailwindcss["']/.test(fs.readFileSync(file, 'utf8')),
+  );
 }
 
 function findTailwindCssFiles(cwd: string): string[] {
@@ -226,10 +273,12 @@ function findTailwindCssFiles(cwd: string): string[] {
     'src/index.css',
     'src/main.css',
     'app.css',
-    'src/app.css'
+    'src/app.css',
   ].map((name) => path.join(cwd, name));
 
-  const found = candidates.filter((file) => fs.existsSync(file) && cssUsesTailwind(fs.readFileSync(file, 'utf8')));
+  const found = candidates.filter(
+    (file) => fs.existsSync(file) && cssUsesTailwind(fs.readFileSync(file, 'utf8')),
+  );
   if (found.length > 0) return found;
 
   const ignoredDirs = new Set(['.boss', '.git', 'node_modules', 'dist', 'build', 'coverage']);
@@ -271,7 +320,7 @@ function ensureBossArtifactsExcludedFromSourceScanners(cwd: string): string[] {
       '',
       '/* Boss orchestration artifacts are not application source. */',
       `@source not "${bossSourcePath}";`,
-      ''
+      '',
     ].join('\n');
     fs.writeFileSync(cssFile, `${content.replace(/\s*$/, '\n')}${addition}`, 'utf8');
     updated.push(path.relative(cwd, cssFile));
@@ -300,7 +349,7 @@ function parseProjectInitInput(argv: string[]): ProjectInitInput {
         message: '--json-input for project init must be an object',
         input: { jsonInput },
         retryable: false,
-        suggestion: 'Use fields: feature, template, force'
+        suggestion: 'Use fields: feature, template, force',
       });
     }
     if (typeof jsonInput.feature === 'string') input.feature = jsonInput.feature;
@@ -324,7 +373,11 @@ function parseProjectInitInput(argv: string[]): ProjectInitInput {
       index += 1;
       continue;
     }
-    if (arg.startsWith('--fields=') || arg.startsWith('--limit=') || arg.startsWith('--json-input=')) {
+    if (
+      arg.startsWith('--fields=') ||
+      arg.startsWith('--limit=') ||
+      arg.startsWith('--json-input=')
+    ) {
       continue;
     }
     if (arg === '-f' || arg === '--force') {
@@ -337,7 +390,7 @@ function parseProjectInitInput(argv: string[]): ProjectInitInput {
         message: `未知选项: ${arg}`,
         input: { option: arg },
         retryable: false,
-        suggestion: 'Run boss project init --describe to verify supported options'
+        suggestion: 'Run boss project init --describe to verify supported options',
       });
     } else if (!input.feature) {
       input.feature = arg;
@@ -347,7 +400,7 @@ function parseProjectInitInput(argv: string[]): ProjectInitInput {
         message: `多余的参数: ${arg}`,
         input: { argument: arg },
         retryable: false,
-        suggestion: 'Pass only one feature name'
+        suggestion: 'Pass only one feature name',
       });
     }
   }
@@ -355,7 +408,11 @@ function parseProjectInitInput(argv: string[]): ProjectInitInput {
   return input;
 }
 
-function buildProjectInitPlan(feature: string, initTemplates: boolean, force: boolean): {
+function buildProjectInitPlan(
+  feature: string,
+  initTemplates: boolean,
+  force: boolean,
+): {
   actions: Array<{ type: string; path: string; overwrite: boolean }>;
   risk_tier: 'medium' | 'high';
   requires_approval: boolean;
@@ -364,27 +421,34 @@ function buildProjectInitPlan(feature: string, initTemplates: boolean, force: bo
     {
       type: 'create_feature_workspace',
       path: path.join('.boss', feature),
-      overwrite: force
-    }
+      overwrite: force,
+    },
   ];
   if (initTemplates) {
     actions.push({
       type: 'copy_project_templates',
       path: PROJECT_TEMPLATE_DIR,
-      overwrite: force
+      overwrite: force,
     });
   }
   return {
     actions,
     risk_tier: force ? 'high' : 'medium',
-    requires_approval: force
+    requires_approval: force,
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss project init' });
   if (context.values.describe) {
-    writeOutput(describeCommand(projectInitDescription), context, (data) => `${JSON.stringify(data, null, 2)}\n`);
+    writeOutput(
+      describeCommand(projectInitDescription),
+      context,
+      (data) => `${JSON.stringify(data, null, 2)}\n`,
+    );
     return 0;
   }
 
@@ -424,7 +488,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         message: `目录已存在: ${relativeTarget}（使用 --force 覆盖）`,
         input: { path: relativeTarget },
         retryable: false,
-        suggestion: 'Use --force after reviewing --dry-run output'
+        suggestion: 'Use --force after reviewing --dry-run output',
       });
     }
     fs.rmSync(targetDir, { recursive: true, force: true });
@@ -445,10 +509,10 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         templatesPath: initTemplates ? PROJECT_TEMPLATE_DIR : undefined,
         sourceIsolationPaths,
         created: true,
-        skipped: false
+        skipped: false,
       },
       context,
-      () => `Boss Mode 项目目录初始化完成: ${relativeTarget}\n`
+      () => `Boss Mode 项目目录初始化完成: ${relativeTarget}\n`,
     );
   } else {
     const sourceIsolationPaths = ensureBossArtifactsExcludedFromSourceScanners(cwd);
@@ -459,20 +523,27 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         templatesPath: initTemplates ? PROJECT_TEMPLATE_DIR : undefined,
         sourceIsolationPaths,
         created: false,
-        skipped: true
+        skipped: true,
       },
       context,
-      () => `跳过 feature 初始化，继续保留现有目录内容: ${relativeTarget}\n`
+      () => `跳过 feature 初始化，继续保留现有目录内容: ${relativeTarget}\n`,
     );
   }
 
   if (!context.useJson) {
-    process.stdout.write(initTemplates ? '下一步：先修改 .boss/templates/ 中的模板，再运行 /boss 开始开发流程\n' : '下一步：运行 /boss 开始开发流程\n');
+    process.stdout.write(
+      initTemplates
+        ? '下一步：先修改 .boss/templates/ 中的模板，再运行 /boss 开始开发流程\n'
+        : '下一步：运行 /boss 开始开发流程\n',
+    );
   }
   return 0;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss project init', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss project init',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

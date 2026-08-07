@@ -9,7 +9,7 @@ import {
   initPipeline,
   readCachedTechStack,
   updateAgent,
-  updateStage
+  updateStage,
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -50,10 +50,16 @@ describe('checkStall', () => {
   it('auto-fails stalled agents when autoFail=true', () => {
     const execPath = path.join(tmpDir, '.boss', 'stall-feature', '.meta', 'execution.json');
     const execution = JSON.parse(fs.readFileSync(execPath, 'utf8'));
-    execution.stages['1'].agents['boss-pm'].startTime = new Date(Date.now() - 120_000).toISOString();
+    execution.stages['1'].agents['boss-pm'].startTime = new Date(
+      Date.now() - 120_000,
+    ).toISOString();
     fs.writeFileSync(execPath, JSON.stringify(execution, null, 2) + '\n', 'utf8');
 
-    const result = checkStall('stall-feature', { cwd: tmpDir, maxDurationMs: 60_000, autoFail: true });
+    const result = checkStall('stall-feature', {
+      cwd: tmpDir,
+      maxDurationMs: 60_000,
+      autoFail: true,
+    });
     expect(result.stalled).toHaveLength(1);
     expect(result.stalled[0].failed).toBe(true);
 

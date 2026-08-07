@@ -1,21 +1,20 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import { createHash } from 'node:crypto';
+import * as path from 'node:path';
 
 import { EVENT_TYPES } from '../domain/event-types.js';
 import { computeNextNodeIds } from '../domain/scheduling.js';
+import { materializeState } from '../projectors/materialize-state.js';
+import type { PipelinePackDefinition } from './packs.js';
 import type { RuntimeHashDescriptor } from './pipeline.js';
+import { evaluateAgentReuse } from './pipeline.js';
 import type { ArtifactDag } from './state.js';
 import {
   appendRuntimeEvent,
   ensureFeatureName,
   readExecutionView,
   readJson,
-  writeJson
+  writeJson,
 } from './state.js';
-import { materializeState } from '../projectors/materialize-state.js';
-import type { PipelinePackDefinition } from './packs.js';
-import { evaluateAgentReuse } from './pipeline.js';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -154,7 +153,7 @@ function stableStringify(value: unknown): string {
 export function hashWorkflowValue(value: unknown): RuntimeHashDescriptor {
   return {
     algorithm: 'sha256',
-    value: sha256Hex(stableStringify(value))
+    value: sha256Hex(stableStringify(value)),
   };
 }
 
@@ -189,13 +188,7 @@ function normalizeInputs(value: unknown): string[] {
 }
 
 function includesDynamicScript(script: string): string | null {
-  const banned = [
-    'Date.now',
-    'new Date',
-    'Math.random',
-    '$(',
-    '`'
-  ];
+  const banned = ['Date.now', 'new Date', 'Math.random', '$(', '`'];
   return banned.find((pattern) => script.includes(pattern)) ?? null;
 }
 
@@ -233,7 +226,10 @@ function validateArtifactDag(artifactDag: ArtifactDag): void {
   }
 }
 
-function toWorkflowNode(artifact: string, definition: NonNullable<ArtifactDag['artifacts']>[string]): WorkflowPlanNode {
+function toWorkflowNode(
+  artifact: string,
+  definition: NonNullable<ArtifactDag['artifacts']>[string],
+): WorkflowPlanNode {
   const stage = normalizeStage(definition.stage);
   const isGate = definition.type === 'gate' || artifact.startsWith('gate');
   const hasAgent = definition.agent != null;
@@ -247,7 +243,7 @@ function toWorkflowNode(artifact: string, definition: NonNullable<ArtifactDag['a
     inputs: normalizeInputs(definition.inputs),
     writes: normalizeInputs(definition.writes),
     optional: definition.optional === true,
-    description: definition.description
+    description: definition.description,
   };
 
   if (isGate) {
@@ -272,7 +268,7 @@ export function compileWorkflowPlan({
   feature,
   pack,
   artifactDag,
-  artifactDagFingerprint
+  artifactDagFingerprint,
 }: {
   feature: string;
   pack: PipelinePackDefinition;
@@ -292,7 +288,7 @@ export function compileWorkflowPlan({
       id: `stage-${stage}`,
       stage,
       name: phaseName(stage),
-      nodeIds: nodes.filter((node) => node.stage === stage).map((node) => node.id)
+      nodeIds: nodes.filter((node) => node.stage === stage).map((node) => node.id),
     }));
 
   return {
@@ -307,24 +303,24 @@ export function compileWorkflowPlan({
           version: pack.version,
           type: pack.type,
           priority: pack.priority,
-          config: pack.config
-        })
+          config: pack.config,
+        }),
       },
-      artifactDag: artifactDagFingerprint
+      artifactDag: artifactDagFingerprint,
     },
     phases,
     nodes,
     validation: {
       deterministic: true,
-      errors: []
-    }
+      errors: [],
+    },
   };
 }
 
 export function persistWorkflowPlan({
   cwd,
   feature,
-  plan
+  plan,
 }: {
   cwd: string;
   feature: string;
@@ -339,7 +335,7 @@ export function persistWorkflowPlan({
     workflowHash,
     workflowPlanPath: relativePlanPath,
     packHash: plan.source.pack.hash,
-    artifactDagHash: plan.source.artifactDag.hash
+    artifactDagHash: plan.source.artifactDag.hash,
   };
 }
 
@@ -347,14 +343,20 @@ function isSatisfiedStatus(status: string | undefined): boolean {
   return status === 'completed' || status === 'reused' || status === 'skipped';
 }
 
-function findNodeIdByArtifact(nodes: Record<string, WorkflowExecutionNode>, artifact: string): string | null {
+function findNodeIdByArtifact(
+  nodes: Record<string, WorkflowExecutionNode>,
+  artifact: string,
+): string | null {
   for (const node of Object.values(nodes)) {
     if (node.artifact === artifact) return node.id;
   }
   return null;
 }
 
-function nodeInputsSatisfied(node: WorkflowExecutionNode, nodes: Record<string, WorkflowExecutionNode>): boolean {
+function nodeInputsSatisfied(
+  node: WorkflowExecutionNode,
+  nodes: Record<string, WorkflowExecutionNode>,
+): boolean {
   for (const input of node.inputs) {
     const inputNodeId = findNodeIdByArtifact(nodes, input);
     if (!inputNodeId) continue;
@@ -375,7 +377,7 @@ export function refreshWorkflowSchedule(workflow: WorkflowExecutionState): Workf
     }
     nodes[id] = {
       ...node,
-      status: nodeInputsSatisfied(node, nodes) ? 'ready' : 'blocked'
+      status: nodeInputsSatisfied(node, nodes) ? 'ready' : 'blocked',
     };
   }
 
@@ -386,14 +388,14 @@ export function refreshWorkflowSchedule(workflow: WorkflowExecutionState): Workf
   return {
     ...workflow,
     nodes,
-    nextNodeIds
+    nextNodeIds,
   };
 }
 
 export function createWorkflowExecutionState({
   plan,
   workflowPlanPath,
-  workflowHash
+  workflowHash,
 }: {
   plan: WorkflowPlan;
   workflowPlanPath: string;
@@ -406,15 +408,15 @@ export function createWorkflowExecutionState({
         ...node,
         status: node.kind === 'input' ? 'skipped' : 'pending',
         decision: node.kind === 'input' ? 'skip' : undefined,
-        reason: node.kind === 'input' ? 'input-node' : undefined
-      } satisfies WorkflowExecutionNode
-    ])
+        reason: node.kind === 'input' ? 'input-node' : undefined,
+      } satisfies WorkflowExecutionNode,
+    ]),
   );
   return refreshWorkflowSchedule({
     planPath: workflowPlanPath,
     hash: workflowHash.value,
     nodes,
-    nextNodeIds: []
+    nextNodeIds: [],
   });
 }
 
@@ -426,7 +428,7 @@ function readWorkflowPlan(cwd: string, workflowPlanPath: string): WorkflowPlan {
 }
 
 function firstAgent(agent: string | string[] | null | undefined): string {
-  return Array.isArray(agent) ? agent[0] ?? '' : agent ?? '';
+  return Array.isArray(agent) ? (agent[0] ?? '') : (agent ?? '');
 }
 
 function nodePrompt(node: WorkflowPlanNode): string {
@@ -436,7 +438,7 @@ function nodePrompt(node: WorkflowPlanNode): string {
 function resumeDecisionForNode(
   feature: string,
   node: WorkflowPlanNode,
-  cwd: string
+  cwd: string,
 ): ResumeWorkflowNodeDecision {
   if (node.kind === 'input') {
     return {
@@ -445,7 +447,7 @@ function resumeDecisionForNode(
       artifact: node.artifact,
       stage: node.stage,
       decision: 'skip',
-      reason: 'input-node'
+      reason: 'input-node',
     };
   }
 
@@ -457,7 +459,7 @@ function resumeDecisionForNode(
       gate: node.gate,
       stage: node.stage,
       decision: 'run',
-      reason: 'gate-evaluation-required'
+      reason: 'gate-evaluation-required',
     };
   }
 
@@ -469,14 +471,14 @@ function resumeDecisionForNode(
       artifact: node.artifact,
       stage: node.stage,
       decision: 'run',
-      reason: 'agent-missing'
+      reason: 'agent-missing',
     };
   }
 
   const reuse = evaluateAgentReuse(feature, node.stage, agent, {
     cwd,
     prompt: nodePrompt(node),
-    dependencyArtifacts: node.inputs
+    dependencyArtifacts: node.inputs,
   });
   return {
     id: node.id,
@@ -485,7 +487,7 @@ function resumeDecisionForNode(
     agent,
     stage: node.stage,
     decision: reuse.reusable ? 'reuse' : 'run',
-    reason: reuse.reason
+    reason: reuse.reason,
   };
 }
 
@@ -493,11 +495,11 @@ export function resumeWorkflow(
   feature: string,
   {
     cwd = process.cwd(),
-    fromRunId
+    fromRunId,
   }: {
     cwd?: string;
     fromRunId: string;
-  }
+  },
 ): ResumeWorkflowResult {
   ensureFeatureName(feature);
   if (!fromRunId) throw new Error('缺少 fromRunId 参数');
@@ -512,9 +514,7 @@ export function resumeWorkflow(
       ? execution.parameters.workflowPlanPath
       : `.boss/${feature}/.meta/workflow-plan.json`;
   const workflowHash =
-    typeof execution.parameters?.workflowHash === 'string'
-      ? execution.parameters.workflowHash
-      : '';
+    typeof execution.parameters?.workflowHash === 'string' ? execution.parameters.workflowHash : '';
   const plan = readWorkflowPlan(cwd, workflowPlanPath);
   const nodes = plan.nodes.map((node) => resumeDecisionForNode(feature, node, cwd));
   const projectedWorkflow = refreshWorkflowSchedule({
@@ -532,11 +532,11 @@ export function resumeWorkflow(
                 ? 'skipped'
                 : 'pending',
           decision: nodes.find((decision) => decision.id === node.id)?.decision,
-          reason: nodes.find((decision) => decision.id === node.id)?.reason
-        } satisfies WorkflowExecutionNode
-      ])
+          reason: nodes.find((decision) => decision.id === node.id)?.reason,
+        } satisfies WorkflowExecutionNode,
+      ]),
     ),
-    nextNodeIds: []
+    nextNodeIds: [],
   });
 
   appendRuntimeEvent(cwd, feature, EVENT_TYPES.PIPELINE_RESUMED, {
@@ -547,7 +547,7 @@ export function resumeWorkflow(
     reusedNodes: nodes.filter((node) => node.decision === 'reuse').length,
     runnableNodes: nodes.filter((node) => node.decision === 'run').length,
     nextNodeIds: projectedWorkflow.nextNodeIds,
-    nodes
+    nodes,
   });
   materializeState(feature, cwd);
 
@@ -558,6 +558,6 @@ export function resumeWorkflow(
     workflowPlanPath,
     workflowHash,
     nodes,
-    nextNodeIds: projectedWorkflow.nextNodeIds
+    nextNodeIds: projectedWorkflow.nextNodeIds,
   };
 }

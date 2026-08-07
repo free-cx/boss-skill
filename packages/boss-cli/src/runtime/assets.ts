@@ -18,7 +18,7 @@ function readJsonObject(filePath: string): Record<string, unknown> | null {
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8')) as unknown;
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? parsed as Record<string, unknown>
+      ? (parsed as Record<string, unknown>)
       : null;
   } catch {
     return null;
@@ -36,7 +36,7 @@ function listManifestPaths(
   root: string,
   fileName: string,
   source: NamedAssetPath['source'],
-  required = false
+  required = false,
 ): NamedAssetPath[] {
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
     if (required) {
@@ -51,9 +51,12 @@ function listManifestPaths(
       const manifestPath = path.join(root, entry.name, fileName);
       const manifest = fs.existsSync(manifestPath) ? readJsonObject(manifestPath) : null;
       return {
-        name: typeof manifest?.name === 'string' && manifest.name.length > 0 ? manifest.name : entry.name,
+        name:
+          typeof manifest?.name === 'string' && manifest.name.length > 0
+            ? manifest.name
+            : entry.name,
         path: manifestPath,
-        source
+        source,
       };
     })
     .filter((item) => fs.existsSync(item.path))
@@ -71,7 +74,10 @@ export function resolveBuiltInAssetPath(...segments: string[]): string {
   return path.join(ASSETS_ROOT, ...segments);
 }
 
-export function resolveProjectBossPath({ cwd = process.cwd() }: AssetOptions = {}, ...segments: string[]): string {
+export function resolveProjectBossPath(
+  { cwd = process.cwd() }: AssetOptions = {},
+  ...segments: string[]
+): string {
   return path.join(cwd, '.boss', ...segments);
 }
 
@@ -79,26 +85,51 @@ export function resolvePluginSchemaPath(): string {
   return requireExistingPath(resolveBuiltInAssetPath('plugin-schema.json'), 'plugin-schema.json');
 }
 
-export function resolveArtifactDagPath(
-  { cwd = process.cwd(), packDagPath }: AssetOptions & { packDagPath?: string } = {}
-): string {
+export function resolveArtifactDagPath({
+  cwd = process.cwd(),
+  packDagPath,
+}: AssetOptions & { packDagPath?: string } = {}): string {
   const projectDag = resolveProjectBossPath({ cwd }, 'artifact-dag.json');
   if (fs.existsSync(projectDag)) return projectDag;
   if (packDagPath) {
-    const resolvedPackDag = path.isAbsolute(packDagPath) ? packDagPath : path.resolve(cwd, packDagPath);
+    const resolvedPackDag = path.isAbsolute(packDagPath)
+      ? packDagPath
+      : path.resolve(cwd, packDagPath);
     if (fs.existsSync(resolvedPackDag)) return resolvedPackDag;
   }
   return requireExistingPath(resolveBuiltInAssetPath('artifact-dag.json'), 'artifact-dag.json');
 }
 
-export function listPipelinePackManifestPaths({ cwd = process.cwd() }: AssetOptions = {}): NamedAssetPath[] {
-  const builtin = listManifestPaths(resolveBuiltInAssetPath('pipeline-packs'), 'pipeline.json', 'builtin', true);
-  const project = listManifestPaths(resolveProjectBossPath({ cwd }, 'pipeline-packs'), 'pipeline.json', 'project');
+export function listPipelinePackManifestPaths({
+  cwd = process.cwd(),
+}: AssetOptions = {}): NamedAssetPath[] {
+  const builtin = listManifestPaths(
+    resolveBuiltInAssetPath('pipeline-packs'),
+    'pipeline.json',
+    'builtin',
+    true,
+  );
+  const project = listManifestPaths(
+    resolveProjectBossPath({ cwd }, 'pipeline-packs'),
+    'pipeline.json',
+    'project',
+  );
   return mergeByName(builtin, project);
 }
 
-export function listPluginManifestPaths({ cwd = process.cwd() }: AssetOptions = {}): NamedAssetPath[] {
-  const builtin = listManifestPaths(resolveBuiltInAssetPath('plugins'), 'plugin.json', 'builtin', true);
-  const project = listManifestPaths(resolveProjectBossPath({ cwd }, 'plugins'), 'plugin.json', 'project');
+export function listPluginManifestPaths({
+  cwd = process.cwd(),
+}: AssetOptions = {}): NamedAssetPath[] {
+  const builtin = listManifestPaths(
+    resolveBuiltInAssetPath('plugins'),
+    'plugin.json',
+    'builtin',
+    true,
+  );
+  const project = listManifestPaths(
+    resolveProjectBossPath({ cwd }, 'plugins'),
+    'plugin.json',
+    'project',
+  );
   return mergeByName(builtin, project);
 }

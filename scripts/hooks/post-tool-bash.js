@@ -3,15 +3,21 @@ import { emitProgress } from '../lib/progress-emitter.js';
 import { normalizeHookInput } from './lib/normalize-input.js';
 
 function isGateCommand(command) {
-  return /boss\s+runtime\s+evaluate-gates|runtime\/cli\/evaluate-gates\.js|gate-runner\.sh|gate0-|gate1-|gate2-/.test(command);
+  return /boss\s+runtime\s+evaluate-gates|runtime\/cli\/evaluate-gates\.js|gate-runner\.sh|gate0-|gate1-|gate2-/.test(
+    command,
+  );
 }
 
 function isHarnessCommand(command) {
-  return /boss\s+runtime\s+(update-stage|check-stage|replay-events|generate-summary|register-plugins|inspect-[^\s]+|run-plugin-hook)|runtime\/cli\/(update-stage|check-stage|replay-events|generate-summary|register-plugins|inspect-|run-plugin-hook)\.js|update-stage\.sh|check-stage\.sh|retry-stage\.sh|generate-summary\.sh|load-plugins\.sh/.test(command);
+  return /boss\s+runtime\s+(update-stage|check-stage|replay-events|generate-summary|register-plugins|inspect-[^\s]+|run-plugin-hook)|runtime\/cli\/(update-stage|check-stage|replay-events|generate-summary|register-plugins|inspect-|run-plugin-hook)\.js|update-stage\.sh|check-stage\.sh|retry-stage\.sh|generate-summary\.sh|load-plugins\.sh/.test(
+    command,
+  );
 }
 
 function isTestCommand(command) {
-  return /npm test|npx vitest|npx jest|pytest|cargo test|go test|npx playwright|npx cypress/.test(command);
+  return /npm test|npx vitest|npx jest|pytest|cargo test|go test|npx playwright|npx cypress/.test(
+    command,
+  );
 }
 
 function run(rawInput) {
@@ -31,7 +37,7 @@ function run(rawInput) {
       const gateMatch = command.match(/gate(\d)/);
       emitProgress(cwd, active.feature, {
         type: 'gate-result',
-        data: { gate: gateMatch ? 'gate' + gateMatch[1] : 'unknown', command }
+        data: { gate: gateMatch ? 'gate' + gateMatch[1] : 'unknown', command },
       });
     }
   }
@@ -52,8 +58,8 @@ function run(rawInput) {
   return JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PostToolUse',
-      additionalContext: context
-    }
+      additionalContext: context,
+    },
   });
 }
 

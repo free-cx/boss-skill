@@ -12,7 +12,7 @@ describe('pipeline exports', () => {
       'updateStage',
       'updateAgent',
       'pausePipeline',
-      'evaluateAgentReuse'
+      'evaluateAgentReuse',
     ];
 
     for (const name of expected) {

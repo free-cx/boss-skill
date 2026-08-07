@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildBossStatus } from '../../packages/boss-cli/src/runtime/application/checkpoints.js';
 import { initPipeline } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
@@ -33,8 +33,8 @@ describe('evidence wave runtime', () => {
         '',
         '| Evidence Wave | 范围 | Owner 文件 | 红测 | 绿门禁 | Contract Matrix 行 | Stop Condition |',
         '| --- | --- | --- | --- | --- | --- | --- |',
-        '| Wave 1：Data | persistence and schema | `src/data.ts`<br>`src/schema.ts` | `npm test -- data.test.ts`，`npm test -- schema.test.ts` | `npm run typecheck`, `npm test -- data.test.ts` | CM-1, `CM-2` | Pause before migration |'
-      ].join('\n')
+        '| Wave 1：Data | persistence and schema | `src/data.ts`<br>`src/schema.ts` | `npm test -- data.test.ts`，`npm test -- schema.test.ts` | `npm run typecheck`, `npm test -- data.test.ts` | CM-1, `CM-2` | Pause before migration |',
+      ].join('\n'),
     );
 
     const waves = readWaves('test-feat', { cwd: tmpDir });
@@ -46,7 +46,7 @@ describe('evidence wave runtime', () => {
       status: 'pending',
       scope: 'persistence and schema',
       writeSet: ['src/data.ts', 'src/schema.ts'],
-      contractRows: ['CM-1', 'CM-2']
+      contractRows: ['CM-1', 'CM-2'],
     });
     // Markdown 不再作为命令来源：命令须由 waves.json 以 argv 数组提供。
     expect(waves[0]!.redTests).toEqual([]);
@@ -64,8 +64,8 @@ describe('evidence wave runtime', () => {
         '',
         '| Evidence Wave | 范围 | Owner 文件 | 红测 | 绿门禁 | Contract Matrix 行 | Stop Condition |',
         '| --- | --- | --- | --- | --- | --- | --- |',
-        '| Wave 1：Runtime | checkpoints | `packages/boss-cli/src/runtime/application/checkpoints.ts` | `npm test -- test/runtime/wave-runtime.test.ts` | `npm run typecheck` | CM-runtime | Stop on failed gate |'
-      ].join('\n')
+        '| Wave 1：Runtime | checkpoints | `packages/boss-cli/src/runtime/application/checkpoints.ts` | `npm test -- test/runtime/wave-runtime.test.ts` | `npm run typecheck` | CM-runtime | Stop on failed gate |',
+      ].join('\n'),
     );
 
     const status = buildBossStatus('test-feat', { cwd: tmpDir });
@@ -73,7 +73,7 @@ describe('evidence wave runtime', () => {
     expect(status.currentWave).toMatchObject({
       id: 'wave-1-runtime',
       title: 'Wave 1：Runtime',
-      status: 'pending'
+      status: 'pending',
     });
     expect(status.currentWave?.greenGates).toEqual([]);
   });
@@ -86,8 +86,8 @@ describe('evidence wave runtime', () => {
       [
         '| Evidence Wave | 范围 | Owner 文件 | 红测 | 绿门禁 | Contract Matrix 行 | Stop Condition |',
         '| --- | --- | --- | --- | --- | --- | --- |',
-        '| Wave 1：Pipes | qa | `src/report.ts` | `touch /tmp/boss-pwned && exit 1` | `cat report.json | jq .ok` | CM-pipe | Stop if report parse fails |'
-      ].join('\n')
+        '| Wave 1：Pipes | qa | `src/report.ts` | `touch /tmp/boss-pwned && exit 1` | `cat report.json | jq .ok` | CM-pipe | Stop if report parse fails |',
+      ].join('\n'),
     );
 
     const waves = readWaves('test-feat', { cwd: tmpDir });
@@ -99,7 +99,7 @@ describe('evidence wave runtime', () => {
       id: 'wave-1-pipes',
       contractRows: ['CM-pipe'],
       pausePolicy: 'Stop if report parse fails',
-      rollbackRisk: 'Stop if report parse fails'
+      rollbackRisk: 'Stop if report parse fails',
     });
     expect(waves[0]!.redTests).toEqual([]);
     expect(waves[0]!.greenGates).toEqual([]);
@@ -114,8 +114,8 @@ describe('evidence wave runtime', () => {
         '| Evidence Wave | 范围 | Owner 文件 | 红测 | 绿门禁 | Contract Matrix 行 | Stop Condition |',
         '| --- | --- | --- | --- | --- | --- | --- |',
         '| 第一波：数据层 | data | `src/data.ts` | `npm test -- data.test.ts` | `npm test -- data.test.ts` | CM-data | Stop A |',
-        '| 第一波：数据层 | data 2 | `src/data2.ts` | `npm test -- data2.test.ts` | `npm test -- data2.test.ts` | CM-data-2 | Stop B |'
-      ].join('\n')
+        '| 第一波：数据层 | data 2 | `src/data2.ts` | `npm test -- data2.test.ts` | `npm test -- data2.test.ts` | CM-data-2 | Stop B |',
+      ].join('\n'),
     );
 
     const waves = readWaves('test-feat', { cwd: tmpDir });
@@ -140,8 +140,8 @@ describe('evidence wave runtime', () => {
         '| Evidence Wave | 范围 | Owner 文件 | 红测 | 绿门禁 | Contract Matrix 行 | Stop Condition |',
         '| --- | --- | --- | --- | --- | --- | --- |',
         '| [completed] Wave 1：Done | done | `src/done.ts` | `npm test -- done.test.ts` | `npm test -- done.test.ts` | CM-done | Stop done |',
-        '| Wave 2：Next | next | `src/next.ts` | `npm test -- next.test.ts` | `npm test -- next.test.ts` | CM-next | Stop next |'
-      ].join('\n')
+        '| Wave 2：Next | next | `src/next.ts` | `npm test -- next.test.ts` | `npm test -- next.test.ts` | CM-next | Stop next |',
+      ].join('\n'),
     );
 
     const status = buildBossStatus('test-feat', { cwd: tmpDir });
@@ -149,7 +149,7 @@ describe('evidence wave runtime', () => {
     expect(status.currentWave).toMatchObject({
       id: 'wave-2-next',
       title: 'Wave 2：Next',
-      status: 'pending'
+      status: 'pending',
     });
   });
 });

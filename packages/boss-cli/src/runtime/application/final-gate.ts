@@ -1,10 +1,10 @@
 import {
+  type ActiveAgentSummary,
+  type FailureSummary,
   inspectPipeline,
   readExecution,
-  type ActiveAgentSummary,
-  type FailureSummary
 } from './inspection.js';
-import { runQaAttack, type QaFinding } from './qa-attack.js';
+import { type QaFinding, runQaAttack } from './qa-attack.js';
 
 const REQUIRED_ARTIFACTS = ['prd.md', 'architecture.md', 'tasks.md', 'qa-report.md'] as const;
 
@@ -51,7 +51,7 @@ function collectRecordedArtifacts(feature: string, cwd: string): string[] {
 
 export function evaluateFinalGate(
   feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): FinalGateResult {
   const recorded = collectRecordedArtifacts(feature, cwd);
   const missing = REQUIRED_ARTIFACTS.filter((artifact) => !recorded.includes(artifact));
@@ -64,28 +64,28 @@ export function evaluateFinalGate(
       passed: missing.length === 0,
       required: [...REQUIRED_ARTIFACTS],
       recorded,
-      missing
+      missing,
     },
     {
       name: 'no-active-agents',
       passed: inspection.activeAgents.length === 0,
-      activeAgents: inspection.activeAgents
+      activeAgents: inspection.activeAgents,
     },
     {
       name: 'no-recent-failures',
       passed: inspection.recentFailures.length === 0,
-      recentFailures: inspection.recentFailures
+      recentFailures: inspection.recentFailures,
     },
     {
       name: 'qa-attack-findings',
       passed: qaAttack.findings.filter((finding) => finding.status === 'open').length === 0,
-      findings: qaAttack.findings
-    }
+      findings: qaAttack.findings,
+    },
   ];
 
   return {
     feature,
     passed: checks.every((check) => check.passed),
-    checks
+    checks,
   };
 }

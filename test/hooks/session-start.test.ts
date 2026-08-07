@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { run } from '../../scripts/hooks/session-start.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
@@ -15,18 +15,19 @@ function createTempBossDir(feature: string, execData?: Record<string, unknown>) 
     fs.writeFileSync(
       path.join(metaDir, 'execution.json'),
       `${JSON.stringify(execData, null, 2)}\n`,
-      'utf8'
+      'utf8',
     );
-    const timestamp = typeof execData.createdAt === 'string' ? execData.createdAt : '2024-01-01T00:00:00Z';
+    const timestamp =
+      typeof execData.createdAt === 'string' ? execData.createdAt : '2024-01-01T00:00:00Z';
     fs.writeFileSync(
       path.join(metaDir, 'events.jsonl'),
       `${JSON.stringify({
         id: 1,
         type: 'PipelineInitialized',
         timestamp,
-        data: { initialState: execData }
+        data: { initialState: execData },
       })}\n`,
-      'utf8'
+      'utf8',
     );
   }
 
@@ -42,9 +43,9 @@ function createExecData(overrides: Record<string, unknown>) {
       '1': { name: 'Planning', status: 'completed', artifacts: [] },
       '2': { name: 'Review', status: 'running', artifacts: [] },
       '3': { name: 'Development', status: 'pending', artifacts: [] },
-      '4': { name: 'Deployment', status: 'pending', artifacts: [] }
+      '4': { name: 'Deployment', status: 'pending', artifacts: [] },
     },
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -112,8 +113,8 @@ describe('session-start hook', () => {
         agentFailureCount: 0,
         meanRetriesPerStage: 0,
         revisionLoopCount: 0,
-        pluginFailureCount: 0
-      }
+        pluginFailureCount: 0,
+      },
     });
     tmpDir = createTempBossDir('test-feat', execData);
 
@@ -134,8 +135,8 @@ describe('session-start hook', () => {
         '2': { name: 'Review', status: 'completed', artifacts: [] },
         '3': { name: 'Development', status: 'completed', artifacts: [] },
         '4': { name: 'Deployment', status: 'completed', artifacts: [] },
-        '5': { name: 'PostDeploy', status: 'running', artifacts: [] }
-      }
+        '5': { name: 'PostDeploy', status: 'running', artifacts: [] },
+      },
     });
     tmpDir = createTempBossDir('extended-feat', execData);
 

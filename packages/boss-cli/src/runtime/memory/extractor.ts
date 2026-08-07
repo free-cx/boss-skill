@@ -23,7 +23,7 @@ function buildRecord(base: PersistedMemoryRecordSeed): PersistedMemoryRecord {
   return {
     influence: 'preference',
     tags: [],
-    ...base
+    ...base,
   };
 }
 
@@ -31,7 +31,7 @@ export function extractFeatureMemories({
   feature,
   events = [],
   execution = {},
-  now
+  now,
 }: MemoryExtractionInput): PersistedMemoryRecord[] {
   const records: PersistedMemoryRecord[] = [];
 
@@ -54,8 +54,8 @@ export function extractFeatureMemories({
           createdAt: event.timestamp,
           lastSeenAt: event.timestamp,
           expiresAt: null,
-          decayScore: 10
-        })
+          decayScore: 10,
+        }),
       );
     }
 
@@ -77,8 +77,8 @@ export function extractFeatureMemories({
           createdAt: event.timestamp,
           lastSeenAt: event.timestamp,
           expiresAt: null,
-          decayScore: 9
-        })
+          decayScore: 9,
+        }),
       );
     }
 
@@ -106,8 +106,8 @@ export function extractFeatureMemories({
             createdAt: event.timestamp,
             lastSeenAt: event.timestamp,
             expiresAt: null,
-            decayScore: 7
-          })
+            decayScore: 7,
+          }),
         );
       }
     }
@@ -115,8 +115,13 @@ export function extractFeatureMemories({
     if (event.type === 'ConversationOpened' && event.data?.thread) {
       const thread = event.data.thread as Record<string, any>;
       const kind = String(thread.kind ?? 'conversation');
-      const anchor =
-        String(thread.anchor?.artifact ?? thread.anchor?.task ?? thread.anchor?.scope ?? thread.anchor?.decision ?? 'unanchored');
+      const anchor = String(
+        thread.anchor?.artifact ??
+          thread.anchor?.task ??
+          thread.anchor?.scope ??
+          thread.anchor?.decision ??
+          'unanchored',
+      );
       records.push(
         buildRecord({
           id: `conversation-open-${event.id}`,
@@ -134,8 +139,8 @@ export function extractFeatureMemories({
           createdAt: event.timestamp,
           lastSeenAt: event.timestamp,
           expiresAt: null,
-          decayScore: kind === 'huddle' ? 11 : 9
-        })
+          decayScore: kind === 'huddle' ? 11 : 9,
+        }),
       );
     }
 
@@ -159,8 +164,8 @@ export function extractFeatureMemories({
           createdAt: event.timestamp,
           lastSeenAt: event.timestamp,
           expiresAt: null,
-          decayScore: 8
-        })
+          decayScore: 8,
+        }),
       );
     }
 
@@ -182,8 +187,8 @@ export function extractFeatureMemories({
           createdAt: event.timestamp,
           lastSeenAt: event.timestamp,
           expiresAt: null,
-          decayScore: 12
-        })
+          decayScore: 12,
+        }),
       );
     }
   }
@@ -208,8 +213,8 @@ export function extractFeatureMemories({
         createdAt: now,
         lastSeenAt: now,
         expiresAt: null,
-        decayScore: 8
-      })
+        decayScore: 8,
+      }),
     );
   }
 
@@ -232,8 +237,8 @@ export function extractFeatureMemories({
         createdAt: now,
         lastSeenAt: now,
         expiresAt: null,
-        decayScore: 10
-      })
+        decayScore: 10,
+      }),
     );
   }
 

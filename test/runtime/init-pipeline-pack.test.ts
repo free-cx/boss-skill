@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { initPipeline } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { materializeState } from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
@@ -61,7 +61,7 @@ describe('initPipeline pack application', () => {
         skipDeploy: false,
         quick: false,
         hitlLevel: 'auto',
-        roles: 'full'
+        roles: 'full',
       },
       stages: {},
       qualityGates: {},
@@ -69,18 +69,18 @@ describe('initPipeline pack application', () => {
         totalDuration: null,
         stageTimings: {},
         gatePassRate: null,
-        retryTotal: 0
+        retryTotal: 0,
       },
       plugins: [],
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
     };
 
     fs.writeFileSync(
       path.join(metaDir, 'execution.json'),
       `${JSON.stringify(legacyState, null, 2)}\n`,
-      'utf8'
+      'utf8',
     );
 
     expect(() => initPipeline('test-feat', { cwd: tmpDir })).toThrow(/检测到不完整的流水线状态/);
@@ -101,7 +101,7 @@ describe('initPipeline pack application', () => {
         skipDeploy: false,
         quick: false,
         hitlLevel: 'auto',
-        roles: 'full'
+        roles: 'full',
       },
       stages: {},
       qualityGates: {},
@@ -109,17 +109,17 @@ describe('initPipeline pack application', () => {
         totalDuration: null,
         stageTimings: {},
         gatePassRate: null,
-        retryTotal: 0
+        retryTotal: 0,
       },
       plugins: [],
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
     };
     fs.writeFileSync(
       path.join(metaDir, 'execution.json'),
       `${JSON.stringify(legacyState, null, 2)}\n`,
-      'utf8'
+      'utf8',
     );
 
     const initEvent = {
@@ -127,8 +127,8 @@ describe('initPipeline pack application', () => {
       type: 'PipelineInitialized',
       timestamp: '2026-04-12T00:00:00.000Z',
       data: {
-        initialState: legacyState
-      }
+        initialState: legacyState,
+      },
     };
     fs.writeFileSync(path.join(metaDir, 'events.jsonl'), `${JSON.stringify(initEvent)}\n`, 'utf8');
 
@@ -151,7 +151,7 @@ describe('initPipeline pack application', () => {
         skipDeploy: false,
         quick: false,
         hitlLevel: 'auto',
-        roles: 'full'
+        roles: 'full',
       },
       stages: {},
       qualityGates: {},
@@ -159,17 +159,17 @@ describe('initPipeline pack application', () => {
         totalDuration: null,
         stageTimings: {},
         gatePassRate: null,
-        retryTotal: 0
+        retryTotal: 0,
       },
       plugins: [],
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
     };
     fs.writeFileSync(
       path.join(metaDir, 'execution.json'),
       `${JSON.stringify(legacyState, null, 2)}\n`,
-      'utf8'
+      'utf8',
     );
 
     const initEvent = {
@@ -177,8 +177,8 @@ describe('initPipeline pack application', () => {
       type: 'PipelineInitialized',
       timestamp: '2026-04-12T00:00:00.000Z',
       data: {
-        initialState: legacyState
-      }
+        initialState: legacyState,
+      },
     };
     fs.writeFileSync(path.join(metaDir, 'events.jsonl'), `${JSON.stringify(initEvent)}\n`, 'utf8');
 

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 import { evaluateTranscriptFile } from './skill-test-runner.js';
 
@@ -11,7 +11,7 @@ describe('Boss skill behavior runner', () => {
       id: 'explicit-boss-good',
       transcriptPath: path.join(FIXTURES, 'claude-good.jsonl'),
       requiredSkill: 'boss',
-      requiredMethodologySkills: ['pm/requirement-penetration']
+      requiredMethodologySkills: ['pm/requirement-penetration'],
     });
 
     expect(report).toEqual({
@@ -29,9 +29,9 @@ describe('Boss skill behavior runner', () => {
         inputTokens: 20,
         outputTokens: 5,
         cacheCreationInputTokens: 3,
-        cacheReadInputTokens: 7
+        cacheReadInputTokens: 7,
       },
-      failures: []
+      failures: [],
     });
   });
 
@@ -39,7 +39,7 @@ describe('Boss skill behavior runner', () => {
     const report = evaluateTranscriptFile({
       id: 'explicit-boss-premature',
       transcriptPath: path.join(FIXTURES, 'codex-premature-action.jsonl'),
-      requiredSkill: 'boss'
+      requiredSkill: 'boss',
     });
 
     expect(report.passed).toBe(false);
@@ -53,7 +53,7 @@ describe('Boss skill behavior runner', () => {
       id: 'missing-methodology',
       transcriptPath: path.join(FIXTURES, 'claude-good.jsonl'),
       requiredSkill: 'boss',
-      requiredMethodologySkills: ['qa/test-strategy']
+      requiredMethodologySkills: ['qa/test-strategy'],
     });
 
     expect(report.passed).toBe(false);

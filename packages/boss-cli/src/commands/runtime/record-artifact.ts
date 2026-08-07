@@ -4,23 +4,23 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { recordArtifact, recordArtifacts } from '../../runtime/application/pipeline.js';
+import { renderArtifactHtml } from '../../runtime/report/render-artifact-html.js';
 import {
   printRuntimeHelp,
   requireInputString,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { recordArtifact, recordArtifacts } from '../../runtime/application/pipeline.js';
-import { renderArtifactHtml } from '../../runtime/report/render-artifact-html.js';
 
 interface RecordArtifactInput {
   feature: string;
@@ -30,7 +30,10 @@ interface RecordArtifactInput {
 }
 
 function showHelp(): void {
-  printRuntimeHelp('record-artifact', 'boss runtime record-artifact FEATURE ARTIFACT STAGE [options]');
+  printRuntimeHelp(
+    'record-artifact',
+    'boss runtime record-artifact FEATURE ARTIFACT STAGE [options]',
+  );
 }
 
 function parseFlatInput(argv: string[]): RecordArtifactInput {
@@ -59,7 +62,7 @@ function parseFlatInput(argv: string[]): RecordArtifactInput {
     feature: requireInputString(feature, 'feature'),
     artifact: requireInputString(artifact, 'artifact'),
     stage: requireInputString(stage, 'stage'),
-    noOpen
+    noOpen,
   };
 }
 
@@ -71,7 +74,7 @@ function resolveInput(argv: string[], context: CliContext): RecordArtifactInput 
       feature: requireInputString(input.feature, 'feature'),
       artifact: requireInputString(input.artifact, 'artifact'),
       stage: requireInputString(input.stage, 'stage'),
-      noOpen: input.noOpen === true || input['no-open'] === true
+      noOpen: input.noOpen === true || input['no-open'] === true,
     };
   }
   return parseFlatInput(argv);
@@ -93,7 +96,7 @@ function actionFor(input: RecordArtifactInput, stageNumber: number) {
     type: 'record_artifact',
     feature: input.feature,
     artifact: input.artifact,
-    stage: stageNumber
+    stage: stageNumber,
   };
 }
 
@@ -119,7 +122,9 @@ function validateMarkdownArtifactName(artifact: string): void {
 
 function isInsideDirectory(child: string, parent: string): boolean {
   const relative = path.relative(parent, child);
-  return relative === '' || Boolean(relative && !relative.startsWith('..') && !path.isAbsolute(relative));
+  return (
+    relative === '' || Boolean(relative && !relative.startsWith('..') && !path.isAbsolute(relative))
+  );
 }
 
 function resolveFeatureDir(cwd: string, feature: string): string {
@@ -165,24 +170,27 @@ function actionsFor(input: RecordArtifactInput, cwd: string, stageNumber: number
     {
       type: 'write_file',
       path: path.posix.join('.boss', input.feature, htmlArtifact),
-      format: 'html'
+      format: 'html',
     },
     {
       type: 'record_artifact',
       feature: input.feature,
       artifact: htmlArtifact,
-      stage: stageNumber
-    }
+      stage: stageNumber,
+    },
   ];
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime record-artifact' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['record-artifact']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['record-artifact'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['record-artifact'], null, 2)}\n`,
     );
     return 0;
   }
@@ -219,16 +227,16 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         cwd,
         feature: input.feature,
         sourceArtifact: input.artifact,
-        markdown
+        markdown,
       });
     }
 
-    let execution;
+    let execution: ReturnType<typeof recordArtifact>;
 
     if (markdown !== undefined && htmlArtifact && html !== undefined && htmlOutputPath) {
       execution = recordArtifacts(input.feature, [input.artifact, htmlArtifact], stageNumber, {
         cwd,
-        beforeAppend: () => writeHtmlWithRollback(htmlOutputPath, html)
+        beforeAppend: () => writeHtmlWithRollback(htmlOutputPath, html),
       });
     } else {
       execution = recordArtifact(input.feature, input.artifact, stageNumber, { cwd });
@@ -247,12 +255,13 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       stage: stageNumber,
       artifacts,
       previewCommand,
-      ...(htmlArtifact ? { htmlArtifact, htmlPath } : {})
+      ...(htmlArtifact ? { htmlArtifact, htmlPath } : {}),
     };
     writeOutput(
       payload,
       context,
-      () => `${JSON.stringify(payload, null, 2)}\n${previewCommand ? `Preview: ${previewCommand}\n` : ''}`
+      () =>
+        `${JSON.stringify(payload, null, 2)}\n${previewCommand ? `Preview: ${previewCommand}\n` : ''}`,
     );
     return 0;
   } catch (err) {
@@ -261,6 +270,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime record-artifact', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime record-artifact',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import * as runtime from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
@@ -61,7 +61,7 @@ describe('recordArtifact', () => {
         beforeAppend: () => {
           beforeAppendRan = true;
           fs.writeFileSync(htmlPath, 'new html\n', 'utf8');
-        }
+        },
       });
     }).toThrow();
 

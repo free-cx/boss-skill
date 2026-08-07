@@ -10,7 +10,7 @@ const STAGE_MAP = {
   'tech-review.md': 2,
   'tasks.md': 2,
   'qa-report.md': 3,
-  'deploy-report.md': 4
+  'deploy-report.md': 4,
 };
 
 const AGENT_STAGE_MAP = {
@@ -22,7 +22,7 @@ const AGENT_STAGE_MAP = {
   'boss-frontend': 3,
   'boss-backend': 3,
   'boss-qa': 3,
-  'boss-devops': 4
+  'boss-devops': 4,
 };
 
 function readExecJson(cwd, feature) {
@@ -64,20 +64,25 @@ function findActiveFeature(cwd) {
         actives.push({
           feature: data.feature || entry.name,
           execJsonPath,
-          status
+          status,
         });
       }
     } catch (err) {
       process.stderr.write('[boss-skill] findActiveFeature/readExecJson: ' + err.message + '\n');
-      continue;
     }
   }
 
   if (actives.length === 0) return null;
 
   if (actives.length > 1) {
-    const names = actives.map(a => a.feature).join(', ');
-    process.stderr.write('[boss-skill] findActiveFeature: 检测到多个活跃流水线 (' + names + ')，使用第一个: ' + actives[0].feature + '\n');
+    const names = actives.map((a) => a.feature).join(', ');
+    process.stderr.write(
+      '[boss-skill] findActiveFeature: 检测到多个活跃流水线 (' +
+        names +
+        ')，使用第一个: ' +
+        actives[0].feature +
+        '\n',
+    );
   }
 
   return actives[0];
@@ -110,7 +115,7 @@ function getReadyArtifacts(dag, execData, params) {
   const stages = execData.stages || {};
   for (const sKey of Object.keys(stages).sort((a, b) => Number(a) - Number(b))) {
     const stage = stages[sKey] || {};
-    for (const a of (stage.artifacts || [])) {
+    for (const a of stage.artifacts || []) {
       completedArtifacts.add(a);
     }
   }
@@ -138,7 +143,7 @@ function getReadyArtifacts(dag, execData, params) {
     if (!def.agent) continue; // manual inputs
 
     const inputs = def.inputs || [];
-    const allReady = inputs.every(input => isSatisfied(input));
+    const allReady = inputs.every((input) => isSatisfied(input));
     if (allReady) {
       ready.push({ artifact: name, agent: def.agent, stage: def.stage });
     }
@@ -165,18 +170,18 @@ function resolveArtifactDagPath(cwd) {
     'packages',
     'boss-cli',
     'assets',
-    'artifact-dag.json'
+    'artifact-dag.json',
   );
   return fs.existsSync(builtIn) ? builtIn : null;
 }
 
 export {
-  STAGE_MAP,
   AGENT_STAGE_MAP,
-  readExecJson,
   findActiveFeature,
-  writeJson,
+  getReadyArtifacts,
   loadArtifactDag,
+  readExecJson,
   resolveArtifactDagPath,
-  getReadyArtifacts
+  STAGE_MAP,
+  writeJson,
 };

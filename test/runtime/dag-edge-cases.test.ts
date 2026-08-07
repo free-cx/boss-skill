@@ -1,14 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
-  initPipeline,
   getArtifactStatus,
+  getReadyArtifacts,
+  initPipeline,
   listArtifactStatuses,
   skipUpTo,
-  getReadyArtifacts
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -33,18 +33,18 @@ describe('DAG edge cases', () => {
   it('throws for artifact not defined in DAG', () => {
     const dagPath = writeDag({
       artifacts: {
-        'prd.md': { inputs: [], agent: 'boss-pm', stage: 1 }
-      }
+        'prd.md': { inputs: [], agent: 'boss-pm', stage: 1 },
+      },
     });
 
     expect(() =>
-      getArtifactStatus('dag-feature', 'nonexistent.md', { cwd: tmpDir, dagPath })
+      getArtifactStatus('dag-feature', 'nonexistent.md', { cwd: tmpDir, dagPath }),
     ).toThrow(/DAG 中未定义产物.*nonexistent\.md/);
   });
 
   it('throws for missing DAG file', () => {
     expect(() =>
-      getArtifactStatus('dag-feature', 'prd.md', { cwd: tmpDir, dagPath: '/nonexistent/dag.json' })
+      getArtifactStatus('dag-feature', 'prd.md', { cwd: tmpDir, dagPath: '/nonexistent/dag.json' }),
     ).toThrow(/未找到 DAG 文件/);
   });
 
@@ -52,8 +52,8 @@ describe('DAG edge cases', () => {
     const dagPath = writeDag({
       artifacts: {
         'prd.md': { inputs: [], agent: 'boss-pm', stage: 1 },
-        'architecture.md': { inputs: ['prd.md'], agent: 'boss-architect', stage: 2 }
-      }
+        'architecture.md': { inputs: ['prd.md'], agent: 'boss-architect', stage: 2 },
+      },
     });
 
     const status = getArtifactStatus('dag-feature', 'architecture.md', { cwd: tmpDir, dagPath });
@@ -65,8 +65,8 @@ describe('DAG edge cases', () => {
     const dagPath = writeDag({
       artifacts: {
         'notes.md': { inputs: [], agent: 'boss-pm', stage: 1, optional: true },
-        'prd.md': { inputs: ['notes.md'], agent: 'boss-pm', stage: 1 }
-      }
+        'prd.md': { inputs: ['notes.md'], agent: 'boss-pm', stage: 1 },
+      },
     });
 
     const status = getArtifactStatus('dag-feature', 'prd.md', { cwd: tmpDir, dagPath });
@@ -78,8 +78,8 @@ describe('DAG edge cases', () => {
       artifacts: {
         'prd.md': { inputs: [], agent: 'boss-pm', stage: 1 },
         'tasks.md': { inputs: ['prd.md'], agent: 'boss-architect', stage: 2 },
-        'code': { inputs: ['tasks.md'], agent: 'boss-dev', stage: 3 }
-      }
+        code: { inputs: ['tasks.md'], agent: 'boss-dev', stage: 3 },
+      },
     });
 
     const skipped = skipUpTo('dag-feature', 'code', { cwd: tmpDir, dagPath });
@@ -91,26 +91,26 @@ describe('DAG edge cases', () => {
   it('skipUpTo throws for undefined artifact', () => {
     const dagPath = writeDag({
       artifacts: {
-        'prd.md': { inputs: [], agent: 'boss-pm', stage: 1 }
-      }
+        'prd.md': { inputs: [], agent: 'boss-pm', stage: 1 },
+      },
     });
 
-    expect(() =>
-      skipUpTo('dag-feature', 'ghost.md', { cwd: tmpDir, dagPath })
-    ).toThrow(/DAG 中未定义产物.*ghost\.md/);
+    expect(() => skipUpTo('dag-feature', 'ghost.md', { cwd: tmpDir, dagPath })).toThrow(
+      /DAG 中未定义产物.*ghost\.md/,
+    );
   });
 
   it('listArtifactStatuses returns status for all DAG artifacts', () => {
     const dagPath = writeDag({
       artifacts: {
         'prd.md': { inputs: [], agent: 'boss-pm', stage: 1 },
-        'architecture.md': { inputs: ['prd.md'], agent: 'boss-arch', stage: 2 }
-      }
+        'architecture.md': { inputs: ['prd.md'], agent: 'boss-arch', stage: 2 },
+      },
     });
 
     const statuses = listArtifactStatuses('dag-feature', { cwd: tmpDir, dagPath });
     expect(statuses).toHaveLength(2);
-    const names = statuses.map(s => s.artifact);
+    const names = statuses.map((s) => s.artifact);
     expect(names).toContain('prd.md');
     expect(names).toContain('architecture.md');
   });
@@ -120,12 +120,12 @@ describe('DAG edge cases', () => {
       artifacts: {
         'prd.md': { inputs: [], agent: 'boss-pm', stage: 1 },
         'tasks.md': { inputs: ['prd.md'], agent: 'boss-arch', stage: 2 },
-        'code': { inputs: ['tasks.md'], agent: 'boss-dev', stage: 3 }
-      }
+        code: { inputs: ['tasks.md'], agent: 'boss-dev', stage: 3 },
+      },
     });
 
     const ready = getReadyArtifacts('dag-feature', { cwd: tmpDir, dagPath });
     // Only prd.md has no unsatisfied inputs initially
-    expect(ready.map(r => r.artifact)).toEqual(['prd.md']);
+    expect(ready.map((r) => r.artifact)).toEqual(['prd.md']);
   });
 });

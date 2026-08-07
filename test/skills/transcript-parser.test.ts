@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   assertSkillBeforeActions,
   parseTranscriptLines,
-  summarizeTranscript
+  summarizeTranscript,
 } from './transcript-parser.js';
 
 describe('Boss skill transcript parser', () => {
@@ -18,10 +18,10 @@ describe('Boss skill transcript parser', () => {
               type: 'tool_use',
               id: 'tool-1',
               name: 'Skill',
-              input: { skill: 'boss' }
-            }
-          ]
-        }
+              input: { skill: 'boss' },
+            },
+          ],
+        },
       }),
       JSON.stringify({
         type: 'assistant',
@@ -31,11 +31,11 @@ describe('Boss skill transcript parser', () => {
               type: 'tool_use',
               id: 'tool-2',
               name: 'Write',
-              input: { file_path: '/tmp/app.ts' }
-            }
-          ]
-        }
-      })
+              input: { file_path: '/tmp/app.ts' },
+            },
+          ],
+        },
+      }),
     ]);
 
     expect(transcript.toolCalls.map((call) => call.name)).toEqual(['Skill', 'Write']);
@@ -44,13 +44,13 @@ describe('Boss skill transcript parser', () => {
       ok: true,
       skill: 'boss',
       firstSkillIndex: 0,
-      firstActionIndex: 1
+      firstActionIndex: 1,
     });
     expect(summarizeTranscript(transcript).usage).toEqual({
       inputTokens: 12,
       outputTokens: 7,
       cacheCreationInputTokens: 0,
-      cacheReadInputTokens: 0
+      cacheReadInputTokens: 0,
     });
   });
 
@@ -59,13 +59,13 @@ describe('Boss skill transcript parser', () => {
       JSON.stringify({
         type: 'tool_call',
         tool: 'apply_patch',
-        arguments: { path: 'src/app.ts' }
+        arguments: { path: 'src/app.ts' },
       }),
       JSON.stringify({
         type: 'tool_call',
         tool: 'Skill',
-        arguments: { skill: 'boss' }
-      })
+        arguments: { skill: 'boss' },
+      }),
     ]);
 
     expect(transcript.toolCalls.map((call) => call.name)).toEqual(['apply_patch', 'Skill']);
@@ -74,7 +74,7 @@ describe('Boss skill transcript parser', () => {
       skill: 'boss',
       firstSkillIndex: 1,
       firstActionIndex: 0,
-      reason: 'tool apply_patch ran before Skill(boss)'
+      reason: 'tool apply_patch ran before Skill(boss)',
     });
   });
 
@@ -85,13 +85,15 @@ describe('Boss skill transcript parser', () => {
         message: {
           content: [
             { type: 'tool_use', name: 'Skill', input: { skill: 'boss' } },
-            { type: 'tool_use', name: 'Skill', input: { skill: 'pm/requirement-penetration' } }
-          ]
-        }
-      })
+            { type: 'tool_use', name: 'Skill', input: { skill: 'pm/requirement-penetration' } },
+          ],
+        },
+      }),
     ]);
 
     expect(summarizeTranscript(transcript).skills).toEqual(['boss', 'pm/requirement-penetration']);
-    expect(summarizeTranscript(transcript).methodologySkills).toEqual(['pm/requirement-penetration']);
+    expect(summarizeTranscript(transcript).methodologySkills).toEqual([
+      'pm/requirement-penetration',
+    ]);
   });
 });

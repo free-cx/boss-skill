@@ -1,15 +1,13 @@
 #!/usr/bin/env node
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-import { describeCommand, runMain, writeOutput } from '../../cli/contract.js';
+import { createCliContext, describeCommand, runMain, writeOutput } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import { createCliContext } from '../../cli/contract.js';
 import { printRuntimeHelp } from './agent-command-utils.js';
 import {
   listTodosRuntime,
   renderTodoListText,
-  toFeatureNotFoundError
+  toFeatureNotFoundError,
 } from './conversation-command-utils.js';
 
 function showHelp(): void {
@@ -24,13 +22,16 @@ function resolveFeature(argv: string[]): string {
   return feature;
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime list-todos' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['list-todos']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['list-todos'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['list-todos'], null, 2)}\n`,
     );
     return 0;
   }
@@ -43,7 +44,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
   const feature = resolveFeature(argv);
   try {
     const payload = listTodosRuntime(feature, context, { cwd });
-    writeOutput(payload, context, (data) => renderTodoListText(data as Array<Record<string, unknown>>));
+    writeOutput(payload, context, (data) =>
+      renderTodoListText(data as Array<Record<string, unknown>>),
+    );
     return 0;
   } catch (err) {
     throw toFeatureNotFoundError(err, feature);

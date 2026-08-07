@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
 
@@ -30,10 +30,13 @@ describe('TypeScript CLI architecture', () => {
   });
 
   it('routes project, artifact, and pack commands through TypeScript modules', () => {
-    const bossSource = fs.readFileSync(path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'bin', 'boss.ts'), 'utf8');
+    const bossSource = fs.readFileSync(
+      path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'bin', 'boss.ts'),
+      'utf8',
+    );
     const dispatcherSource = fs.readFileSync(
       path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'cli', 'dispatcher.ts'),
-      'utf8'
+      'utf8',
     );
 
     expect(bossSource).not.toContain('runBashScript');
@@ -46,7 +49,9 @@ describe('TypeScript CLI architecture', () => {
   it('keeps harness as a runtime pattern instead of a root directory', () => {
     expect(fs.existsSync(path.join(REPO_ROOT, 'harness'))).toBe(false);
 
-    const packageJson = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8')) as {
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'),
+    ) as {
       files?: string[];
     };
     expect(packageJson.files).toContain('packages/boss-cli/assets/');
@@ -54,13 +59,14 @@ describe('TypeScript CLI architecture', () => {
   });
 
   it('does not hard-code root harness asset paths in runtime source', () => {
-    const runtimeFiles = walkFiles(path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'runtime'))
-      .filter((file) => file.endsWith('.ts'));
+    const runtimeFiles = walkFiles(
+      path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'runtime'),
+    ).filter((file) => file.endsWith('.ts'));
     const forbiddenRootHarnessPatterns = [
       /\bREPO_ROOT\b[^\n;]*['"]harness['"]/,
       /\brepoRoot\b[^\n;]*['"]harness['"]/,
       /\bPROJECT_ROOT\b[^\n;]*['"]harness['"]/,
-      /['"](?:\.\.\/)+harness\//
+      /['"](?:\.\.\/)+harness\//,
     ];
 
     for (const file of runtimeFiles) {
@@ -96,7 +102,7 @@ describe('TypeScript CLI architecture', () => {
       'runtime/assets.ts',
       'infrastructure/paths.ts',
       'infrastructure/process.ts',
-      'infrastructure/fs.ts'
+      'infrastructure/fs.ts',
     ];
 
     for (const relativePath of expectedFiles) {
@@ -120,7 +126,7 @@ describe('TypeScript CLI architecture', () => {
       'runtime/application/memory-runtime.ts',
       'runtime/application/inspection-runtime.ts',
       'runtime/application/pack-runtime.ts',
-      'scripts'
+      'scripts',
     ];
 
     for (const relativePath of forbiddenFiles) {
@@ -147,7 +153,7 @@ describe('TypeScript CLI architecture', () => {
       'runtime/application/memory-runtime.js',
       'runtime/application/inspection-runtime.js',
       'runtime/application/pack-runtime.js',
-      'scripts'
+      'scripts',
     ];
 
     for (const relativePath of forbiddenPaths) {
@@ -165,7 +171,9 @@ describe('TypeScript CLI architecture', () => {
     expect(bossSource).not.toContain('const ROOT_USAGE');
 
     for (const file of ['help.ts', 'dispatcher.ts', 'registry.ts']) {
-      expect(fs.existsSync(path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'cli', file))).toBe(true);
+      expect(fs.existsSync(path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'cli', file))).toBe(
+        true,
+      );
     }
   });
 
@@ -175,13 +183,23 @@ describe('TypeScript CLI architecture', () => {
     const gatesSource = fs.readFileSync(path.join(appRoot, 'gates.ts'), 'utf8');
     const stateSource = fs.readFileSync(path.join(appRoot, 'state.ts'), 'utf8');
     const evaluateCommand = fs.readFileSync(
-      path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'commands', 'runtime', 'evaluate-gates.ts'),
-      'utf8'
+      path.join(
+        REPO_ROOT,
+        'packages',
+        'boss-cli',
+        'src',
+        'commands',
+        'runtime',
+        'evaluate-gates.ts',
+      ),
+      'utf8',
     );
 
     expect(gatesSource).toContain('export function evaluateGates');
     expect(gatesSource).toContain('function runGate0');
-    expect(gatesSource).not.toMatch(/^export\s+\{[^}]*evaluateGates[^}]*\}\s+from\s+['"]\.\/pipeline\.js['"]/m);
+    expect(gatesSource).not.toMatch(
+      /^export\s+\{[^}]*evaluateGates[^}]*\}\s+from\s+['"]\.\/pipeline\.js['"]/m,
+    );
     expect(pipelineSource).not.toContain('export function evaluateGates');
     expect(pipelineSource).not.toContain('function runGate0');
     expect(pipelineSource).not.toContain('function resolveGateScript');
@@ -204,7 +222,7 @@ describe('TypeScript CLI architecture', () => {
       'commands/artifact/index.ts',
       'commands/install/index.ts',
       'runtime/assets.ts',
-      'runtime/application/plugins.ts'
+      'runtime/application/plugins.ts',
     ];
 
     expect(pathSource).toContain('export function packageRootFromImportMeta');

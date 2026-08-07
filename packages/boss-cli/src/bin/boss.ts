@@ -2,13 +2,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-import { main as continueMain } from '../commands/continue.js';
-import { installMain } from '../commands/install/index.js';
-import { main as doctorMain } from '../commands/doctor.js';
-import { main as statusMain } from '../commands/status.js';
 import { CliUserError, createCliContext, describeCommand, runMain } from '../cli/contract.js';
-import { runtimeCommandNames } from '../cli/registry.js';
 import {
   describeRegisteredCommand,
   removeFirstPositional,
@@ -21,10 +15,14 @@ import {
   runQaCommand,
   runRuntimeCommand,
   throwUnknownCommand,
-  writeDescription
+  writeDescription,
 } from '../cli/dispatcher.js';
 import { showRootHelp } from '../cli/help.js';
-import { rootDescription } from '../cli/registry.js';
+import { rootDescription, runtimeCommandNames } from '../cli/registry.js';
+import { main as continueMain } from '../commands/continue.js';
+import { main as doctorMain } from '../commands/doctor.js';
+import { installMain } from '../commands/install/index.js';
+import { main as statusMain } from '../commands/status.js';
 import { readJsonFile } from '../infrastructure/fs.js';
 import { packageRootFromImportMeta } from '../infrastructure/paths.js';
 
@@ -59,9 +57,9 @@ function describeRoot() {
       'project init',
       'artifact prepare',
       'packs detect',
-      'hooks run'
+      'hooks run',
     ],
-    runtime_commands: runtimeCommandNames
+    runtime_commands: runtimeCommandNames,
   };
 }
 
@@ -92,7 +90,10 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
     case 'uninstall':
     case 'path':
       if (rootContext.values.describe && rootContext.positionals.length === 1) {
-        writeDescription(describeRegisteredCommand(`boss ${cmd}`), createCliContext(commandArgv, { command: `boss ${cmd}` }));
+        writeDescription(
+          describeRegisteredCommand(`boss ${cmd}`),
+          createCliContext(commandArgv, { command: `boss ${cmd}` }),
+        );
         return 0;
       }
       return installMain(argv);
@@ -104,12 +105,16 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
         code: 'command_removed',
         message: 'boss skills 命令组已移除',
         retryable: false,
-        suggestion: '安装 boss 自身请用 `boss install`（或 `npx @blade-ai/boss-skill`）；boss 不再管理其它 skill'
+        suggestion:
+          '安装 boss 自身请用 `boss install`（或 `npx @blade-ai/boss-skill`）；boss 不再管理其它 skill',
       });
 
     case 'doctor':
       if (rootContext.values.describe && rootContext.positionals.length === 1) {
-        writeDescription(describeRegisteredCommand('boss doctor'), createCliContext(commandArgv, { command: 'boss doctor' }));
+        writeDescription(
+          describeRegisteredCommand('boss doctor'),
+          createCliContext(commandArgv, { command: 'boss doctor' }),
+        );
         return 0;
       }
       return doctorMain(commandArgv, { cwd: process.cwd() });
@@ -169,6 +174,9 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
 }
 
 if (process.argv[1] && fs.realpathSync(process.argv[1]) === fs.realpathSync(__filename)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2)), context));
 }

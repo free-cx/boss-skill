@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 import { evaluateEvalCase, loadEvalCase } from './eval-runner.js';
 
@@ -27,17 +27,17 @@ describe('Boss deterministic eval runner', () => {
       behaviorResults: {
         'uses-boss-skill': true,
         'runs-tests': true,
-        'records-qa-evidence': true
+        'records-qa-evidence': true,
       },
       usage: {
         inputTokens: 1000,
         outputTokens: 500,
         cacheCreationInputTokens: 0,
-        cacheReadInputTokens: 0
+        cacheReadInputTokens: 0,
       },
       estimatedCostUsd: 0.0105,
       durationSeconds: 120,
-      failures: []
+      failures: [],
     });
   });
 
@@ -52,7 +52,7 @@ describe('Boss deterministic eval runner', () => {
       'avoids-direct-execution-write': true,
       'has-workflow-scheduler': true,
       'runs-tests': true,
-      'records-qa-evidence': true
+      'records-qa-evidence': true,
     });
   });
 

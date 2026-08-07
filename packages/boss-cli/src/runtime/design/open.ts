@@ -1,12 +1,15 @@
-import { spawn, type ChildProcess } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 
 export type SpawnOpenProcess = (
   command: string,
   args: string[],
-  options: { detached: true; stdio: 'ignore' }
+  options: { detached: true; stdio: 'ignore' },
 ) => Pick<ChildProcess, 'on' | 'unref'>;
 
-export function createOpenUrl(spawnProcess: SpawnOpenProcess, platform: NodeJS.Platform): (url: string) => boolean {
+export function createOpenUrl(
+  spawnProcess: SpawnOpenProcess,
+  platform: NodeJS.Platform,
+): (url: string) => boolean {
   return (url: string): boolean => {
     const command = platform === 'darwin' ? 'open' : platform === 'win32' ? 'cmd' : 'xdg-open';
     const args = platform === 'win32' ? ['/c', 'start', '', url] : [url];

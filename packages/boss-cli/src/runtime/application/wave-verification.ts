@@ -2,10 +2,10 @@ import { spawnSync } from 'node:child_process';
 
 import { EVENT_TYPES } from '../domain/event-types.js';
 import { formatCommand, type StructuredCommand } from '../domain/structured-wave.js';
-import { readWaves, type EvidenceWave } from './waves.js';
-import { appendRuntimeEvent, ensureFeatureName } from './state.js';
 import type { RuntimeEvent } from '../projectors/materialize-state.js';
 import { materializeState } from '../projectors/materialize-state.js';
+import { appendRuntimeEvent, ensureFeatureName } from './state.js';
+import { type EvidenceWave, readWaves } from './waves.js';
 
 export type VerifyPhase = 'red' | 'green' | 'full';
 
@@ -41,28 +41,27 @@ export interface WaveVerificationResult {
  */
 function runStructuredCommand(
   command: StructuredCommand,
-  cwd: string
+  cwd: string,
 ): { exitCode: number; stdout: string; stderr: string } {
   const result = spawnSync(command.command, command.args, {
     cwd,
     shell: false,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
-    timeout: 120_000
+    timeout: 120_000,
   });
 
   if (result.error) {
     const code = (result.error as NodeJS.ErrnoException).code;
-    const message = code === 'ENOENT'
-      ? `找不到可执行文件: ${command.command}`
-      : result.error.message;
+    const message =
+      code === 'ENOENT' ? `找不到可执行文件: ${command.command}` : result.error.message;
     return { exitCode: 127, stdout: '', stderr: message };
   }
 
   return {
     exitCode: result.status ?? 1,
     stdout: (result.stdout || '').trim().split('\n').slice(-30).join('\n'),
-    stderr: (result.stderr || '').trim().split('\n').slice(-30).join('\n')
+    stderr: (result.stderr || '').trim().split('\n').slice(-30).join('\n'),
   };
 }
 
@@ -98,7 +97,7 @@ export function verifyWave(
   feature: string,
   waveId: string,
   phase: VerifyPhase,
-  { cwd = process.cwd(), dryRun = false }: { cwd?: string; dryRun?: boolean } = {}
+  { cwd = process.cwd(), dryRun = false }: { cwd?: string; dryRun?: boolean } = {},
 ): WaveVerificationResult {
   ensureFeatureName(feature);
   const wave = findWave(feature, waveId, cwd);
@@ -134,7 +133,7 @@ export function verifyWave(
         phase,
         verified,
         redTestsCorrect: redTests?.allCorrect ?? null,
-        greenGatesCorrect: greenGates?.allCorrect ?? null
+        greenGatesCorrect: greenGates?.allCorrect ?? null,
       });
       materializeState(feature, cwd);
       result.event = { id: event.id, type: event.type };

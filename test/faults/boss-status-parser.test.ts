@@ -6,15 +6,15 @@ describe('Boss agent status intake fault handling', () => {
   it('accepts a known status from the structured field', () => {
     expect(
       readReportedStatus({
-        structured_output: { status: 'DONE_WITH_CONCERNS', reason: 'verified with warnings' }
-      })
+        structured_output: { status: 'DONE_WITH_CONCERNS', reason: 'verified with warnings' },
+      }),
     ).toEqual({ status: 'DONE_WITH_CONCERNS', reason: 'verified with warnings' });
   });
 
   it('accepts a bare status string', () => {
     expect(readReportedStatus({ agent_status: 'BLOCKED' })).toEqual({
       status: 'BLOCKED',
-      reason: ''
+      reason: '',
     });
   });
 
@@ -26,13 +26,11 @@ describe('Boss agent status intake fault handling', () => {
   it('does not infer status from prose', () => {
     // 核心不变量：状态是控制流输入，只能来自校验过的结构化字段，
     // 不得从自然语言消息里推断。
-    expect(
-      readReportedStatus({ last_assistant_message: 'Done, all tests passed.' })
-    ).toBeNull();
+    expect(readReportedStatus({ last_assistant_message: 'Done, all tests passed.' })).toBeNull();
     expect(
       readReportedStatus({
-        last_assistant_message: '[BOSS_STATUS]\nstatus: DONE\n[/BOSS_STATUS]'
-      })
+        last_assistant_message: '[BOSS_STATUS]\nstatus: DONE\n[/BOSS_STATUS]',
+      }),
     ).toBeNull();
   });
 
@@ -47,8 +45,8 @@ describe('Boss agent status intake fault handling', () => {
     expect(
       readReportedStatus({
         last_assistant_message: verbose,
-        structured_output: { status: 'DONE', reason: 'ok' }
-      })
+        structured_output: { status: 'DONE', reason: 'ok' },
+      }),
     ).toEqual({ status: 'DONE', reason: 'ok' });
   });
 });

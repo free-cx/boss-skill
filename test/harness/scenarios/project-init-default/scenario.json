@@ -2,9 +2,7 @@
   "name": "project-init-default",
   "description": "Initializes a Boss project and verifies metadata scaffold.",
   "feature": "harness-init",
-  "commands": [
-    { "run": ["boss", "project", "init", "harness-init", "--json"] }
-  ],
+  "commands": [{ "run": ["boss", "project", "init", "harness-init", "--json"] }],
   "expect": {
     "artifacts": [
       ".boss/harness-init/.meta/execution.json",

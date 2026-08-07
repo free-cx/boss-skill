@@ -1,14 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   listPipelinePackManifestPaths,
   listPluginManifestPaths,
   resolveArtifactDagPath,
   resolveBuiltInAssetPath,
-  resolvePluginSchemaPath
+  resolvePluginSchemaPath,
 } from '../../packages/boss-cli/src/runtime/assets.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -39,7 +39,9 @@ describe('runtime asset resolver', () => {
     fs.mkdirSync(path.join(tmpDir, '.boss'), { recursive: true });
     fs.writeFileSync(path.join(tmpDir, '.boss', 'artifact-dag.json'), '{"artifacts":{}}\n', 'utf8');
 
-    expect(resolveArtifactDagPath({ cwd: tmpDir })).toBe(path.join(tmpDir, '.boss', 'artifact-dag.json'));
+    expect(resolveArtifactDagPath({ cwd: tmpDir })).toBe(
+      path.join(tmpDir, '.boss', 'artifact-dag.json'),
+    );
   });
 
   it('merges project pipeline packs over built-in packs by name', () => {
@@ -48,7 +50,7 @@ describe('runtime asset resolver', () => {
     fs.writeFileSync(
       path.join(packDir, 'pipeline.json'),
       '{"name":"api-only","version":"9.9.9","type":"pipeline-pack","config":{}}\n',
-      'utf8'
+      'utf8',
     );
 
     const paths = listPipelinePackManifestPaths({ cwd: tmpDir });
@@ -63,9 +65,13 @@ describe('runtime asset resolver', () => {
     fs.writeFileSync(
       path.join(pluginDir, 'plugin.json'),
       '{"name":"security-audit","version":"9.9.9","type":"gate","hooks":{"gate":"gate.js"}}\n',
-      'utf8'
+      'utf8',
     );
-    fs.writeFileSync(path.join(pluginDir, 'gate.js'), '#!/usr/bin/env node\nprocess.exit(0)\n', 'utf8');
+    fs.writeFileSync(
+      path.join(pluginDir, 'gate.js'),
+      '#!/usr/bin/env node\nprocess.exit(0)\n',
+      'utf8',
+    );
 
     const paths = listPluginManifestPaths({ cwd: tmpDir });
     const securityAuditEntries = paths.filter((item) => item.name === 'security-audit');

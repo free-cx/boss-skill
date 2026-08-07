@@ -32,7 +32,7 @@ const VERSION_FILES = [
       const obj = JSON.parse(content);
       obj.version = version;
       return JSON.stringify(obj, null, 2) + '\n';
-    }
+    },
   },
   {
     path: 'packages/boss-cli/package.json',
@@ -41,7 +41,7 @@ const VERSION_FILES = [
       const obj = JSON.parse(content);
       obj.version = version;
       return JSON.stringify(obj, null, 2) + '\n';
-    }
+    },
   },
   {
     path: '.claude-plugin/plugin.json',
@@ -50,7 +50,7 @@ const VERSION_FILES = [
       const obj = JSON.parse(content);
       obj.version = version;
       return JSON.stringify(obj, null, 2) + '\n';
-    }
+    },
   },
   {
     path: '.claude-plugin/marketplace.json',
@@ -64,7 +64,7 @@ const VERSION_FILES = [
         }
       }
       return JSON.stringify(obj, null, 2) + '\n';
-    }
+    },
   },
   {
     path: '.codex-plugin/plugin.json',
@@ -73,7 +73,7 @@ const VERSION_FILES = [
       const obj = JSON.parse(content);
       obj.version = version;
       return JSON.stringify(obj, null, 2) + '\n';
-    }
+    },
   },
   {
     path: '.codex-plugin/marketplace.json',
@@ -87,7 +87,7 @@ const VERSION_FILES = [
         }
       }
       return JSON.stringify(obj, null, 2) + '\n';
-    }
+    },
   },
   {
     path: '.agents/plugins/marketplace.json',
@@ -101,22 +101,22 @@ const VERSION_FILES = [
         }
       }
       return JSON.stringify(obj, null, 2) + '\n';
-    }
+    },
   },
   {
     path: PROVENANCE_FILE,
     kind: 'provenance',
-    update(content, version) {
+    update(content, _version) {
       return content;
-    }
+    },
   },
   {
     path: 'skill/SKILL.md',
     kind: 'skill',
     update(content, version) {
       return content.replace(/^version:\s*.+$/m, `version: ${version}`);
-    }
-  }
+    },
+  },
 ];
 
 // ── 辅助函数 ──────────────────────────────────────────
@@ -156,7 +156,9 @@ function verifyVersionFile(file, version) {
     if (Array.isArray(obj.plugins)) {
       for (const plugin of obj.plugins) {
         if (plugin.version !== version) {
-          throw new Error(`${file.path} plugin ${plugin.name ?? '<unknown>'} version=${plugin.version ?? '<missing>'}`);
+          throw new Error(
+            `${file.path} plugin ${plugin.name ?? '<unknown>'} version=${plugin.version ?? '<missing>'}`,
+          );
         }
       }
     }
@@ -181,10 +183,21 @@ function verifyVersionFile(file, version) {
 
 function bumpVersion(current, type) {
   const parts = current.split('.').map(Number);
-  if (type === 'major') { parts[0]++; parts[1] = 0; parts[2] = 0; }
-  else if (type === 'minor') { parts[0]; parts[1]++; parts[2] = 0; }
-  else if (type === 'patch') { parts[0]; parts[1]; parts[2]++; }
-  else { return null; }
+  if (type === 'major') {
+    parts[0]++;
+    parts[1] = 0;
+    parts[2] = 0;
+  } else if (type === 'minor') {
+    parts[0];
+    parts[1]++;
+    parts[2] = 0;
+  } else if (type === 'patch') {
+    parts[0];
+    parts[1];
+    parts[2]++;
+  } else {
+    return null;
+  }
   return parts.join('.');
 }
 
@@ -198,10 +211,12 @@ function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
   const noPublish = args.includes('--no-publish');
-  const versionArg = args.find(a => !a.startsWith('--'));
+  const versionArg = args.find((a) => !a.startsWith('--'));
 
   if (!versionArg) {
-    console.error('用法: node scripts/release.js <version|major|minor|patch> [--dry-run] [--no-publish]');
+    console.error(
+      '用法: node scripts/release.js <version|major|minor|patch> [--dry-run] [--no-publish]',
+    );
     process.exit(1);
   }
 
@@ -263,7 +278,7 @@ function main() {
       try {
         verifyVersionFile(file, next);
       } catch (err) {
-        console.error(`❌ ${file.path} 版本不一致: ${(err).message}`);
+        console.error(`❌ ${file.path} 版本不一致: ${err.message}`);
         process.exit(1);
       }
     }
@@ -281,7 +296,7 @@ function main() {
 
   // 6. Git commit + tag
   console.log('\n📝 提交版本更新...');
-  run(`git add ${VERSION_FILES.map(f => f.path).join(' ')}`);
+  run(`git add ${VERSION_FILES.map((f) => f.path).join(' ')}`);
   run(`git commit -m "chore: release v${next}"`);
   run(`git tag v${next}`);
 

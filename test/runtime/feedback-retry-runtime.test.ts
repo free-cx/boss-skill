@@ -1,14 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   initPipeline,
-  updateStage,
-  updateAgent,
   recordFeedback,
   retryAgent,
-  retryStage
+  retryStage,
+  updateAgent,
+  updateStage,
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -27,9 +27,11 @@ describe('recordFeedback', () => {
 
   it('records a revision request and increments round', () => {
     const state = recordFeedback('test-feat', {
-      from: 'boss-tech-lead', to: 'boss-architect',
-      artifact: 'architecture.md', reason: '缺少缓存策略',
-      cwd: tmpDir
+      from: 'boss-tech-lead',
+      to: 'boss-architect',
+      artifact: 'architecture.md',
+      reason: '缺少缓存策略',
+      cwd: tmpDir,
     });
     expect(state.feedbackLoops.currentRound).toBe(1);
     expect(state.revisionRequests).toHaveLength(1);
@@ -38,29 +40,46 @@ describe('recordFeedback', () => {
 
   it('rejects when max rounds reached', () => {
     recordFeedback('test-feat', {
-      from: 'boss-tech-lead', to: 'boss-architect',
-      artifact: 'architecture.md', reason: 'round 1', cwd: tmpDir
+      from: 'boss-tech-lead',
+      to: 'boss-architect',
+      artifact: 'architecture.md',
+      reason: 'round 1',
+      cwd: tmpDir,
     });
     recordFeedback('test-feat', {
-      from: 'boss-qa', to: 'boss-backend',
-      artifact: 'code', reason: 'round 2', cwd: tmpDir
+      from: 'boss-qa',
+      to: 'boss-backend',
+      artifact: 'code',
+      reason: 'round 2',
+      cwd: tmpDir,
     });
-    expect(() => recordFeedback('test-feat', {
-      from: 'boss-qa', to: 'boss-frontend',
-      artifact: 'code', reason: 'round 3', cwd: tmpDir
-    })).toThrow(/已达上限/);
+    expect(() =>
+      recordFeedback('test-feat', {
+        from: 'boss-qa',
+        to: 'boss-frontend',
+        artifact: 'code',
+        reason: 'round 3',
+        cwd: tmpDir,
+      }),
+    ).toThrow(/已达上限/);
   });
 
   it('event data includes priority field', () => {
     recordFeedback('test-feat', {
-      from: 'boss-tech-lead', to: 'boss-architect',
-      artifact: 'architecture.md', reason: '安全问题',
-      priority: 'critical', cwd: tmpDir
+      from: 'boss-tech-lead',
+      to: 'boss-architect',
+      artifact: 'architecture.md',
+      reason: '安全问题',
+      priority: 'critical',
+      cwd: tmpDir,
     });
     const eventsPath = path.join(tmpDir, '.boss', 'test-feat', '.meta', 'events.jsonl');
-    const events = fs.readFileSync(eventsPath, 'utf8').trim().split('\n')
-      .map(line => JSON.parse(line))
-      .filter(e => e.type === 'RevisionRequested');
+    const events = fs
+      .readFileSync(eventsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line))
+      .filter((e) => e.type === 'RevisionRequested');
     expect(events[0].data.priority).toBe('critical');
   });
 });
@@ -89,8 +108,9 @@ describe('retryAgent', () => {
 
   it('rejects retry of non-failed agent', () => {
     retryAgent('test-feat', 3, 'boss-qa', { cwd: tmpDir }); // now running
-    expect(() => retryAgent('test-feat', 3, 'boss-qa', { cwd: tmpDir }))
-      .toThrow(/只有 failed 状态可以重试/);
+    expect(() => retryAgent('test-feat', 3, 'boss-qa', { cwd: tmpDir })).toThrow(
+      /只有 failed 状态可以重试/,
+    );
   });
 
   it('rejects when max retries reached', () => {
@@ -101,8 +121,9 @@ describe('retryAgent', () => {
     retryAgent('test-feat', 3, 'boss-qa', { cwd: tmpDir });
     updateAgent('test-feat', 3, 'boss-qa', 'failed', { cwd: tmpDir });
     // retry 3 should fail (default maxRetries=2)
-    expect(() => retryAgent('test-feat', 3, 'boss-qa', { cwd: tmpDir }))
-      .toThrow(/已达最大重试次数/);
+    expect(() => retryAgent('test-feat', 3, 'boss-qa', { cwd: tmpDir })).toThrow(
+      /已达最大重试次数/,
+    );
   });
 });
 
@@ -128,7 +149,6 @@ describe('retryStage', () => {
 
   it('rejects retry of non-failed stage', () => {
     retryStage('test-feat', 3, { cwd: tmpDir }); // now running
-    expect(() => retryStage('test-feat', 3, { cwd: tmpDir }))
-      .toThrow(/只有 failed 状态可以重试/);
+    expect(() => retryStage('test-feat', 3, { cwd: tmpDir })).toThrow(/只有 failed 状态可以重试/);
   });
 });

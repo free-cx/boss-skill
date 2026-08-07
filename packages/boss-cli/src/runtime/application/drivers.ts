@@ -23,7 +23,7 @@ export function resolveDriverCapabilities(value: string | undefined): BossDriver
       hooks: true,
       checkpointPrompt: false,
       stopGuards: true,
-      subagents: true
+      subagents: true,
     };
   }
 
@@ -32,6 +32,6 @@ export function resolveDriverCapabilities(value: string | undefined): BossDriver
     hooks: false,
     checkpointPrompt: true,
     stopGuards: false,
-    subagents: false
+    subagents: false,
   };
 }

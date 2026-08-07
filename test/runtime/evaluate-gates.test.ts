@@ -1,11 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-
-import { initPipeline } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { evaluateGates } from '../../packages/boss-cli/src/runtime/application/gates.js';
+import { initPipeline } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
@@ -68,7 +67,7 @@ describe('evaluateGates', () => {
   it('skip-on-error ignores missing gates', () => {
     const result = evaluateGates('test-feat', 'missing-gate', {
       cwd: tmpDir,
-      skipOnError: true
+      skipOnError: true,
     });
     expect(result.skipped).toBe(true);
     expect(result.passed).toBe(true);
@@ -86,10 +85,14 @@ describe('evaluateGates', () => {
     fs.writeFileSync(path.join(pluginDir, 'gate.sh'), '#!/bin/bash\necho "[]"\nexit 1\n', 'utf8');
     fs.chmodSync(path.join(pluginDir, 'gate.sh'), 0o755);
 
-    const result = spawnSync(process.execPath, [BOSS_BIN, 'runtime', 'evaluate-gates', 'test-feat', 'fail-gate'], {
-      cwd: tmpDir,
-      encoding: 'utf8'
-    });
+    const result = spawnSync(
+      process.execPath,
+      [BOSS_BIN, 'runtime', 'evaluate-gates', 'test-feat', 'fail-gate'],
+      {
+        cwd: tmpDir,
+        encoding: 'utf8',
+      },
+    );
     expect(result.status).not.toBe(0);
   });
 
@@ -100,17 +103,25 @@ describe('evaluateGates', () => {
     fs.writeFileSync(
       path.join(pluginDir, 'gate.sh'),
       `#!/bin/bash\necho touched > ${JSON.stringify(sideEffectPath)}\necho "[]"\nexit 0\n`,
-      'utf8'
+      'utf8',
     );
     fs.chmodSync(path.join(pluginDir, 'gate.sh'), 0o755);
 
     const result = spawnSync(
       process.execPath,
-      [BOSS_BIN, 'runtime', 'evaluate-gates', 'test-feat', 'side-effect-gate', '--dry-run', '--json'],
+      [
+        BOSS_BIN,
+        'runtime',
+        'evaluate-gates',
+        'test-feat',
+        'side-effect-gate',
+        '--dry-run',
+        '--json',
+      ],
       {
         cwd: tmpDir,
-        encoding: 'utf8'
-      }
+        encoding: 'utf8',
+      },
     );
 
     expect(result.status).toBe(0);
@@ -122,8 +133,8 @@ describe('evaluateGates', () => {
         type: 'evaluate_gate',
         feature: 'test-feat',
         gate: 'side-effect-gate',
-        writes_event: false
-      }
+        writes_event: false,
+      },
     ]);
     expect(fs.existsSync(sideEffectPath)).toBe(false);
   });
@@ -141,9 +152,14 @@ describe('evaluateGates', () => {
   });
 
   it('reports missing args at boss runtime CLI boundary', () => {
-    const result = spawnSync(process.execPath, [BOSS_BIN, 'runtime', 'evaluate-gates'], { cwd: tmpDir, encoding: 'utf8' });
+    const result = spawnSync(process.execPath, [BOSS_BIN, 'runtime', 'evaluate-gates'], {
+      cwd: tmpDir,
+      encoding: 'utf8',
+    });
     expect(result.status).not.toBe(0);
-    expect(result.stdout + result.stderr).toContain('Usage: boss runtime evaluate-gates FEATURE GATE [options]');
+    expect(result.stdout + result.stderr).toContain(
+      'Usage: boss runtime evaluate-gates FEATURE GATE [options]',
+    );
   });
 
   it('records stderr-only gate checks', () => {
@@ -152,13 +168,13 @@ describe('evaluateGates', () => {
     fs.writeFileSync(
       path.join(pluginDir, 'gate.sh'),
       '#!/bin/bash\necho "[{\\"name\\":\\"stderr-only\\",\\"passed\\":true}]" 1>&2\nexit 0\n',
-      'utf8'
+      'utf8',
     );
     fs.chmodSync(path.join(pluginDir, 'gate.sh'), 0o755);
 
     const result = evaluateGates('test-feat', 'stderr-gate', { cwd: tmpDir });
     expect((result.execution.qualityGates['stderr-gate'].checks[0] as { name: string }).name).toBe(
-      'stderr-only'
+      'stderr-only',
     );
   });
 

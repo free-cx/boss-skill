@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cleanupTempDir, createExecData, createTempBossDir } from '../helpers/fixtures.js';
 
@@ -56,7 +56,7 @@ describe('session-resume hook', () => {
     fs.writeFileSync(
       path.join(tmpDir, '.boss', '.session-state.json'),
       JSON.stringify({ feature: 'test-feat', pipelineStatus: 'running' }),
-      'utf8'
+      'utf8',
     );
 
     const parsed = JSON.parse(hook.run(JSON.stringify({ cwd: tmpDir }))) as {

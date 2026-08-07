@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cleanupTempDir, createExecData, createTempBossDir } from '../helpers/fixtures.js';
 
@@ -30,8 +30,8 @@ describe('subagent-stop hook', () => {
         cwd: tmpDir,
         agent_type: 'code',
         agent_id: 'agent-123',
-        last_assistant_message: 'Task completed successfully'
-      })
+        last_assistant_message: 'Task completed successfully',
+      }),
     );
 
     const logFile = path.join(tmpDir, '.boss', 'test-feat', '.meta', 'agent-log.jsonl');
@@ -56,8 +56,8 @@ describe('subagent-stop hook', () => {
         cwd: tmpDir,
         agent_type: 'code',
         agent_id: 'agent-456',
-        last_assistant_message: 'Done'
-      })
+        last_assistant_message: 'Done',
+      }),
     );
 
     const logFile = path.join(tmpDir, '.boss', '.harness-logs', '.meta', 'agent-log.jsonl');
@@ -72,8 +72,8 @@ describe('subagent-stop hook', () => {
         '1': { name: 'Planning', status: 'completed', artifacts: [] },
         '2': { name: 'Review', status: 'running', artifacts: [] },
         '3': { name: 'Development', status: 'pending', artifacts: [] },
-        '4': { name: 'Deployment', status: 'pending', artifacts: [] }
-      }
+        '4': { name: 'Deployment', status: 'pending', artifacts: [] },
+      },
     });
     tmpDir = createTempBossDir('test-feat', execData);
 
@@ -84,12 +84,12 @@ describe('subagent-stop hook', () => {
         agent_id: 'agent-789',
         // 散文里写 DONE 不影响结果：状态只来自结构化字段
         last_assistant_message: 'DONE',
-        structured_output: { status: 'BLOCKED', reason: 'waiting-for-schema' }
-      })
+        structured_output: { status: 'BLOCKED', reason: 'waiting-for-schema' },
+      }),
     );
 
     const execJson = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8'),
     ) as {
       stages: {
         '2': {
@@ -119,8 +119,8 @@ describe('subagent-stop hook', () => {
         '1': { name: 'Planning', status: 'completed', artifacts: [] },
         '2': { name: 'Review', status: 'running', artifacts: [] },
         '3': { name: 'Development', status: 'pending', artifacts: [] },
-        '4': { name: 'Deployment', status: 'pending', artifacts: [] }
-      }
+        '4': { name: 'Deployment', status: 'pending', artifacts: [] },
+      },
     });
     tmpDir = createTempBossDir('test-feat', execData);
 
@@ -129,12 +129,12 @@ describe('subagent-stop hook', () => {
         cwd: tmpDir,
         agent_type: 'boss-tech-lead',
         agent_id: 'agent-790',
-        last_assistant_message: 'DONE'
-      })
+        last_assistant_message: 'DONE',
+      }),
     );
 
     const execJson = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8'),
     ) as {
       stages: {
         '2': {
@@ -156,8 +156,8 @@ describe('subagent-stop hook', () => {
         '1': { name: 'Planning', status: 'completed', artifacts: [] },
         '2': { name: 'Review', status: 'running', artifacts: [] },
         '3': { name: 'Development', status: 'pending', artifacts: [] },
-        '4': { name: 'Deployment', status: 'pending', artifacts: [] }
-      }
+        '4': { name: 'Deployment', status: 'pending', artifacts: [] },
+      },
     });
     tmpDir = createTempBossDir('test-feat', execData);
 
@@ -166,12 +166,12 @@ describe('subagent-stop hook', () => {
         cwd: tmpDir,
         agent_type: 'boss-tech-lead',
         agent_id: 'agent-791',
-        structured_output: { status: 'ALL_GOOD', reason: 'ship it' }
-      })
+        structured_output: { status: 'ALL_GOOD', reason: 'ship it' },
+      }),
     );
 
     const execJson = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8'),
     ) as {
       stages: {
         '2': {

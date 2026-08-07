@@ -36,14 +36,17 @@ function renderList<T>(items: T[] | undefined, renderItem: (item: T) => string):
 }
 
 export function renderHtml(model: DiagnosticsModel): string {
-  const stageCards = renderList(model.stages, (stage) => `
+  const stageCards = renderList(
+    model.stages,
+    (stage) => `
     <li class="card">
       <h3>Stage ${stage.stage}: ${escapeHtml(stage.name)}</h3>
       <p>Status: ${escapeHtml(stage.status)}</p>
       <p>Duration: ${stage.duration == null ? '&mdash;' : `${stage.duration}s`}</p>
       <p>Retries: ${stage.retryCount}</p>
     </li>
-  `);
+  `,
+  );
 
   const artifactCards = renderList(
     model.stages.filter((stage) => stage.artifacts.length > 0),
@@ -53,29 +56,38 @@ export function renderHtml(model: DiagnosticsModel): string {
       <p>${escapeHtml(stage.name)}</p>
       <ul>${renderList(stage.artifacts, (artifact) => `<li>${escapeHtml(artifact)}</li>`)}</ul>
     </li>
-  `
+  `,
   );
 
-  const eventCards = renderList(model.recentEvents, (event) => `
+  const eventCards = renderList(
+    model.recentEvents,
+    (event) => `
     <li class="card">
       <strong>${escapeHtml(event.type)}</strong>
       <p>${escapeHtml(event.timestamp)}</p>
     </li>
-  `);
+  `,
+  );
 
-  const progressCards = renderList(model.progressEvents, (event) => `
+  const progressCards = renderList(
+    model.progressEvents,
+    (event) => `
     <li class="card">
       <strong>${escapeHtml(event.type)}</strong>
       <p>${escapeHtml(event.timestamp)}</p>
     </li>
-  `);
+  `,
+  );
 
-  const todoCards = renderList(model.derivedTodos, (todo) => `
+  const todoCards = renderList(
+    model.derivedTodos,
+    (todo) => `
     <li class="card">
       <strong>${escapeHtml(todo.title)}</strong>
       <p>${escapeHtml(todo.owner)} · ${escapeHtml(todo.status)}</p>
     </li>
-  `);
+  `,
+  );
 
   return `<!doctype html>
 <html lang="en">

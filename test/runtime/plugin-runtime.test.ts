@@ -1,12 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   discoverPlugins,
-  registerPlugins
+  registerPlugins,
 } from '../../packages/boss-cli/src/runtime/application/plugins.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -19,14 +19,18 @@ describe('plugin runtime registration', () => {
   function writePlugin(
     dirName: string,
     manifest: Record<string, unknown>,
-    scripts: Record<string, string> = {}
+    scripts: Record<string, string> = {},
   ) {
     const pluginDir = path.join(tmpDir, '.boss', 'plugins', dirName);
     fs.mkdirSync(pluginDir, { recursive: true });
     for (const [fileName, content] of Object.entries(scripts)) {
       fs.writeFileSync(path.join(pluginDir, fileName), content, 'utf8');
     }
-    fs.writeFileSync(path.join(pluginDir, 'plugin.json'), JSON.stringify(manifest, null, 2), 'utf8');
+    fs.writeFileSync(
+      path.join(pluginDir, 'plugin.json'),
+      JSON.stringify(manifest, null, 2),
+      'utf8',
+    );
     return pluginDir;
   }
 
@@ -40,9 +44,9 @@ describe('plugin runtime registration', () => {
         type: 'gate',
         hooks: { gate: 'gate.sh' },
         dependencies: ['beta'],
-        enabled: true
+        enabled: true,
       },
-      { 'gate.sh': '#!/bin/bash\nexit 0\n' }
+      { 'gate.sh': '#!/bin/bash\nexit 0\n' },
     );
     writePlugin(
       'beta',
@@ -51,9 +55,9 @@ describe('plugin runtime registration', () => {
         version: '1.0.0',
         type: 'gate',
         hooks: { gate: 'gate.sh' },
-        enabled: true
+        enabled: true,
       },
-      { 'gate.sh': '#!/bin/bash\nexit 0\n' }
+      { 'gate.sh': '#!/bin/bash\nexit 0\n' },
     );
   });
 
@@ -63,13 +67,23 @@ describe('plugin runtime registration', () => {
 
   it('discovers enabled plugins, validates manifests, and honors dependency order', () => {
     const result = discoverPlugins({ cwd: tmpDir });
-    expect(result.plugins.map((plugin) => plugin.name)).toEqual(['beta', 'alpha', 'llm-judge', 'owasp-scan', 'security-audit']);
+    expect(result.plugins.map((plugin) => plugin.name)).toEqual([
+      'beta',
+      'alpha',
+      'llm-judge',
+      'owasp-scan',
+      'security-audit',
+    ]);
   });
 
   it('discovers project plugins from .boss/plugins and built-in plugins from CLI assets', () => {
     const projectPluginDir = path.join(tmpDir, '.boss', 'plugins', 'project-gate');
     fs.mkdirSync(projectPluginDir, { recursive: true });
-    fs.writeFileSync(path.join(projectPluginDir, 'gate.js'), '#!/usr/bin/env node\nprocess.stdout.write("[]\\n")\n', 'utf8');
+    fs.writeFileSync(
+      path.join(projectPluginDir, 'gate.js'),
+      '#!/usr/bin/env node\nprocess.stdout.write("[]\\n")\n',
+      'utf8',
+    );
     fs.chmodSync(path.join(projectPluginDir, 'gate.js'), 0o755);
     fs.writeFileSync(
       path.join(projectPluginDir, 'plugin.json'),
@@ -78,9 +92,9 @@ describe('plugin runtime registration', () => {
         version: '1.0.0',
         type: 'gate',
         hooks: { gate: 'gate.js' },
-        enabled: true
+        enabled: true,
       }),
-      'utf8'
+      'utf8',
     );
 
     const result = discoverPlugins({ cwd: tmpDir });
@@ -91,11 +105,15 @@ describe('plugin runtime registration', () => {
   it('does not discover root harness plugins', () => {
     const rootHarnessPlugin = path.join(tmpDir, 'harness', 'plugins', 'legacy-gate');
     fs.mkdirSync(rootHarnessPlugin, { recursive: true });
-    fs.writeFileSync(path.join(rootHarnessPlugin, 'gate.js'), '#!/usr/bin/env node\nprocess.exit(0)\n', 'utf8');
+    fs.writeFileSync(
+      path.join(rootHarnessPlugin, 'gate.js'),
+      '#!/usr/bin/env node\nprocess.exit(0)\n',
+      'utf8',
+    );
     fs.writeFileSync(
       path.join(rootHarnessPlugin, 'plugin.json'),
       '{"name":"legacy-gate","version":"1.0.0","type":"gate","hooks":{"gate":"gate.js"}}\n',
-      'utf8'
+      'utf8',
     );
 
     const result = discoverPlugins({ cwd: tmpDir });
@@ -110,9 +128,9 @@ describe('plugin runtime registration', () => {
         version: '1.0.0',
         type: 'gate',
         hooks: { gate: 'gate.sh' },
-        enabled: false
+        enabled: false,
       },
-      { 'gate.sh': '#!/bin/bash\nexit 0\n' }
+      { 'gate.sh': '#!/bin/bash\nexit 0\n' },
     );
 
     const result = discoverPlugins({ cwd: tmpDir });
@@ -125,9 +143,9 @@ describe('plugin runtime registration', () => {
       {
         version: '1.0.0',
         type: 'gate',
-        hooks: { gate: 'gate.sh' }
+        hooks: { gate: 'gate.sh' },
       },
-      { 'gate.sh': '#!/bin/bash\nexit 0\n' }
+      { 'gate.sh': '#!/bin/bash\nexit 0\n' },
     );
 
     expect(() => discoverPlugins({ cwd: tmpDir })).toThrow(/缺少或无效的 name/);
@@ -138,7 +156,7 @@ describe('plugin runtime registration', () => {
       name: 'invalid-gate-hook',
       version: '1.0.0',
       type: 'gate',
-      hooks: {}
+      hooks: {},
     });
 
     expect(() => discoverPlugins({ cwd: tmpDir })).toThrow(/type=gate 时必须定义 hooks\.gate/);
@@ -149,7 +167,7 @@ describe('plugin runtime registration', () => {
       name: 'invalid-hook-file',
       version: '1.0.0',
       type: 'gate',
-      hooks: { gate: 'missing.sh' }
+      hooks: { gate: 'missing.sh' },
     });
 
     expect(() => discoverPlugins({ cwd: tmpDir })).toThrow(/hooks\.gate 指向不存在文件/);
@@ -163,9 +181,9 @@ describe('plugin runtime registration', () => {
         version: '1.0.0',
         type: 'gate',
         hooks: { gate: 'gate.sh' },
-        dependencies: ['not-found']
+        dependencies: ['not-found'],
       },
-      { 'gate.sh': '#!/bin/bash\nexit 0\n' }
+      { 'gate.sh': '#!/bin/bash\nexit 0\n' },
     );
 
     expect(() => discoverPlugins({ cwd: tmpDir })).toThrow(/依赖不存在: not-found/);
@@ -188,12 +206,12 @@ describe('plugin runtime registration', () => {
             name,
             version: '1.0.0',
             type: 'gate',
-            hooks: { gate: 'gate.sh' }
+            hooks: { gate: 'gate.sh' },
           },
           null,
-          2
+          2,
         ),
-        'utf8'
+        'utf8',
       );
     }
 
@@ -204,7 +222,7 @@ describe('plugin runtime registration', () => {
       'llm-judge',
       'owasp-scan',
       'security-audit',
-      'zeta'
+      'zeta',
     ]);
   });
 
@@ -215,9 +233,9 @@ describe('plugin runtime registration', () => {
         name: 'dup',
         version: '1.0.0',
         type: 'gate',
-        hooks: { gate: 'gate.sh' }
+        hooks: { gate: 'gate.sh' },
       },
-      { 'gate.sh': '#!/bin/bash\nexit 0\n' }
+      { 'gate.sh': '#!/bin/bash\nexit 0\n' },
     );
     writePlugin(
       'dup-b',
@@ -225,9 +243,9 @@ describe('plugin runtime registration', () => {
         name: 'dup',
         version: '1.0.0',
         type: 'gate',
-        hooks: { gate: 'gate.sh' }
+        hooks: { gate: 'gate.sh' },
       },
-      { 'gate.sh': '#!/bin/bash\nexit 0\n' }
+      { 'gate.sh': '#!/bin/bash\nexit 0\n' },
     );
 
     expect(() => discoverPlugins({ cwd: tmpDir })).toThrow(/重复插件名: dup/);
@@ -250,23 +268,33 @@ describe('plugin runtime registration', () => {
       plugins: [],
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
     };
 
-    fs.writeFileSync(path.join(metaDir, 'execution.json'), JSON.stringify(initialState, null, 2), 'utf8');
+    fs.writeFileSync(
+      path.join(metaDir, 'execution.json'),
+      JSON.stringify(initialState, null, 2),
+      'utf8',
+    );
     fs.writeFileSync(
       path.join(metaDir, 'events.jsonl'),
       `${JSON.stringify({
         id: 1,
         type: 'PipelineInitialized',
         timestamp: '2024-01-01T00:00:00Z',
-        data: { initialState }
+        data: { initialState },
       })}\n`,
-      'utf8'
+      'utf8',
     );
 
     const registered = registerPlugins('test-feat', { cwd: tmpDir });
-    expect(registered.plugins.map((plugin) => plugin.name)).toEqual(['beta', 'alpha', 'llm-judge', 'owasp-scan', 'security-audit']);
+    expect(registered.plugins.map((plugin) => plugin.name)).toEqual([
+      'beta',
+      'alpha',
+      'llm-judge',
+      'owasp-scan',
+      'security-audit',
+    ]);
 
     const events = fs
       .readFileSync(path.join(metaDir, 'events.jsonl'), 'utf8')
@@ -285,20 +313,26 @@ describe('plugin runtime registration', () => {
         activated: Array<{ name: string }>;
       };
     };
-    expect(execution.plugins.map((plugin) => plugin.name)).toEqual(['beta', 'alpha', 'llm-judge', 'owasp-scan', 'security-audit']);
+    expect(execution.plugins.map((plugin) => plugin.name)).toEqual([
+      'beta',
+      'alpha',
+      'llm-judge',
+      'owasp-scan',
+      'security-audit',
+    ]);
     expect(execution.pluginLifecycle.discovered.map((plugin) => plugin.name)).toEqual([
       'beta',
       'alpha',
       'llm-judge',
       'owasp-scan',
-      'security-audit'
+      'security-audit',
     ]);
     expect(execution.pluginLifecycle.activated.map((plugin) => plugin.name)).toEqual([
       'beta',
       'alpha',
       'llm-judge',
       'owasp-scan',
-      'security-audit'
+      'security-audit',
     ]);
   });
 
@@ -310,9 +344,9 @@ describe('plugin runtime registration', () => {
         version: '1.0.0',
         type: 'reporter',
         hooks: { report: 'report.sh' },
-        enabled: true
+        enabled: true,
       },
-      { 'report.sh': '#!/bin/bash\nexit 0\n' }
+      { 'report.sh': '#!/bin/bash\nexit 0\n' },
     );
 
     const metaDir = path.join(tmpDir, '.boss', 'test-feat', '.meta');
@@ -330,18 +364,22 @@ describe('plugin runtime registration', () => {
       plugins: [],
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
     };
-    fs.writeFileSync(path.join(metaDir, 'execution.json'), JSON.stringify(initialState, null, 2), 'utf8');
+    fs.writeFileSync(
+      path.join(metaDir, 'execution.json'),
+      JSON.stringify(initialState, null, 2),
+      'utf8',
+    );
     fs.writeFileSync(
       path.join(metaDir, 'events.jsonl'),
       `${JSON.stringify({
         id: 1,
         type: 'PipelineInitialized',
         timestamp: '2024-01-01T00:00:00Z',
-        data: { initialState }
+        data: { initialState },
       })}\n`,
-      'utf8'
+      'utf8',
     );
 
     registerPlugins('test-feat', { cwd: tmpDir, type: 'gate' });
@@ -353,7 +391,7 @@ describe('plugin runtime registration', () => {
       'llm-judge',
       'owasp-scan',
       'security-audit',
-      'echo-reporter'
+      'echo-reporter',
     ]);
     expect(secondPass.execution.plugins.map((plugin) => plugin.name)).toEqual([
       'beta',
@@ -361,7 +399,7 @@ describe('plugin runtime registration', () => {
       'llm-judge',
       'owasp-scan',
       'security-audit',
-      'echo-reporter'
+      'echo-reporter',
     ]);
   });
 
@@ -382,24 +420,32 @@ describe('plugin runtime registration', () => {
       pluginLifecycle: { discovered: [], activated: [] },
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
     };
-    fs.writeFileSync(path.join(metaDir, 'execution.json'), JSON.stringify(initialState, null, 2), 'utf8');
+    fs.writeFileSync(
+      path.join(metaDir, 'execution.json'),
+      JSON.stringify(initialState, null, 2),
+      'utf8',
+    );
     fs.writeFileSync(
       path.join(metaDir, 'events.jsonl'),
       `${JSON.stringify({
         id: 1,
         type: 'PipelineInitialized',
         timestamp: '2024-01-01T00:00:00Z',
-        data: { initialState }
+        data: { initialState },
       })}\n`,
-      'utf8'
+      'utf8',
     );
 
-    const result = spawnSync(process.execPath, [BOSS_BIN, 'runtime', 'register-plugins', '--register', 'test-feat'], {
-      cwd: tmpDir,
-      encoding: 'utf8'
-    });
+    const result = spawnSync(
+      process.execPath,
+      [BOSS_BIN, 'runtime', 'register-plugins', '--register', 'test-feat'],
+      {
+        cwd: tmpDir,
+        encoding: 'utf8',
+      },
+    );
 
     expect(result.status).toBe(0);
     const payload = JSON.parse(result.stdout) as {
@@ -432,24 +478,32 @@ describe('plugin runtime registration', () => {
       pluginLifecycle: { discovered: [], activated: [] },
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
     };
-    fs.writeFileSync(path.join(metaDir, 'execution.json'), JSON.stringify(initialState, null, 2), 'utf8');
+    fs.writeFileSync(
+      path.join(metaDir, 'execution.json'),
+      JSON.stringify(initialState, null, 2),
+      'utf8',
+    );
     fs.writeFileSync(
       path.join(metaDir, 'events.jsonl'),
       `${JSON.stringify({
         id: 1,
         type: 'PipelineInitialized',
         timestamp: '2024-01-01T00:00:00Z',
-        data: { initialState }
+        data: { initialState },
       })}\n`,
-      'utf8'
+      'utf8',
     );
 
-    const result = spawnSync(process.execPath, [BOSS_BIN, 'runtime', 'register-plugins', 'test-feat'], {
-      cwd: tmpDir,
-      encoding: 'utf8'
-    });
+    const result = spawnSync(
+      process.execPath,
+      [BOSS_BIN, 'runtime', 'register-plugins', 'test-feat'],
+      {
+        cwd: tmpDir,
+        encoding: 'utf8',
+      },
+    );
 
     expect(result.status).toBe(0);
     const payload = JSON.parse(result.stdout) as { feature: string; plugin_count: number };

@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cleanupTempDir, createExecData, createTempBossDir } from '../helpers/fixtures.js';
 
@@ -38,8 +38,8 @@ describe('on-stop hook', () => {
         '1': { name: 'Planning', status: 'completed' },
         '2': { name: 'Review', status: 'running' },
         '3': { name: 'Development', status: 'pending' },
-        '4': { name: 'Deployment', status: 'pending' }
-      }
+        '4': { name: 'Deployment', status: 'pending' },
+      },
     });
     tmpDir = createTempBossDir('blocking-feat', execData);
 
@@ -60,8 +60,8 @@ describe('on-stop hook', () => {
         '1': { name: 'Planning', status: 'completed' },
         '2': { name: 'Review', status: 'completed' },
         '3': { name: 'Development', status: 'pending' },
-        '4': { name: 'Deployment', status: 'pending' }
-      }
+        '4': { name: 'Deployment', status: 'pending' },
+      },
     });
     tmpDir = createTempBossDir('done-feat', execData);
 
@@ -77,8 +77,8 @@ describe('on-stop hook', () => {
         '2': { name: 'Review', status: 'completed' },
         '3': { name: 'Development', status: 'completed' },
         '4': { name: 'Deployment', status: 'completed' },
-        '5': { name: 'PostDeploy', status: 'running' }
-      }
+        '5': { name: 'PostDeploy', status: 'running' },
+      },
     });
     tmpDir = createTempBossDir('extra-feat', execData);
 

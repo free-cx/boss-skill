@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cleanupTempDir, createExecData, createTempBossDir } from '../helpers/fixtures.js';
 
@@ -80,7 +80,7 @@ describe('session-end hook', () => {
       qualityGates: {
         gate0: { status: 'pending', passed: null, checks: [], executedAt: null },
         gate1: { status: 'pending', passed: null, checks: [], executedAt: null },
-        gate2: { status: 'pending', passed: null, checks: [], executedAt: null }
+        gate2: { status: 'pending', passed: null, checks: [], executedAt: null },
       },
       metrics: {
         totalDuration: 60,
@@ -91,13 +91,13 @@ describe('session-end hook', () => {
         agentFailureCount: 0,
         meanRetriesPerStage: 0,
         revisionLoopCount: 0,
-        pluginFailureCount: 0
+        pluginFailureCount: 0,
       },
       plugins: [],
       pluginLifecycle: { discovered: [], activated: [], executed: [], failed: [] },
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
     });
     tmpDir = createTempBossDir('test-feat', execData);
 

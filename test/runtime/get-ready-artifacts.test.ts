@@ -1,14 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   getArtifactStatus,
   getReadyArtifacts,
   initPipeline,
-  recordArtifact
+  recordArtifact,
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -50,11 +50,11 @@ describe('getReadyArtifacts', () => {
             agent: 'boss-pm',
             stage: 1,
             optional: false,
-            description: 'Custom project artifact'
-          }
-        }
+            description: 'Custom project artifact',
+          },
+        },
       }),
-      'utf8'
+      'utf8',
     );
 
     const ready = getReadyArtifacts('test-feat', { cwd: tmpDir });
@@ -65,7 +65,11 @@ describe('getReadyArtifacts', () => {
     initPipeline('test-feat', { cwd: tmpDir });
     recordArtifact('test-feat', 'prd.md', 1, { cwd: tmpDir });
     const ready = getReadyArtifacts('test-feat', { cwd: tmpDir });
-    expect(ready.map((item) => item.artifact)).toEqual(['architecture.md', 'ui-design.json', 'ui-spec.md']);
+    expect(ready.map((item) => item.artifact)).toEqual([
+      'architecture.md',
+      'ui-design.json',
+      'ui-spec.md',
+    ]);
   });
 
   it('exposes artifact status through the public runtime API', () => {
@@ -112,10 +116,14 @@ describe('getReadyArtifacts', () => {
   });
 
   it('rejects --dag without a value in the boss runtime wrapper', () => {
-    const result = spawnSync(process.execPath, [BOSS_BIN, 'runtime', 'get-ready-artifacts', 'test-feat', '--ready', '--dag'], {
-      cwd: tmpDir,
-      encoding: 'utf8'
-    });
+    const result = spawnSync(
+      process.execPath,
+      [BOSS_BIN, 'runtime', 'get-ready-artifacts', 'test-feat', '--ready', '--dag'],
+      {
+        cwd: tmpDir,
+        encoding: 'utf8',
+      },
+    );
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toMatch(/--dag 需要指定 path/);

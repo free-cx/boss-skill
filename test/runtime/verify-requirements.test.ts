@@ -1,12 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { initPipeline } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import {
+  parseAcceptanceCriteria,
   verifyRequirements,
-  parseAcceptanceCriteria
 } from '../../packages/boss-cli/src/runtime/application/requirements-verification.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -42,7 +42,7 @@ describe('verify-requirements', () => {
       expect(criteria[0]).toMatchObject({
         id: 'AC-1',
         description: '用户可以登录',
-        section: ''
+        section: '',
       });
     });
 
@@ -51,7 +51,7 @@ describe('verify-requirements', () => {
       expect(criteria).toHaveLength(1);
       expect(criteria[0]).toMatchObject({
         id: 'AC-2',
-        description: 'Password encrypted'
+        description: 'Password encrypted',
       });
     });
 
@@ -61,7 +61,7 @@ describe('verify-requirements', () => {
         '- [ ] AC-1：Login works',
         '- [ ] AC-2：Logout works',
         '## FR-002 Dashboard',
-        '- [ ] AC-3：Shows stats'
+        '- [ ] AC-3：Shows stats',
       ].join('\n');
       const criteria = parseAcceptanceCriteria(content);
       expect(criteria[0]!.section).toBe('FR-001');
@@ -70,10 +70,7 @@ describe('verify-requirements', () => {
     });
 
     it('tracks US-xxx section format', () => {
-      const content = [
-        '### US-010 User Story',
-        '- [ ] AC-1：Acceptance'
-      ].join('\n');
+      const content = ['### US-010 User Story', '- [ ] AC-1：Acceptance'].join('\n');
       const criteria = parseAcceptanceCriteria(content);
       expect(criteria[0]!.section).toBe('US-010');
     });
@@ -107,11 +104,11 @@ describe('verify-requirements', () => {
     });
 
     it('verified=true when all ACs are covered by test files', () => {
-      writePrd(tmpDir, feature, [
-        '## FR-001 Auth',
-        '- [ ] AC-1：Login',
-        '- [ ] AC-2：Logout'
-      ].join('\n'));
+      writePrd(
+        tmpDir,
+        feature,
+        ['## FR-001 Auth', '- [ ] AC-1：Login', '- [ ] AC-2：Logout'].join('\n'),
+      );
       writeTestFile(tmpDir, 'src/auth.test.ts', '// AC-1 AC-2 coverage');
 
       const result = verifyRequirements(feature, { cwd: tmpDir, dryRun: true });
@@ -123,10 +120,7 @@ describe('verify-requirements', () => {
     });
 
     it('verified=false when some ACs are not covered', () => {
-      writePrd(tmpDir, feature, [
-        '- [ ] AC-1：Covered',
-        '- [ ] AC-2：Not covered'
-      ].join('\n'));
+      writePrd(tmpDir, feature, ['- [ ] AC-1：Covered', '- [ ] AC-2：Not covered'].join('\n'));
       writeTestFile(tmpDir, 'src/auth.test.ts', '// Tests for AC-1');
 
       const result = verifyRequirements(feature, { cwd: tmpDir, dryRun: true });
@@ -137,10 +131,7 @@ describe('verify-requirements', () => {
     });
 
     it('matrix rows contain correct data', () => {
-      writePrd(tmpDir, feature, [
-        '## FR-001 Auth',
-        '- [ ] AC-1：Login'
-      ].join('\n'));
+      writePrd(tmpDir, feature, ['## FR-001 Auth', '- [ ] AC-1：Login'].join('\n'));
       writeTestFile(tmpDir, 'src/login.test.ts', 'describe("AC-1 login flow", () => {});');
 
       const result = verifyRequirements(feature, { cwd: tmpDir, dryRun: true });
@@ -148,7 +139,7 @@ describe('verify-requirements', () => {
         ac: 'AC-1',
         description: 'Login',
         section: 'FR-001',
-        covered: true
+        covered: true,
       });
       expect(result.matrix[0]!.testFiles).toContain('src/login.test.ts');
     });
@@ -190,11 +181,11 @@ describe('verify-requirements', () => {
     });
 
     it('scans multiple test file extensions', () => {
-      writePrd(tmpDir, feature, [
-        '- [ ] AC-1：Feature A',
-        '- [ ] AC-2：Feature B',
-        '- [ ] AC-3：Feature C'
-      ].join('\n'));
+      writePrd(
+        tmpDir,
+        feature,
+        ['- [ ] AC-1：Feature A', '- [ ] AC-2：Feature B', '- [ ] AC-3：Feature C'].join('\n'),
+      );
       writeTestFile(tmpDir, 'test/a.spec.ts', '// AC-1');
       writeTestFile(tmpDir, 'test/b.test.js', '// AC-2');
       writeTestFile(tmpDir, 'test/c.spec.jsx', '// AC-3');

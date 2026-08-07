@@ -72,8 +72,13 @@ export function createCliContext(
     command,
     stdinIsTTY = Boolean(process.stdin.isTTY),
     stdoutIsTTY = Boolean(process.stdout.isTTY),
-    validateOptionValues = true
-  }: { command: string; stdinIsTTY?: boolean; stdoutIsTTY?: boolean; validateOptionValues?: boolean }
+    validateOptionValues = true,
+  }: {
+    command: string;
+    stdinIsTTY?: boolean;
+    stdoutIsTTY?: boolean;
+    validateOptionValues?: boolean;
+  },
 ): CliContext {
   if (validateOptionValues) {
     validateCliContractOptionValues(argv);
@@ -89,9 +94,9 @@ export function createCliContext(
       fields: { type: 'string' },
       limit: { type: 'string', default: '100' },
       'json-input': { type: 'string' },
-      describe: { type: 'boolean', default: false }
+      describe: { type: 'boolean', default: false },
     },
-    strict: false
+    strict: false,
   });
 
   return {
@@ -103,12 +108,12 @@ export function createCliContext(
       describe: Boolean(values.describe),
       fields: typeof values.fields === 'string' ? values.fields : undefined,
       limit: typeof values.limit === 'string' ? values.limit : '100',
-      jsonInput: typeof values['json-input'] === 'string' ? values['json-input'] : undefined
+      jsonInput: typeof values['json-input'] === 'string' ? values['json-input'] : undefined,
     },
     positionals,
     useJson: Boolean(values.json) || !stdoutIsTTY,
     stdinIsTTY,
-    stdoutIsTTY
+    stdoutIsTTY,
   };
 }
 
@@ -120,7 +125,7 @@ export function parseLimit(limit: string): number {
       message: `Invalid --limit value: ${limit}`,
       input: { limit },
       retryable: false,
-      suggestion: 'Use an integer between 0 and 1000'
+      suggestion: 'Use an integer between 0 and 1000',
     });
   }
   return parsed;
@@ -136,7 +141,9 @@ export function pickFields<T extends JsonObject>(obj: T, fields?: string): JsonO
 }
 
 export function outputList(items: JsonObject[], context: CliContext): JsonObject[] {
-  return items.slice(0, parseLimit(context.values.limit)).map((item) => pickFields(item, context.values.fields));
+  return items
+    .slice(0, parseLimit(context.values.limit))
+    .map((item) => pickFields(item, context.values.fields));
 }
 
 function isLikelyOptionToken(value: string): boolean {
@@ -149,7 +156,7 @@ function missingValueError(option: string): CliUserError {
     message: `${option} requires a value`,
     input: { option },
     retryable: false,
-    suggestion: `Pass a value after ${option}`
+    suggestion: `Pass a value after ${option}`,
   });
 }
 
@@ -174,7 +181,13 @@ export function validateCliContractOptionValues(argv: string[]): void {
 
 export function consumeCliContractOption(argv: string[], index: number): number | null {
   const arg = argv[index]!;
-  if (arg === '--json' || arg === '--describe' || arg === '--dry-run' || arg === '--yes' || arg === '-y') {
+  if (
+    arg === '--json' ||
+    arg === '--describe' ||
+    arg === '--dry-run' ||
+    arg === '--yes' ||
+    arg === '-y'
+  ) {
     return index;
   }
 
@@ -189,7 +202,11 @@ export function consumeCliContractOption(argv: string[], index: number): number 
     return index + 1;
   }
 
-  if (arg.startsWith('--fields=') || arg.startsWith('--limit=') || arg.startsWith('--json-input=')) {
+  if (
+    arg.startsWith('--fields=') ||
+    arg.startsWith('--limit=') ||
+    arg.startsWith('--json-input=')
+  ) {
     return index;
   }
 
@@ -200,7 +217,11 @@ function isJsonObject(value: unknown): value is JsonObject {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-export function writeOutput(data: unknown, context: CliContext, renderText: (data: unknown) => string): void {
+export function writeOutput(
+  data: unknown,
+  context: CliContext,
+  renderText: (data: unknown) => string,
+): void {
   if (!context.useJson) {
     process.stdout.write(renderText(data));
     return;
@@ -227,7 +248,7 @@ export function readJsonInputText(raw: string, stdinText: string): unknown {
       message: 'Invalid JSON supplied to --json-input',
       input: { jsonInput: raw === '-' ? '<stdin>' : raw },
       retryable: false,
-      suggestion: 'Pass valid JSON or use --json-input=- with JSON on stdin'
+      suggestion: 'Pass valid JSON or use --json-input=- with JSON on stdin',
     });
   }
 }
@@ -244,19 +265,20 @@ export function assertConfirmed(context: CliContext, action: string): void {
       message: '--yes required in non-interactive mode',
       input: { action },
       retryable: false,
-      suggestion: `Re-run ${context.command} with --yes after reviewing --dry-run output`
+      suggestion: `Re-run ${context.command} with --yes after reviewing --dry-run output`,
     });
   }
 }
 
 export function validatePathInside(input: string, baseDir: string, label: string): string {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control character detection
   if (/[\x00-\x1f]/.test(input)) {
     throw new CliUserError({
       code: 'invalid_path',
       message: `Control characters rejected in ${label}`,
       input: { path: input },
       retryable: false,
-      suggestion: `Pass a ${label} path without control characters`
+      suggestion: `Pass a ${label} path without control characters`,
     });
   }
 
@@ -275,7 +297,7 @@ export function validatePathInside(input: string, baseDir: string, label: string
       message: `Path traversal rejected for ${label}: ${input}`,
       input: { path: input },
       retryable: false,
-      suggestion: `Use a ${label} path inside the current project directory`
+      suggestion: `Use a ${label} path inside the current project directory`,
     });
   }
 
@@ -288,7 +310,7 @@ export function describeCommand(description: CommandDescription): CommandDescrip
     summary: description.summary,
     parameters: description.parameters,
     options: description.options,
-    risk_tier: description.risk_tier
+    risk_tier: description.risk_tier,
   };
 }
 
@@ -323,7 +345,7 @@ export function renderHelp(description: CommandDescription, usage: string): stri
     'Options:',
     ...description.options.map(renderOption),
     '  -h, --help          Show help',
-    ''
+    '',
   ];
   return lines.join('\n');
 }
@@ -340,8 +362,8 @@ export function errorPayload(err: unknown): { error: CliErrorData } {
         message: err.message,
         input: err.input,
         retryable: err.retryable,
-        suggestion: err.suggestion
-      }
+        suggestion: err.suggestion,
+      },
     };
   }
 
@@ -354,8 +376,8 @@ export function errorPayload(err: unknown): { error: CliErrorData } {
         message,
         input: { option: unknownOptionMatch[1] },
         retryable: false,
-        suggestion: 'Run this command with --describe to verify supported options'
-      }
+        suggestion: 'Run this command with --describe to verify supported options',
+      },
     };
   }
   // feature 尚未初始化：runtime 层裸抛「未找到执行文件/事件文件」，在此统一映射为
@@ -368,8 +390,9 @@ export function errorPayload(err: unknown): { error: CliErrorData } {
         message,
         input: { path: notInitializedMatch[1] },
         retryable: false,
-        suggestion: '该 feature 尚未初始化或路径不对；先运行 `boss runtime init-pipeline <feature>`，或用 `boss doctor` 检查已有 feature'
-      }
+        suggestion:
+          '该 feature 尚未初始化或路径不对；先运行 `boss runtime init-pipeline <feature>`，或用 `boss doctor` 检查已有 feature',
+      },
     };
   }
   return {
@@ -377,8 +400,8 @@ export function errorPayload(err: unknown): { error: CliErrorData } {
       code: 'internal_error',
       message,
       retryable: false,
-      suggestion: 'Re-run with --describe to verify command parameters'
-    }
+      suggestion: 'Re-run with --describe to verify command parameters',
+    },
   };
 }
 
@@ -395,7 +418,10 @@ export function writeError(err: unknown, context: Pick<CliContext, 'useJson'>): 
   }
 }
 
-export function runMain(fn: () => number | Promise<number>, context: Pick<CliContext, 'useJson'>): Promise<number> {
+export function runMain(
+  fn: () => number | Promise<number>,
+  context: Pick<CliContext, 'useJson'>,
+): Promise<number> {
   return Promise.resolve()
     .then(fn)
     .catch((err) => {

@@ -6,7 +6,7 @@ import type {
   ExecutionState,
   GateState,
   PluginSummary,
-  StageState
+  StageState,
 } from '../projectors/materialize-state.js';
 
 export interface ConversationMetrics {
@@ -70,18 +70,18 @@ function stageEntries(execution: ExecutionState): StageSummary[] {
       status: state.status || 'pending',
       duration:
         execution.metrics && execution.metrics.stageTimings
-          ? execution.metrics.stageTimings[stage] ?? null
+          ? (execution.metrics.stageTimings[stage] ?? null)
           : null,
       retryCount: state.retryCount || 0,
       artifacts: Array.isArray(state.artifacts) ? state.artifacts : [],
       gateResults: state.gateResults || {},
-      failureReason: state.failureReason || null
+      failureReason: state.failureReason || null,
     }));
 }
 
 export function buildSummaryModel(
   feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): SummaryModel {
   if (!feature) {
     throw new Error('缺少 feature 参数');
@@ -97,7 +97,7 @@ export function buildSummaryModel(
     agentFailureCount: 0,
     meanRetriesPerStage: 0,
     revisionLoopCount: 0,
-    pluginFailureCount: 0
+    pluginFailureCount: 0,
   };
 
   return {
@@ -114,7 +114,7 @@ export function buildSummaryModel(
       version:
         execution.parameters && typeof execution.parameters.pipelinePackVersion === 'string'
           ? execution.parameters.pipelinePackVersion
-          : ''
+          : '',
     },
     stages: stageEntries(execution),
     qualityGates: execution.qualityGates || {},
@@ -127,7 +127,7 @@ export function buildSummaryModel(
       agentFailureCount: metrics.agentFailureCount ?? 0,
       meanRetriesPerStage: metrics.meanRetriesPerStage ?? 0,
       revisionLoopCount: metrics.revisionLoopCount ?? 0,
-      pluginFailureCount: metrics.pluginFailureCount ?? 0
+      pluginFailureCount: metrics.pluginFailureCount ?? 0,
     },
     plugins: Array.isArray(execution.plugins) ? execution.plugins : [],
     conversationMetrics: execution.conversationMetrics || {
@@ -135,15 +135,15 @@ export function buildSummaryModel(
       resolved: 0,
       todos: 0,
       huddles: 0,
-      unresolved: 0
+      unresolved: 0,
     },
     derivedTodos: Array.isArray(execution.derivedTodos)
       ? execution.derivedTodos.map((todo) => ({
           id: String(todo.id),
           owner: String(todo.owner),
           status: String(todo.status),
-          title: String(todo.title)
+          title: String(todo.title),
         }))
-      : []
+      : [],
   };
 }

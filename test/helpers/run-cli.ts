@@ -40,7 +40,7 @@ export function ensureBuilt(entrypoint: string): void {
 
   execFileSync(npmCmd, ['run', 'build'], {
     cwd: root,
-    encoding: 'utf8'
+    encoding: 'utf8',
   });
   built = true;
 }
@@ -52,7 +52,7 @@ export function runCli(args: string[], options: RunCliOptions = {}) {
   return spawnSync(process.execPath, resolvedArgs, {
     cwd: options.cwd ?? root,
     env: options.env ?? process.env,
-    encoding: 'utf8'
+    encoding: 'utf8',
   });
 }
 
@@ -63,6 +63,6 @@ export function runCliOrThrow(args: string[], options: RunCliOptions = {}) {
   return execFileSync(process.execPath, resolvedArgs, {
     cwd: options.cwd ?? root,
     env: options.env ?? process.env,
-    encoding: 'utf8'
+    encoding: 'utf8',
   });
 }

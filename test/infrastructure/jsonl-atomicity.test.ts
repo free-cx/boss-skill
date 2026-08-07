@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   appendLineSync,
-  readJsonlTolerant
+  readJsonlTolerant,
 } from '../../packages/boss-cli/src/infrastructure/fs.js';
 
 let tmpDir: string | null = null;

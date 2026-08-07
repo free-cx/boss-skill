@@ -1,9 +1,9 @@
 import {
-  CliUserError,
   type CliContext,
+  CliUserError,
+  type JsonObject,
   renderHelp,
   writeOutput,
-  type JsonObject
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
 
@@ -13,7 +13,7 @@ export function missingRequiredArgument(argument: string): CliUserError {
     message: `Missing ${argument} argument`,
     input: { argument },
     retryable: false,
-    suggestion: 'Run this command with --describe to see required parameters'
+    suggestion: 'Run this command with --describe to see required parameters',
   });
 }
 
@@ -35,7 +35,7 @@ export function requireOptionValue(flag: string, value: string | undefined): str
       message: `${flag} requires a value`,
       input: { option: flag },
       retryable: false,
-      suggestion: `Pass a value after ${flag}`
+      suggestion: `Pass a value after ${flag}`,
     });
   }
   return value;
@@ -49,7 +49,7 @@ export function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline <feature> first'
+      suggestion: 'Run boss runtime init-pipeline <feature> first',
     });
   }
   return err;
@@ -58,16 +58,16 @@ export function toFeatureNotFoundError(err: unknown, feature: string): unknown {
 export function writeActionPlan(
   actions: JsonObject[],
   context: CliContext,
-  riskTier: 'low' | 'medium' | 'high' = 'medium'
+  riskTier: 'low' | 'medium' | 'high' = 'medium',
 ): void {
   writeOutput(
     {
       actions,
       risk_tier: riskTier,
-      requires_approval: riskTier === 'high'
+      requires_approval: riskTier === 'high',
     },
     context,
-    () => actions.map((action) => `Would ${String(action.type)}\n`).join('')
+    () => actions.map((action) => `Would ${String(action.type)}\n`).join(''),
   );
 }
 

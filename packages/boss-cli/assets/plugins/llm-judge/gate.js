@@ -12,7 +12,9 @@ function addCheck(name, ok, detail) {
 
 // Load config from plugin.json
 const pluginDir = path.dirname(new URL(import.meta.url).pathname);
-const pluginConfig = JSON.parse(fs.readFileSync(path.join(pluginDir, 'plugin.json'), 'utf8')).config;
+const pluginConfig = JSON.parse(
+  fs.readFileSync(path.join(pluginDir, 'plugin.json'), 'utf8'),
+).config;
 
 const { dimensions, passThreshold, model, maxTokens, timeout } = pluginConfig;
 
@@ -41,9 +43,10 @@ if (feature && fs.existsSync(path.join(bossDir, feature))) {
 } else {
   // Try to find the most recent feature directory
   if (fs.existsSync(bossDir)) {
-    const entries = fs.readdirSync(bossDir, { withFileTypes: true })
-      .filter(e => e.isDirectory() && !e.name.startsWith('.'))
-      .map(e => ({ name: e.name, mtime: fs.statSync(path.join(bossDir, e.name)).mtime }))
+    const entries = fs
+      .readdirSync(bossDir, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && !e.name.startsWith('.'))
+      .map((e) => ({ name: e.name, mtime: fs.statSync(path.join(bossDir, e.name)).mtime }))
       .sort((a, b) => b.mtime - a.mtime);
     if (entries.length > 0) {
       featureDir = path.join(bossDir, entries[0].name);
@@ -96,7 +99,7 @@ async function callLLM(systemPrompt, userContent) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: modelName,
@@ -176,8 +179,11 @@ async function main() {
       addCheck(`llm-judge-${dimension}`, true, detail || 'LLM 评估不可用，跳过');
     } else {
       const passed = score >= passThreshold;
-      addCheck(`llm-judge-${dimension}`, passed,
-        `${score.toFixed(2)}/${passThreshold} — ${detail}`);
+      addCheck(
+        `llm-judge-${dimension}`,
+        passed,
+        `${score.toFixed(2)}/${passThreshold} — ${detail}`,
+      );
     }
   }
 
@@ -188,7 +194,7 @@ async function main() {
 main().catch(() => {
   // Final fallback: graceful skip on any unhandled error
   for (const dim of dimensions) {
-    if (!checks.some(c => c.name === `llm-judge-${dim}`)) {
+    if (!checks.some((c) => c.name === `llm-judge-${dim}`)) {
       addCheck(`llm-judge-${dim}`, true, 'LLM 评估异常，跳过');
     }
   }

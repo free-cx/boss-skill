@@ -17,7 +17,7 @@ function resolveDistToSrc(): Plugin {
         return srcPath;
       }
       return null;
-    }
+    },
   };
 }
 
@@ -28,6 +28,6 @@ export default defineConfig({
     include: ['test/**/*.test.ts'],
     restoreMocks: true,
     clearMocks: true,
-    testTimeout: 30000
-  }
+    testTimeout: 30000,
+  },
 });

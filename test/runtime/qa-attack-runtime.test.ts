@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   initPipeline,
-  recordArtifact
+  recordArtifact,
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { runQaAttack } from '../../packages/boss-cli/src/runtime/application/qa-attack.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
@@ -31,9 +31,9 @@ describe('qa attack runtime', () => {
         expect.objectContaining({
           id: 'qa-report-missing',
           severity: 'critical',
-          status: 'open'
-        })
-      ])
+          status: 'open',
+        }),
+      ]),
     );
   });
 
@@ -58,8 +58,8 @@ describe('qa attack runtime', () => {
         '',
         '## Known Failures',
         '- none',
-        ''
-      ].join('\n')
+        '',
+      ].join('\n'),
     );
     recordArtifact('test-feat', 'qa-report.md', 4, { cwd: tmpDir });
 
@@ -68,14 +68,14 @@ describe('qa attack runtime', () => {
     expect(result).toEqual({
       feature: 'test-feat',
       status: 'passed',
-      findings: []
+      findings: [],
     });
   });
 
   it('accepts the built-in QA report template headings', () => {
     const template = fs.readFileSync(
       path.join(process.cwd(), 'skill', 'templates', 'qa-report.md.template'),
-      'utf8'
+      'utf8',
     );
     fs.writeFileSync(path.join(tmpDir, '.boss', 'test-feat', 'qa-report.md'), template);
     recordArtifact('test-feat', 'qa-report.md', 4, { cwd: tmpDir });
@@ -89,16 +89,9 @@ describe('qa attack runtime', () => {
     const featureDir = path.join(tmpDir, '.boss', 'test-feat');
     fs.writeFileSync(
       path.join(featureDir, 'qa-report.md'),
-      [
-        '# QA Report',
-        '',
-        '## Verification',
-        '- npm test',
-        '',
-        '## Findings',
-        '- none',
-        ''
-      ].join('\n')
+      ['# QA Report', '', '## Verification', '- npm test', '', '## Findings', '- none', ''].join(
+        '\n',
+      ),
     );
     recordArtifact('test-feat', 'qa-report.md', 4, { cwd: tmpDir });
 
@@ -109,8 +102,8 @@ describe('qa attack runtime', () => {
       expect.objectContaining({
         id: 'qa-report-evidence-missing',
         severity: 'high',
-        status: 'open'
-      })
+        status: 'open',
+      }),
     );
   });
 
@@ -135,8 +128,8 @@ describe('qa attack runtime', () => {
         '',
         '## Known Failures',
         '- none',
-        ''
-      ].join('\n')
+        '',
+      ].join('\n'),
     );
     recordArtifact('test-feat', 'qa-report.md', 4, { cwd: tmpDir });
 
@@ -147,8 +140,8 @@ describe('qa attack runtime', () => {
       expect.objectContaining({
         id: 'qa-report-open-critical',
         severity: 'critical',
-        status: 'open'
-      })
+        status: 'open',
+      }),
     );
   });
 
@@ -173,8 +166,8 @@ describe('qa attack runtime', () => {
         '',
         '## Known Failures',
         '- none',
-        ''
-      ].join('\n')
+        '',
+      ].join('\n'),
     );
     recordArtifact('test-feat', 'qa-report.md', 4, { cwd: tmpDir });
 

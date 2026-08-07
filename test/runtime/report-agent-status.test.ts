@@ -1,14 +1,21 @@
+import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-
 import { afterEach, describe, expect, it } from 'vitest';
-
-import { spawnSync } from 'node:child_process';
 
 import { ensureBuilt } from '../helpers/run-cli.js';
 
-const BOSS_BIN = path.resolve(import.meta.dirname, '..', '..', 'packages', 'boss-cli', 'dist', 'bin', 'boss.js');
+const BOSS_BIN = path.resolve(
+  import.meta.dirname,
+  '..',
+  '..',
+  'packages',
+  'boss-cli',
+  'dist',
+  'bin',
+  'boss.js',
+);
 
 let tmpDir: string | null = null;
 
@@ -16,7 +23,7 @@ function runCli(args: string[], { cwd }: { cwd?: string } = {}) {
   ensureBuilt('packages/boss-cli/dist/bin/boss.js');
   return spawnSync(process.execPath, [BOSS_BIN, ...args], {
     cwd: cwd ?? process.cwd(),
-    encoding: 'utf8'
+    encoding: 'utf8',
   });
 }
 
@@ -30,7 +37,7 @@ function createWorkspace(): string {
 
 function readAgent(cwd: string, stage: string, agent: string) {
   const execution = JSON.parse(
-    fs.readFileSync(path.join(cwd, '.boss', 'demo', '.meta', 'execution.json'), 'utf8')
+    fs.readFileSync(path.join(cwd, '.boss', 'demo', '.meta', 'execution.json'), 'utf8'),
   ) as {
     stages: Record<string, { agents?: Record<string, { status: string; failureReason?: string }> }>;
   };
@@ -59,20 +66,30 @@ describe('boss runtime report-agent-status', () => {
       'DONE_WITH_CONCERNS',
       'NEEDS_CONTEXT',
       'BLOCKED',
-      'REVISION_NEEDED'
+      'REVISION_NEEDED',
     ]);
   });
 
   it('maps DONE to a completed agent in the event stream', () => {
     const cwd = createWorkspace();
     const result = runCli(
-      ['runtime', 'report-agent-status', 'demo', '1', 'boss-pm', 'DONE', '--reason', 'prd ready', '--json'],
-      { cwd }
+      [
+        'runtime',
+        'report-agent-status',
+        'demo',
+        '1',
+        'boss-pm',
+        'DONE',
+        '--reason',
+        'prd ready',
+        '--json',
+      ],
+      { cwd },
     );
     expect(result.status, result.stderr).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({
       reportedStatus: 'DONE',
-      agentStatus: 'completed'
+      agentStatus: 'completed',
     });
     expect(readAgent(cwd, '1', 'boss-pm')?.status).toBe('completed');
   });
@@ -80,13 +97,23 @@ describe('boss runtime report-agent-status', () => {
   it('treats DONE_WITH_CONCERNS as completed but keeps the reported status distinct', () => {
     const cwd = createWorkspace();
     const result = runCli(
-      ['runtime', 'report-agent-status', 'demo', '1', 'boss-pm', 'DONE_WITH_CONCERNS', '--reason', 'flaky test', '--json'],
-      { cwd }
+      [
+        'runtime',
+        'report-agent-status',
+        'demo',
+        '1',
+        'boss-pm',
+        'DONE_WITH_CONCERNS',
+        '--reason',
+        'flaky test',
+        '--json',
+      ],
+      { cwd },
     );
     expect(result.status, result.stderr).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({
       reportedStatus: 'DONE_WITH_CONCERNS',
-      agentStatus: 'completed'
+      agentStatus: 'completed',
     });
   });
 
@@ -95,26 +122,36 @@ describe('boss runtime report-agent-status', () => {
     (status) => {
       const cwd = createWorkspace();
       const result = runCli(
-        ['runtime', 'report-agent-status', 'demo', '1', 'boss-pm', status, '--reason', 'needs schema', '--json'],
-        { cwd }
+        [
+          'runtime',
+          'report-agent-status',
+          'demo',
+          '1',
+          'boss-pm',
+          status,
+          '--reason',
+          'needs schema',
+          '--json',
+        ],
+        { cwd },
       );
       expect(result.status, result.stderr).toBe(0);
       expect(JSON.parse(result.stdout)).toMatchObject({
         reportedStatus: status,
-        agentStatus: 'failed'
+        agentStatus: 'failed',
       });
 
       const agent = readAgent(cwd, '1', 'boss-pm');
       expect(agent?.status).toBe('failed');
       expect(agent?.failureReason).toBe('needs schema');
-    }
+    },
   );
 
   it('rejects an unknown status with a retryable structured error', () => {
     const cwd = createWorkspace();
     const result = runCli(
       ['runtime', 'report-agent-status', 'demo', '1', 'boss-pm', 'ALL_GOOD', '--json'],
-      { cwd }
+      { cwd },
     );
     expect(result.status).not.toBe(0);
 
@@ -134,7 +171,7 @@ describe('boss runtime report-agent-status', () => {
     const cwd = createWorkspace();
     const result = runCli(
       ['runtime', 'report-agent-status', 'demo', '1', 'boss-pm', 'done', '--json'],
-      { cwd }
+      { cwd },
     );
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('invalid_agent_status');
@@ -144,7 +181,7 @@ describe('boss runtime report-agent-status', () => {
     const cwd = createWorkspace();
     const result = runCli(
       ['runtime', 'report-agent-status', 'demo', '1', 'boss-pm', 'DONE', '--dry-run', '--json'],
-      { cwd }
+      { cwd },
     );
     expect(result.status, result.stderr).toBe(0);
 
@@ -154,7 +191,7 @@ describe('boss runtime report-agent-status', () => {
     expect(plan.actions[0]).toMatchObject({
       type: 'report_agent_status',
       reported_status: 'DONE',
-      target_status: 'completed'
+      target_status: 'completed',
     });
     expect(readAgent(cwd, '1', 'boss-pm')).toBeUndefined();
   });
@@ -171,11 +208,11 @@ describe('boss runtime report-agent-status', () => {
           stage: '1',
           agent: 'boss-pm',
           status: 'DONE',
-          reason: 'via json'
+          reason: 'via json',
         }),
-        '--json'
+        '--json',
       ],
-      { cwd }
+      { cwd },
     );
     expect(result.status, result.stderr).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({ agentStatus: 'completed' });

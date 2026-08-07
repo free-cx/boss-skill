@@ -1,12 +1,14 @@
-import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8')) as {
   files?: string[];
 };
-const claudePlugin = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, '.claude-plugin', 'plugin.json'), 'utf8')) as {
+const claudePlugin = JSON.parse(
+  fs.readFileSync(path.join(REPO_ROOT, '.claude-plugin', 'plugin.json'), 'utf8'),
+) as {
   skills?: string[];
 };
 const readme = fs.readFileSync(path.join(REPO_ROOT, 'README.md'), 'utf8');
@@ -14,85 +16,108 @@ const contributing = fs.readFileSync(path.join(REPO_ROOT, 'CONTRIBUTING.md'), 'u
 const design = fs.readFileSync(path.join(REPO_ROOT, 'DESIGN.md'), 'utf8');
 const skill = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'SKILL.md'), 'utf8');
 const bossCommand = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'commands', 'boss.md'), 'utf8');
-const tasksTemplate = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'templates', 'tasks.md.template'), 'utf8');
-const scrumMaster = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'agents', 'boss-scrum-master.md'), 'utf8');
-const qaTemplate = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'templates', 'qa-report.md.template'), 'utf8');
+const tasksTemplate = fs.readFileSync(
+  path.join(REPO_ROOT, 'skill', 'templates', 'tasks.md.template'),
+  'utf8',
+);
+const scrumMaster = fs.readFileSync(
+  path.join(REPO_ROOT, 'skill', 'agents', 'boss-scrum-master.md'),
+  'utf8',
+);
+const qaTemplate = fs.readFileSync(
+  path.join(REPO_ROOT, 'skill', 'templates', 'qa-report.md.template'),
+  'utf8',
+);
 const qaAgent = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'agents', 'boss-qa.md'), 'utf8');
 const qaTestStrategy = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'skills', 'qa', 'test-strategy', 'SKILL.md'),
-  'utf8'
+  'utf8',
 );
 const testingStandards = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'references', 'testing-standards.md'),
-  'utf8'
+  'utf8',
 );
 const subagentProtocol = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'agents', 'prompts', 'subagent-protocol.md'),
-  'utf8'
+  'utf8',
 );
 const sharedAgentProtocol = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'agents', 'shared', 'agent-protocol.md'),
-  'utf8'
+  'utf8',
 );
 const protocolManifest = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'agents', 'shared', 'protocol-manifest.md'),
-  'utf8'
+  'utf8',
 );
-const claudeHooksConfig = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'hooks', 'claude', 'hooks.json'), 'utf8');
-const codexHooksConfig = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'hooks', 'codex', 'hooks.json'), 'utf8');
+const claudeHooksConfig = fs.readFileSync(
+  path.join(REPO_ROOT, 'skill', 'hooks', 'claude', 'hooks.json'),
+  'utf8',
+);
+const codexHooksConfig = fs.readFileSync(
+  path.join(REPO_ROOT, 'skill', 'hooks', 'codex', 'hooks.json'),
+  'utf8',
+);
 const claudeSettings = fs.readFileSync(path.join(REPO_ROOT, '.claude', 'settings.json'), 'utf8');
 const bmadMethodology = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'references', 'bmad-methodology.md'),
-  'utf8'
+  'utf8',
 );
-const uiDesigner = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'agents', 'boss-ui-designer.md'), 'utf8');
-const frontend = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'agents', 'boss-frontend.md'), 'utf8');
-const techLead = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'agents', 'boss-tech-lead.md'), 'utf8');
-const artifactGuide = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'references', 'artifact-guide.md'), 'utf8');
+const uiDesigner = fs.readFileSync(
+  path.join(REPO_ROOT, 'skill', 'agents', 'boss-ui-designer.md'),
+  'utf8',
+);
+const frontend = fs.readFileSync(
+  path.join(REPO_ROOT, 'skill', 'agents', 'boss-frontend.md'),
+  'utf8',
+);
+const techLead = fs.readFileSync(
+  path.join(REPO_ROOT, 'skill', 'agents', 'boss-tech-lead.md'),
+  'utf8',
+);
+const artifactGuide = fs.readFileSync(
+  path.join(REPO_ROOT, 'skill', 'references', 'artifact-guide.md'),
+  'utf8',
+);
 const uiDesignTemplate = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'templates', 'ui-design.json.template'),
-  'utf8'
+  'utf8',
 );
 const techReviewTemplate = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'templates', 'tech-review.md.template'),
-  'utf8'
+  'utf8',
 );
 const evidenceGatesDesign = fs.readFileSync(
   path.join(REPO_ROOT, 'docs', 'superpowers', 'specs', '2026-05-12-boss-evidence-gates-design.md'),
-  'utf8'
+  'utf8',
 );
 const evidenceGatesPlan = fs.readFileSync(
   path.join(REPO_ROOT, 'docs', 'superpowers', 'plans', '2026-05-12-boss-evidence-gates.md'),
-  'utf8'
+  'utf8',
 );
 const multiDriverRuntimePlan = fs.readFileSync(
   path.join(REPO_ROOT, 'docs', 'superpowers', 'plans', '2026-05-12-boss-multi-driver-runtime.md'),
-  'utf8'
+  'utf8',
 );
 const orchestrationLoop = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'references', 'orchestration-loop.md'),
-  'utf8'
+  'utf8',
 );
 const runtimeSurface = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'references', 'runtime-surface.md'),
-  'utf8'
+  'utf8',
 );
 const platformDrivers = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'references', 'platform-drivers.md'),
-  'utf8'
-);
-const hooksRuntime = fs.readFileSync(
-  path.join(REPO_ROOT, 'skill', 'references', 'hooks-runtime.md'),
-  'utf8'
+  'utf8',
 );
 const evidenceWaves = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'references', 'evidence-waves.md'),
-  'utf8'
+  'utf8',
 );
 
 const techDetection = fs.readFileSync(
   path.join(REPO_ROOT, 'skill', 'agents', 'shared', 'tech-detection.md'),
-  'utf8'
+  'utf8',
 );
 
 describe('tech-detection.md contract', () => {
@@ -170,7 +195,8 @@ describe('package metadata', () => {
   });
 
   it('documents Boss CLI assets instead of a root harness directory', () => {
-    const rootHarnessPathPattern = /(?:^|[\s`([{])(?:\.\/)?harness\/(?:plugins|pipeline-packs|artifact-dag|plugin-schema)?/;
+    const rootHarnessPathPattern =
+      /(?:^|[\s`([{])(?:\.\/)?harness\/(?:plugins|pipeline-packs|artifact-dag|plugin-schema)?/;
 
     expect(readme).toContain('packages/boss-cli/assets/');
     expect(readme).not.toMatch(rootHarnessPathPattern);
@@ -222,7 +248,7 @@ describe('agent methodology skill contract', () => {
     return new Set(
       Array.from(content.matchAll(/Skill\(\s*skill:\s*["']([^"']+)["']/g))
         .map((match) => match[1])
-        .filter((skillName) => skillName.includes('/'))
+        .filter((skillName) => skillName.includes('/')),
     );
   }
 
@@ -276,7 +302,10 @@ describe('agent methodology skill contract', () => {
   });
 
   it('documents the bundled skill layout and forbids flat methodology files', () => {
-    const skillsReadme = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'skills', 'README.md'), 'utf8');
+    const skillsReadme = fs.readFileSync(
+      path.join(REPO_ROOT, 'skill', 'skills', 'README.md'),
+      'utf8',
+    );
 
     expect(skillsReadme).toContain('skill/skills/<domain>/<name>/SKILL.md');
     expect(skillsReadme).toContain('不要新增平铺');
@@ -410,11 +439,21 @@ describe('subagent orchestration safety contract', () => {
     expect(skill).toContain('按需加载');
     expect(skill).toContain('渐进式披露');
     expect(skill).toContain('agents/shared/protocol-manifest.md');
-    expect(skill).not.toContain('每个 Agent 调用前 Load 对应的 Agent Prompt 文件 + `agents/shared/agent-protocol.md` + `agents/shared/tech-detection.md`');
+    expect(skill).not.toContain(
+      '每个 Agent 调用前 Load 对应的 Agent Prompt 文件 + `agents/shared/agent-protocol.md` + `agents/shared/tech-detection.md`',
+    );
   });
 
   it('documents execution conversation primitives in the shared agent protocol', () => {
-    for (const primitive of ['ask', 'challenge', 'propose', 'request_change', 'escalate', 'huddle', 'resolve']) {
+    for (const primitive of [
+      'ask',
+      'challenge',
+      'propose',
+      'request_change',
+      'escalate',
+      'huddle',
+      'resolve',
+    ]) {
       expect(sharedAgentProtocol).toContain(primitive);
     }
     expect(sharedAgentProtocol).toContain('single-owner todo');
@@ -563,7 +602,7 @@ describe('thin skill CLI contract', () => {
       'references/platform-drivers.md',
       'references/hooks-runtime.md',
       'agents/shared/protocol-manifest.md',
-      'references/artifact-guide.md'
+      'references/artifact-guide.md',
     ]) {
       expect(skill).toContain(reference);
     }
@@ -594,7 +633,9 @@ describe('thin skill CLI contract', () => {
     expect(orchestrationLoop).toContain('`project init` 已隐式执行');
     expect(orchestrationLoop).toContain('execution.workflow.nextNodeIds');
     expect(orchestrationLoop).toContain('workflow node 状态');
-    expect(runtimeSurface).not.toContain('boss runtime query-memory <feature> --agent <agent-name> --json');
+    expect(runtimeSurface).not.toContain(
+      'boss runtime query-memory <feature> --agent <agent-name> --json',
+    );
     expect(runtimeSurface).not.toContain('update-stage <feature> <N> completed --artifact');
   });
 
@@ -634,11 +675,20 @@ describe('ui-design artifact contract', () => {
     expect(uiDesigner).toContain('ui-design.json');
     expect(uiDesigner).toContain('.boss/<feature>/ui-spec.md');
     expect(uiDesigner).toContain('.boss/<feature>/ui-design.json');
-    expect(uiDesigner).toContain('Markdown 解释设计，JSON 约束实现；两者冲突时必须先修正冲突再交付');
+    expect(uiDesigner).toContain(
+      'Markdown 解释设计，JSON 约束实现；两者冲突时必须先修正冲突再交付',
+    );
     expect(uiDesigner).toContain('boss design preview <feature>');
     expect(frontend).toContain('ui-design.json');
     expect(frontend).toContain('ui-design.json > ui-spec.md');
-    for (const term of ['tokens', 'pages', 'frames', 'prototype.links', 'components', '最终报告中说明原因']) {
+    for (const term of [
+      'tokens',
+      'pages',
+      'frames',
+      'prototype.links',
+      'components',
+      '最终报告中说明原因',
+    ]) {
       expect(frontend).toContain(term);
     }
     expect(techLead).toContain('ui-design.json');

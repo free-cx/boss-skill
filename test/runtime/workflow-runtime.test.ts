@@ -6,8 +6,8 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import * as runtime from '../../packages/boss-cli/src/runtime/application/pipeline.js';
-import { verifyWave } from '../../packages/boss-cli/src/runtime/application/wave-verification.js';
 import { readExecutionView } from '../../packages/boss-cli/src/runtime/application/state.js';
+import { verifyWave } from '../../packages/boss-cli/src/runtime/application/wave-verification.js';
 import { hashWorkflowValue } from '../../packages/boss-cli/src/runtime/application/workflow.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 import { ensureBuilt } from '../helpers/run-cli.js';
@@ -71,7 +71,7 @@ describe('workflow runtime layer', () => {
     ensureBuilt('packages/boss-cli/dist/bin/boss.js');
     return spawnSync(process.execPath, [BOSS_BIN, 'runtime', name, ...args], {
       cwd: tmpDir,
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
   }
 
@@ -81,24 +81,28 @@ describe('workflow runtime layer', () => {
     fs.writeFileSync(
       path.join(tmpDir, '.boss', 'custom-dag.json'),
       JSON.stringify({ version: 'custom', artifacts: dag }, null, 2) + '\n',
-      'utf8'
+      'utf8',
     );
     fs.writeFileSync(
       path.join(tmpDir, '.boss', 'pipeline-packs', 'custom', 'pipeline.json'),
-      JSON.stringify({
-        name: 'custom',
-        version: '1.0.0',
-        type: 'pipeline-pack',
-        priority: 100,
-        when: { fileExists: ['custom.marker'] },
-        config: {
-          stages: [1],
-          agents: ['boss-pm', 'boss-architect'],
-          gates: [],
-          artifactDag: '.boss/custom-dag.json'
-        }
-      }, null, 2) + '\n',
-      'utf8'
+      JSON.stringify(
+        {
+          name: 'custom',
+          version: '1.0.0',
+          type: 'pipeline-pack',
+          priority: 100,
+          when: { fileExists: ['custom.marker'] },
+          config: {
+            stages: [1],
+            agents: ['boss-pm', 'boss-architect'],
+            gates: [],
+            artifactDag: '.boss/custom-dag.json',
+          },
+        },
+        null,
+        2,
+      ) + '\n',
+      'utf8',
     );
   }
 
@@ -112,7 +116,9 @@ describe('workflow runtime layer', () => {
     expect(plan.feature).toBe('workflow-feat');
     expect(plan.validation).toEqual({ deterministic: true, errors: [] });
     expect(plan.phases.map((phase) => phase.stage)).toEqual([0, 1, 2, 3, 4]);
-    expect(plan.nodes.some((node) => node.kind === 'agent' && node.artifact === 'prd.md')).toBe(true);
+    expect(plan.nodes.some((node) => node.kind === 'agent' && node.artifact === 'prd.md')).toBe(
+      true,
+    );
     expect(plan.nodes.some((node) => node.kind === 'gate' && node.gate === 'gate1')).toBe(true);
     expect(plan.nodes.find((node) => node.artifact === 'code')?.parallelGroup).toBe('stage-3-code');
 
@@ -130,41 +136,53 @@ describe('workflow runtime layer', () => {
     fs.mkdirSync(path.join(tmpDir, '.boss'), { recursive: true });
     fs.writeFileSync(
       path.join(tmpDir, '.boss', 'artifact-dag.json'),
-      JSON.stringify({
-        version: '1.0.0',
-        artifacts: {
-          'prd.md': {
-            inputs: ['missing-brief'],
-            agent: 'boss-pm',
-            stage: 1
-          }
-        }
-      }, null, 2) + '\n',
-      'utf8'
+      JSON.stringify(
+        {
+          version: '1.0.0',
+          artifacts: {
+            'prd.md': {
+              inputs: ['missing-brief'],
+              agent: 'boss-pm',
+              stage: 1,
+            },
+          },
+        },
+        null,
+        2,
+      ) + '\n',
+      'utf8',
     );
 
-    expect(() => runtime.initPipeline('workflow-feat', { cwd: tmpDir })).toThrow(/undeclared input/i);
+    expect(() => runtime.initPipeline('workflow-feat', { cwd: tmpDir })).toThrow(
+      /undeclared input/i,
+    );
   });
 
   it('rejects workflow plans with dynamic scripts', () => {
     fs.mkdirSync(path.join(tmpDir, '.boss'), { recursive: true });
     fs.writeFileSync(
       path.join(tmpDir, '.boss', 'artifact-dag.json'),
-      JSON.stringify({
-        version: '1.0.0',
-        artifacts: {
-          'prd.md': {
-            inputs: [],
-            agent: 'boss-pm',
-            stage: 1,
-            script: 'Date.now()'
-          }
-        }
-      }, null, 2) + '\n',
-      'utf8'
+      JSON.stringify(
+        {
+          version: '1.0.0',
+          artifacts: {
+            'prd.md': {
+              inputs: [],
+              agent: 'boss-pm',
+              stage: 1,
+              script: 'Date.now()',
+            },
+          },
+        },
+        null,
+        2,
+      ) + '\n',
+      'utf8',
     );
 
-    expect(() => runtime.initPipeline('workflow-feat', { cwd: tmpDir })).toThrow(/non-deterministic|Date\.now/i);
+    expect(() => runtime.initPipeline('workflow-feat', { cwd: tmpDir })).toThrow(
+      /non-deterministic|Date\.now/i,
+    );
   });
 
   it('compiles project pipeline packs and custom DAGs through the same workflow plan path', () => {
@@ -172,40 +190,48 @@ describe('workflow runtime layer', () => {
     fs.writeFileSync(path.join(tmpDir, 'custom.marker'), 'yes\n', 'utf8');
     fs.writeFileSync(
       path.join(tmpDir, '.boss', 'custom-dag.json'),
-      JSON.stringify({
-        version: 'custom',
-        artifacts: {
-          'custom-input': {
-            inputs: [],
-            agent: null,
-            stage: 0,
-            optional: true
+      JSON.stringify(
+        {
+          version: 'custom',
+          artifacts: {
+            'custom-input': {
+              inputs: [],
+              agent: null,
+              stage: 0,
+              optional: true,
+            },
+            'custom-output.md': {
+              inputs: ['custom-input'],
+              agent: 'boss-pm',
+              stage: 1,
+            },
           },
-          'custom-output.md': {
-            inputs: ['custom-input'],
-            agent: 'boss-pm',
-            stage: 1
-          }
-        }
-      }, null, 2) + '\n',
-      'utf8'
+        },
+        null,
+        2,
+      ) + '\n',
+      'utf8',
     );
     fs.writeFileSync(
       path.join(tmpDir, '.boss', 'pipeline-packs', 'custom', 'pipeline.json'),
-      JSON.stringify({
-        name: 'custom',
-        version: '1.0.0',
-        type: 'pipeline-pack',
-        priority: 100,
-        when: { fileExists: ['custom.marker'] },
-        config: {
-          stages: [1],
-          agents: ['boss-pm'],
-          gates: [],
-          artifactDag: '.boss/custom-dag.json'
-        }
-      }, null, 2) + '\n',
-      'utf8'
+      JSON.stringify(
+        {
+          name: 'custom',
+          version: '1.0.0',
+          type: 'pipeline-pack',
+          priority: 100,
+          when: { fileExists: ['custom.marker'] },
+          config: {
+            stages: [1],
+            agents: ['boss-pm'],
+            gates: [],
+            artifactDag: '.boss/custom-dag.json',
+          },
+        },
+        null,
+        2,
+      ) + '\n',
+      'utf8',
     );
 
     const state = runtime.initPipeline('custom-feat', { cwd: tmpDir });
@@ -216,7 +242,7 @@ describe('workflow runtime layer', () => {
     expect(plan.source.artifactDag.hash.value).toBe(state.parameters.artifactDagHash);
     expect(plan.nodes.map((node) => node.artifact).filter(Boolean)).toEqual([
       'custom-input',
-      'custom-output.md'
+      'custom-output.md',
     ]);
   });
 
@@ -225,18 +251,22 @@ describe('workflow runtime layer', () => {
     const runId = state.parameters.runId;
     expect(typeof runId).toBe('string');
 
-    fs.writeFileSync(path.join(tmpDir, '.boss', 'workflow-feat', 'design-brief'), 'brief\n', 'utf8');
+    fs.writeFileSync(
+      path.join(tmpDir, '.boss', 'workflow-feat', 'design-brief'),
+      'brief\n',
+      'utf8',
+    );
     runtime.updateAgent('workflow-feat', 1, 'boss-pm', 'completed', {
       cwd: tmpDir,
       prompt: 'boss-pm:prd.md',
-      dependencyArtifacts: ['design-brief']
+      dependencyArtifacts: ['design-brief'],
     });
 
     const result = runRuntimeCommand('resume', [
       'workflow-feat',
       '--from-run',
       runId as string,
-      '--json'
+      '--json',
     ]);
     expect(result.status, result.stderr).toBe(0);
     const payload = JSON.parse(result.stdout) as {
@@ -251,7 +281,9 @@ describe('workflow runtime layer', () => {
     expect(payload.fromRunId).toBe(runId);
     expect(payload.runId).toBe(runId);
     expect(payload.workflowPlanPath).toBe('.boss/workflow-feat/.meta/workflow-plan.json');
-    expect(payload.nodes.some((node) => node.id === 'artifact:prd.md' && node.decision === 'reuse')).toBe(true);
+    expect(
+      payload.nodes.some((node) => node.id === 'artifact:prd.md' && node.decision === 'reuse'),
+    ).toBe(true);
     expect(payload.nodes.some((node) => node.decision === 'run')).toBe(true);
   });
 
@@ -261,18 +293,18 @@ describe('workflow runtime layer', () => {
         inputs: [],
         agent: null,
         stage: 0,
-        optional: true
+        optional: true,
       },
       'a.md': {
         inputs: ['seed'],
         agent: 'boss-pm',
-        stage: 1
+        stage: 1,
       },
       'b.md': {
         inputs: ['a.md'],
         agent: 'boss-architect',
-        stage: 1
-      }
+        stage: 1,
+      },
     });
 
     const state = runtime.initPipeline('custom-feat', { cwd: tmpDir });
@@ -281,13 +313,13 @@ describe('workflow runtime layer', () => {
     runtime.updateAgent('custom-feat', 1, 'boss-pm', 'completed', {
       cwd: tmpDir,
       prompt: 'boss-pm:a.md',
-      dependencyArtifacts: ['seed']
+      dependencyArtifacts: ['seed'],
     });
     const result = runRuntimeCommand('resume', [
       'custom-feat',
       '--from-run',
       String(state.parameters.runId),
-      '--json'
+      '--json',
     ]);
     expect(result.status, result.stderr).toBe(0);
 
@@ -296,11 +328,11 @@ describe('workflow runtime layer', () => {
     expect(nodes['artifact:a.md']).toMatchObject({
       status: 'reused',
       decision: 'reuse',
-      reason: 'input-digest-matched'
+      reason: 'input-digest-matched',
     });
     expect(nodes['artifact:b.md']).toMatchObject({
       status: 'ready',
-      decision: 'run'
+      decision: 'run',
     });
     expect(execution.workflow?.nextNodeIds).toEqual(['artifact:b.md']);
   });
@@ -310,14 +342,14 @@ describe('workflow runtime layer', () => {
       code: {
         inputs: [],
         agent: 'boss-pm',
-        stage: 1
+        stage: 1,
       },
       'quality-gate': {
         inputs: ['code'],
         agent: null,
         stage: 1,
-        type: 'gate'
-      }
+        type: 'gate',
+      },
     });
     runtime.initPipeline('custom-feat', { cwd: tmpDir });
 
@@ -326,14 +358,14 @@ describe('workflow runtime layer', () => {
     const execution = runtime.updateStage('custom-feat', 1, 'completed', {
       cwd: tmpDir,
       gate: 'quality-gate',
-      gatePassed: true
+      gatePassed: true,
     });
 
     const nodes = execution.workflow?.nodes as Record<string, WorkflowExecutionNode>;
     expect(nodes['artifact:code']).toMatchObject({ status: 'completed' });
     expect(nodes['gate:quality-gate']).toMatchObject({
       status: 'completed',
-      kind: 'gate'
+      kind: 'gate',
     });
   });
 
@@ -352,11 +384,11 @@ describe('workflow runtime layer', () => {
             redTests: [['false']],
             greenGates: [['true']],
             contractRows: ['CM-runtime'],
-            stopCondition: 'Stop on failed status'
-          }
-        ]
+            stopCondition: 'Stop on failed status',
+          },
+        ],
       }) + '\n',
-      'utf8'
+      'utf8',
     );
 
     const result = verifyWave('workflow-feat', 'wave-1-runtime', 'green', { cwd: tmpDir });
@@ -367,7 +399,7 @@ describe('workflow runtime layer', () => {
     expect(nodes['wave:wave-1-runtime']).toMatchObject({
       id: 'wave:wave-1-runtime',
       kind: 'wave',
-      status: 'completed'
+      status: 'completed',
     });
   });
 });

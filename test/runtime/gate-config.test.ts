@@ -1,15 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  initPipeline
-} from '../../packages/boss-cli/src/runtime/application/pipeline.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   evaluateGates,
-  resolveGateConfig
+  resolveGateConfig,
 } from '../../packages/boss-cli/src/runtime/application/gates.js';
+import { initPipeline } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -37,7 +35,10 @@ describe('configurable gate coverage threshold', () => {
     const execPath = path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json');
     const exec = JSON.parse(fs.readFileSync(execPath, 'utf8'));
     exec.parameters = exec.parameters || {};
-    exec.parameters.packConfig = { ...(exec.parameters.packConfig || {}), gateConfig: { coverage: 80 } };
+    exec.parameters.packConfig = {
+      ...(exec.parameters.packConfig || {}),
+      gateConfig: { coverage: 80 },
+    };
     fs.writeFileSync(execPath, JSON.stringify(exec, null, 2), 'utf8');
 
     const config = resolveGateConfig('test-feat', 'gate1', { cwd: tmpDir });
@@ -49,12 +50,18 @@ describe('configurable gate coverage threshold', () => {
     const gateDir = path.join(tmpDir, '.boss', 'plugins', 'env-echo');
     fs.mkdirSync(gateDir, { recursive: true });
     const gateScript = path.join(gateDir, 'gate.sh');
-    fs.writeFileSync(gateScript, [
-      '#!/bin/bash',
-      'T="${GATE_COVERAGE_THRESHOLD:-unset}"',
-      'echo "[{\\"name\\":\\"threshold\\",\\"passed\\":true,\\"detail\\":\\"${T}\\"}]"',
-      'exit 0'
-    ].join('\n'), 'utf8');
+    fs.writeFileSync(
+      gateScript,
+      [
+        '#!/bin/bash',
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: bash variable substitution in test fixture
+        'T="${GATE_COVERAGE_THRESHOLD:-unset}"',
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: bash variable substitution in test fixture
+        'echo "[{\\"name\\":\\"threshold\\",\\"passed\\":true,\\"detail\\":\\"${T}\\"}]"',
+        'exit 0',
+      ].join('\n'),
+      'utf8',
+    );
     fs.chmodSync(gateScript, 0o755);
 
     const result = evaluateGates('test-feat', 'env-echo', { cwd: tmpDir, dryRun: true });
@@ -67,7 +74,7 @@ describe('configurable gate coverage threshold', () => {
   it('built-in gate1 receives the resolved coverage threshold', () => {
     const gatesSource = fs.readFileSync(
       path.join(REPO_ROOT, 'packages', 'boss-cli', 'src', 'runtime', 'application', 'gates.ts'),
-      'utf8'
+      'utf8',
     );
     expect(gatesSource).toContain('coverageThreshold');
     expect(gatesSource).toContain('runGate1');

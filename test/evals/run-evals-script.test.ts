@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const SCRIPT = path.resolve(import.meta.dirname, 'run-evals.sh');
 const README = path.resolve(import.meta.dirname, 'README.md');
@@ -22,7 +22,10 @@ describe('Boss eval shell runner', () => {
     const result = spawnSync('bash', [SCRIPT], { encoding: 'utf8' });
 
     expect(result.status, result.stderr).toBe(0);
-    const payload = JSON.parse(result.stdout) as { passed: boolean; reports: Array<{ id: string }> };
+    const payload = JSON.parse(result.stdout) as {
+      passed: boolean;
+      reports: Array<{ id: string }>;
+    };
     expect(payload.passed).toBe(true);
     expect(payload.reports[0].id).toBe('smoke-success');
   });
@@ -31,7 +34,10 @@ describe('Boss eval shell runner', () => {
     const result = spawnSync('bash', [SCRIPT, '--smoke'], { encoding: 'utf8' });
 
     expect(result.status, result.stderr).toBe(0);
-    const payload = JSON.parse(result.stdout) as { passed: boolean; reports: Array<{ id: string }> };
+    const payload = JSON.parse(result.stdout) as {
+      passed: boolean;
+      reports: Array<{ id: string }>;
+    };
     expect(payload.passed).toBe(true);
     expect(payload.reports.map((report) => report.id)).toEqual(['smoke-success']);
   });
@@ -40,16 +46,25 @@ describe('Boss eval shell runner', () => {
     const result = spawnSync('bash', [SCRIPT, '--release'], { encoding: 'utf8' });
 
     expect(result.status, result.stderr).toBe(0);
-    const payload = JSON.parse(result.stdout) as { passed: boolean; reports: Array<{ id: string }> };
+    const payload = JSON.parse(result.stdout) as {
+      passed: boolean;
+      reports: Array<{ id: string }>;
+    };
     expect(payload.passed).toBe(true);
-    expect(payload.reports.map((report) => report.id)).toEqual(['release-evidence', 'pipeline-compliance']);
+    expect(payload.reports.map((report) => report.id)).toEqual([
+      'release-evidence',
+      'pipeline-compliance',
+    ]);
   });
 
   it('returns non-zero when an eval case fails deterministic checks', () => {
     const result = spawnSync('bash', [SCRIPT, '--case', BAD_CASE], { encoding: 'utf8' });
 
     expect(result.status).toBe(1);
-    const payload = JSON.parse(result.stdout) as { passed: boolean; reports: Array<{ failures: string[] }> };
+    const payload = JSON.parse(result.stdout) as {
+      passed: boolean;
+      reports: Array<{ failures: string[] }>;
+    };
     expect(payload.passed).toBe(false);
     expect(payload.reports[0].failures).toContain('missing artifact: qa-report.md');
   });

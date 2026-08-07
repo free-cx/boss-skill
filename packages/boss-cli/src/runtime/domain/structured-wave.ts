@@ -47,7 +47,7 @@ function assertNoShellSyntax(field: string, value: string): void {
       value,
       `命令片段包含 shell 元字符 ${JSON.stringify(match[0])}：${JSON.stringify(value)}。` +
         '命令以 argv 数组直接执行，不经 shell，因此不支持管道、重定向、变量展开或命令串联。' +
-        '如需组合多步，请拆成多条命令。'
+        '如需组合多步，请拆成多条命令。',
     );
   }
 }
@@ -67,12 +67,14 @@ export function normalizeCommand(input: unknown, field: string): StructuredComma
       field,
       input,
       `命令必须是 argv 数组或 { command, args } 对象，不能是字符串：${JSON.stringify(input)}。` +
-        '字符串形态需要 shell 切分，已不再支持。'
+        '字符串形态需要 shell 切分，已不再支持。',
     );
   }
 
   if (Array.isArray(input)) {
-    const parts = input.filter((item): item is string => typeof item === 'string' && item.length > 0);
+    const parts = input.filter(
+      (item): item is string => typeof item === 'string' && item.length > 0,
+    );
     if (parts.length === 0) {
       throw new InvalidCommandError(field, JSON.stringify(input), '命令数组为空');
     }

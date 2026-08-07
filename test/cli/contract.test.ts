@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import path from 'node:path';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   CliUserError,
@@ -8,11 +8,10 @@ import {
   errorPayload,
   exitCodeForError,
   outputList,
-  pickFields,
   readJsonInput,
   readJsonInputText,
   validatePathInside,
-  writeOutput
+  writeOutput,
 } from '../../packages/boss-cli/src/cli/contract.js';
 
 describe('CLI contract utilities', () => {
@@ -20,7 +19,7 @@ describe('CLI contract utilities', () => {
     const context = createCliContext(['--limit=2'], {
       command: 'boss test',
       stdoutIsTTY: false,
-      stdinIsTTY: false
+      stdinIsTTY: false,
     });
 
     expect(context.useJson).toBe(true);
@@ -31,15 +30,15 @@ describe('CLI contract utilities', () => {
     const context = createCliContext(['--fields=name,status', '--limit=1'], {
       command: 'boss test',
       stdoutIsTTY: false,
-      stdinIsTTY: false
+      stdinIsTTY: false,
     });
 
     const payload = outputList(
       [
         { name: 'a', status: 'ok', secret: 'hidden' },
-        { name: 'b', status: 'ok', secret: 'hidden' }
+        { name: 'b', status: 'ok', secret: 'hidden' },
       ],
-      context
+      context,
     );
 
     expect(payload).toEqual([{ name: 'a', status: 'ok' }]);
@@ -48,10 +47,14 @@ describe('CLI contract utilities', () => {
   it('rejects path traversal and control characters', () => {
     const baseDir = path.resolve('/tmp/boss-base');
 
-    expect(() => validatePathInside('../outside', baseDir, 'project directory')).toThrow(CliUserError);
-    expect(() => validatePathInside('bad\npath', baseDir, 'project directory')).toThrow(CliUserError);
+    expect(() => validatePathInside('../outside', baseDir, 'project directory')).toThrow(
+      CliUserError,
+    );
+    expect(() => validatePathInside('bad\npath', baseDir, 'project directory')).toThrow(
+      CliUserError,
+    );
     expect(validatePathInside('inside/project', baseDir, 'project directory')).toBe(
-      path.join(baseDir, 'inside', 'project')
+      path.join(baseDir, 'inside', 'project'),
     );
   });
 
@@ -78,7 +81,7 @@ describe('CLI contract utilities', () => {
     const context = createCliContext(['--fields=name'], {
       command: 'boss test',
       stdoutIsTTY: true,
-      stdinIsTTY: true
+      stdinIsTTY: true,
     });
     const data = { name: 'demo', secret: 'secret-value' };
     let renderedData: unknown;
@@ -102,7 +105,7 @@ describe('CLI contract utilities', () => {
       summary: 'Initialize a Boss feature workspace',
       parameters: [{ name: 'feature', type: 'string', required: true }],
       options: [{ name: 'json', type: 'boolean', default: false }],
-      risk_tier: 'medium'
+      risk_tier: 'medium',
     });
 
     expect(metadata.command).toBe('boss project init');
@@ -111,11 +114,15 @@ describe('CLI contract utilities', () => {
   });
 
   it('maps retryable errors to exit code 2', () => {
-    expect(exitCodeForError(new CliUserError({
-      code: 'transient_timeout',
-      message: 'Timed out',
-      retryable: true
-    }))).toBe(2);
+    expect(
+      exitCodeForError(
+        new CliUserError({
+          code: 'transient_timeout',
+          message: 'Timed out',
+          retryable: true,
+        }),
+      ),
+    ).toBe(2);
   });
 
   it('maps runtime "未找到执行文件" throws to pipeline_not_initialized with recovery hint', () => {

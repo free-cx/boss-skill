@@ -15,10 +15,12 @@ function exitCleanly() {
 }
 
 function resolvePluginRoot() {
-  return process.env.SKILL_DIR
-    || process.env.CLAUDE_PROJECT_DIR
-    || process.env.CLAUDE_PLUGIN_ROOT
-    || path.resolve(__dirname, '..', '..');
+  return (
+    process.env.SKILL_DIR ||
+    process.env.CLAUDE_PROJECT_DIR ||
+    process.env.CLAUDE_PLUGIN_ROOT ||
+    path.resolve(__dirname, '..', '..')
+  );
 }
 
 function readStdin() {
@@ -54,7 +56,7 @@ function readStdin() {
   return Buffer.concat(chunks, total);
 }
 
-function writeStructuredResult(result, stdinBuf) {
+function writeStructuredResult(result, _stdinBuf) {
   if (result && typeof result === 'object' && !Buffer.isBuffer(result)) {
     if (result.stderr) {
       process.stderr.write(String(result.stderr));
@@ -120,7 +122,7 @@ async function main() {
       input: stdinBuf,
       stdio: ['pipe', 'pipe', 'pipe'],
       timeout: 30000,
-      maxBuffer: MAX_STDIN
+      maxBuffer: MAX_STDIN,
     });
 
     if (child.stderr && child.stderr.length) {

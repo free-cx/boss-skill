@@ -6,7 +6,7 @@ import {
   assertSkillBeforeActions,
   parseTranscriptLines,
   summarizeTranscript,
-  type TranscriptUsage
+  type TranscriptUsage,
 } from './transcript-parser.js';
 
 export interface SkillBehaviorCase {
@@ -38,7 +38,7 @@ export function evaluateTranscriptFile(testCase: SkillBehaviorCase): SkillBehavi
   const order = assertSkillBeforeActions(transcript, testCase.requiredSkill);
   const requiredMethodologySkills = testCase.requiredMethodologySkills ?? [];
   const missingMethodologySkills = requiredMethodologySkills.filter(
-    (skill) => !summary.methodologySkills.includes(skill)
+    (skill) => !summary.methodologySkills.includes(skill),
   );
   const failures: string[] = [];
   const skillLoaded = transcript.skillCalls.some((call) => call.skill === testCase.requiredSkill);
@@ -65,7 +65,7 @@ export function evaluateTranscriptFile(testCase: SkillBehaviorCase): SkillBehavi
     firstActionIndex: order.firstActionIndex,
     toolNames: summary.toolNames,
     usage: summary.usage,
-    failures
+    failures,
   };
 }
 
@@ -103,7 +103,7 @@ function parseCliArgs(argv: string[]): SkillBehaviorCase {
     id,
     transcriptPath,
     requiredSkill,
-    requiredMethodologySkills: requiredMethodologySkills.filter(Boolean)
+    requiredMethodologySkills: requiredMethodologySkills.filter(Boolean),
   };
 }
 

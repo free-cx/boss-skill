@@ -1,13 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-
-import { findActiveFeature, readExecJson, AGENT_STAGE_MAP } from '../lib/boss-utils.js';
-import { emitProgress } from '../lib/progress-emitter.js';
 import * as runtime from '../../packages/boss-cli/dist/runtime/application/pipeline.js';
 import {
   isAgentReportStatus,
-  toPipelineAgentStatus
+  toPipelineAgentStatus,
 } from '../../packages/boss-cli/dist/runtime/domain/agent-report.js';
+import { AGENT_STAGE_MAP, findActiveFeature, readExecJson } from '../lib/boss-utils.js';
+import { emitProgress } from '../lib/progress-emitter.js';
 
 /**
  * 读取子代理上报的结构化状态。
@@ -22,7 +21,7 @@ function readReportedStatus(input) {
     input.structured_output,
     input.structuredOutput,
     input.agent_status,
-    input.agentStatus
+    input.agentStatus,
   ];
 
   for (const candidate of candidates) {
@@ -38,7 +37,7 @@ function readReportedStatus(input) {
       if (isAgentReportStatus(status)) {
         return {
           status,
-          reason: typeof candidate.reason === 'string' ? candidate.reason : ''
+          reason: typeof candidate.reason === 'string' ? candidate.reason : '',
         };
       }
     }
@@ -46,7 +45,6 @@ function readReportedStatus(input) {
 
   return null;
 }
-
 
 function run(rawInput) {
   const input = JSON.parse(rawInput);
@@ -80,7 +78,7 @@ function run(rawInput) {
     event: 'stop',
     summary: lastMsg,
     status: parsedStatus.status || '',
-    reason: parsedStatus.reason || ''
+    reason: parsedStatus.reason || '',
   });
 
   try {
@@ -110,14 +108,14 @@ function run(rawInput) {
 
         emitProgress(cwd, active.feature, {
           type: 'agent-complete',
-          data: { agent: agentType, stage: parseInt(currentStage), status: agentStatus }
+          data: { agent: agentType, stage: parseInt(currentStage, 10), status: agentStatus },
         });
 
         const failureReason = parsedStatus.reason || parsedStatus.status || '';
         try {
           runtime.updateAgent(active.feature, currentStage, agentType, agentStatus, {
             cwd,
-            reason: agentStatus === 'failed' ? failureReason : ''
+            reason: agentStatus === 'failed' ? failureReason : '',
           });
         } catch (err) {
           process.stderr.write('[boss-skill] subagent-stop/update-agent: ' + err.message + '\n');
@@ -129,7 +127,4 @@ function run(rawInput) {
   return '';
 }
 
-export {
-  run,
-  readReportedStatus
-};
+export { readReportedStatus, run };

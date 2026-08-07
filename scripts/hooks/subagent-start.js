@@ -1,7 +1,7 @@
-import { findActiveFeature, readExecJson, AGENT_STAGE_MAP } from '../lib/boss-utils.js';
-import { emitProgress } from '../lib/progress-emitter.js';
-import * as runtime from '../../packages/boss-cli/dist/runtime/application/pipeline.js';
 import * as memoryRuntime from '../../packages/boss-cli/dist/runtime/application/memory.js';
+import * as runtime from '../../packages/boss-cli/dist/runtime/application/pipeline.js';
+import { AGENT_STAGE_MAP, findActiveFeature, readExecJson } from '../lib/boss-utils.js';
+import { emitProgress } from '../lib/progress-emitter.js';
 
 function artifactInputsForStage(stage) {
   if (Number(stage) === 1) return [];
@@ -17,12 +17,14 @@ function buildMemoryContext(feature, agentType, stage, cwd) {
       cwd,
       agent: agentType,
       stage: Number(stage),
-      limit: 3
+      limit: 3,
     });
     if (!section.length) {
       return '';
     }
-    return '\n记忆提示:\n' + section.map((item) => `- [${item.category}] ${item.summary}`).join('\n');
+    return (
+      '\n记忆提示:\n' + section.map((item) => `- [${item.category}] ${item.summary}`).join('\n')
+    );
   } catch {
     return '';
   }
@@ -60,7 +62,8 @@ function run(rawInput) {
   stablePrompt += `\n子 Agent 类型: ${agentType}`;
   stablePrompt += '\n完成时必须通过命令上报终态（状态值在工具层校验，不要用自然语言描述状态）：';
   stablePrompt += `\n  boss runtime report-agent-status ${active.feature} <stage> ${agentType || '<agent>'} <STATUS> --reason "<简述>"`;
-  stablePrompt += '\n  STATUS ∈ DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED | REVISION_NEEDED';
+  stablePrompt +=
+    '\n  STATUS ∈ DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED | REVISION_NEEDED';
   let context = stablePrompt;
   context += buildMemoryContext(active.feature, agentType, currentStage, cwd);
 
@@ -68,14 +71,14 @@ function run(rawInput) {
   if (currentStage && AGENT_STAGE_MAP[agentType]) {
     emitProgress(cwd, active.feature, {
       type: 'agent-start',
-      data: { agent: agentType, stage: parseInt(currentStage) }
+      data: { agent: agentType, stage: parseInt(currentStage, 10) },
     });
     try {
       runtime.updateAgent(active.feature, currentStage, agentType, 'running', {
         cwd,
         prompt: stablePrompt,
         dependencyArtifacts: artifactInputsForStage(currentStage),
-        opts: { hook: 'subagent-start', agentType }
+        opts: { hook: 'subagent-start', agentType },
       });
     } catch (err) {
       process.stderr.write('[boss-skill] subagent-start/update-agent: ' + err.message + '\n');
@@ -85,8 +88,8 @@ function run(rawInput) {
   return JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'SubagentStart',
-      additionalContext: context
-    }
+      additionalContext: context,
+    },
   });
 }
 

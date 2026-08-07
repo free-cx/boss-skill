@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
 let pipelineRuntime: typeof import('../../packages/boss-cli/src/runtime/application/pipeline.js');
@@ -29,7 +29,10 @@ describe('checkStall', () => {
     pipelineRuntime.updateStage('test-feat', 1, 'running', { cwd: tmpDir });
     pipelineRuntime.updateAgent('test-feat', 1, 'boss-pm', 'running', { cwd: tmpDir });
     // Agent just started, so with a large threshold it shouldn't be stalled
-    const result = pipelineRuntime.checkStall('test-feat', { cwd: tmpDir, maxDurationMs: 60 * 60 * 1000 });
+    const result = pipelineRuntime.checkStall('test-feat', {
+      cwd: tmpDir,
+      maxDurationMs: 60 * 60 * 1000,
+    });
     expect(result.stalled).toEqual([]);
   });
 
@@ -59,14 +62,23 @@ describe('checkStall', () => {
     exec.stages['1'].agents['boss-pm'].startTime = new Date(Date.now() - 120000).toISOString();
     fs.writeFileSync(execPath, JSON.stringify(exec, null, 2), 'utf8');
 
-    const result = pipelineRuntime.checkStall('test-feat', { cwd: tmpDir, maxDurationMs: 60000, autoFail: true });
+    const result = pipelineRuntime.checkStall('test-feat', {
+      cwd: tmpDir,
+      maxDurationMs: 60000,
+      autoFail: true,
+    });
     expect(result.stalled[0].failed).toBe(true);
 
     // Verify AgentFailed event was emitted
     const eventsPath = path.join(tmpDir, '.boss', 'test-feat', '.meta', 'events.jsonl');
-    const events = fs.readFileSync(eventsPath, 'utf8').trim().split('\n').map(l => JSON.parse(l));
-    const failEvent = events.find((e: { type: string; data?: { reason?: string } }) =>
-      e.type === 'AgentFailed' && e.data?.reason === 'timeout'
+    const events = fs
+      .readFileSync(eventsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    const failEvent = events.find(
+      (e: { type: string; data?: { reason?: string } }) =>
+        e.type === 'AgentFailed' && e.data?.reason === 'timeout',
     );
     expect(failEvent).toBeTruthy();
     expect(failEvent.data.agent).toBe('boss-pm');

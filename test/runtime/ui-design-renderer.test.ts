@@ -4,7 +4,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createOpenUrl } from '../../packages/boss-cli/src/runtime/design/open.js';
 import { renderUiDesignHtml } from '../../packages/boss-cli/src/runtime/design/render.js';
-import { validateUiDesignArtifact, type UiDesignArtifact } from '../../packages/boss-cli/src/runtime/design/schema.js';
+import {
+  type UiDesignArtifact,
+  validateUiDesignArtifact,
+} from '../../packages/boss-cli/src/runtime/design/schema.js';
 import { startUiDesignPreviewServer } from '../../packages/boss-cli/src/runtime/design/server.js';
 
 const design: UiDesignArtifact = {
@@ -27,11 +30,17 @@ const design: UiDesignArtifact = {
           name: 'Checkout Main',
           layout: 'vertical',
           children: [
-            { id: 'pay-button', type: 'button', name: 'Pay now', layout: 'horizontal', children: [] }
-          ]
-        }
+            {
+              id: 'pay-button',
+              type: 'button',
+              name: 'Pay now',
+              layout: 'horizontal',
+              children: [],
+            },
+          ],
+        },
       ],
-      states: []
+      states: [],
     },
     {
       id: 'success',
@@ -39,21 +48,27 @@ const design: UiDesignArtifact = {
       route: '/success',
       viewport: { width: 1440, height: 960 },
       frames: [
-        { id: 'success-main', type: 'page', name: 'Success Main', layout: 'vertical', children: [] }
+        {
+          id: 'success-main',
+          type: 'page',
+          name: 'Success Main',
+          layout: 'vertical',
+          children: [],
+        },
       ],
-      states: []
-    }
+      states: [],
+    },
   ],
   components: [{ id: 'button', name: 'Button', type: 'button' }],
   prototype: {
     startPageId: 'checkout',
-    links: [{ sourceId: 'pay-button', targetPageId: 'success' }]
+    links: [{ sourceId: 'pay-button', targetPageId: 'success' }],
   },
   implementationHints: {
     preferredFramework: 'react',
     requiredComponents: ['Button'],
-    accessibilityNotes: ['Buttons need visible focus states']
-  }
+    accessibilityNotes: ['Buttons need visible focus states'],
+  },
 };
 
 describe('ui design renderer', () => {
@@ -88,7 +103,7 @@ describe('ui design renderer', () => {
     const html = renderUiDesignHtml(malicious, validateUiDesignArtifact(malicious));
     const errorHtml = renderUiDesignHtml(malicious, {
       ok: false,
-      errors: ['<script>alert("error")</script>']
+      errors: ['<script>alert("error")</script>'],
     });
 
     expect(html).not.toContain('<script>alert("page")</script>');
@@ -105,10 +120,10 @@ describe('ui design renderer', () => {
     const html = renderUiDesignHtml(design, validateUiDesignArtifact(design));
 
     expect(html).toContain('<script>');
-    expect(html).toContain("function switchPage(pageId)");
+    expect(html).toContain('function switchPage(pageId)');
     expect(html).toContain("document.querySelectorAll('.page-tab')");
     expect(html).toContain("document.querySelectorAll('[data-target-page]')");
-    expect(html).toContain("function switchViewport(viewport)");
+    expect(html).toContain('function switchViewport(viewport)');
     expect(html).toContain('data-page-id="success"');
     expect(html).toContain('data-target-page="success"');
     expect(html).toContain('viewport-mobile');
@@ -118,7 +133,7 @@ describe('ui design renderer', () => {
     const malformed = structuredClone(design) as unknown as UiDesignArtifact;
     (malformed.pages[0]!.viewport as unknown) = {
       width: '1440; background: url(javascript:alert(1))',
-      height: Number.POSITIVE_INFINITY
+      height: Number.POSITIVE_INFINITY,
     };
 
     const html = renderUiDesignHtml(malformed, validateUiDesignArtifact(malformed));

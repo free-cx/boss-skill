@@ -6,7 +6,7 @@ function event(type: string, data: Record<string, unknown> = {}, id = 1) {
     id,
     type,
     timestamp: new Date(Date.UTC(2026, 4, 15, 8, 0, id)).toISOString(),
-    data
+    data,
   };
 }
 
@@ -30,27 +30,27 @@ function initialized(feature = 'fault-feature') {
         agentFailureCount: 0,
         meanRetriesPerStage: 0,
         revisionLoopCount: 0,
-        pluginFailureCount: 0
+        pluginFailureCount: 0,
       },
       plugins: [],
       pluginLifecycle: {
         discovered: [],
         activated: [],
         executed: [],
-        failed: []
+        failed: [],
       },
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
-    }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
+    },
   });
 }
 
 describe('Boss fault trace invariants', () => {
   it('rejects unknown event types with event context', () => {
-    expect(() => assertTraceInvariants([initialized(), event('UnexpectedThing', {}, 2)], {})).toThrow(
-      /unknown event type UnexpectedThing.*event index 1/s
-    );
+    expect(() =>
+      assertTraceInvariants([initialized(), event('UnexpectedThing', {}, 2)], {}),
+    ).toThrow(/unknown event type UnexpectedThing.*event index 1/s);
   });
 
   it('rejects invalid timestamps with event context', () => {
@@ -58,28 +58,31 @@ describe('Boss fault trace invariants', () => {
       assertTraceInvariants(
         [
           initialized(),
-          { id: 2, type: 'StageStarted', timestamp: 'Friday-ish', data: { stage: 1 } }
+          { id: 2, type: 'StageStarted', timestamp: 'Friday-ish', data: { stage: 1 } },
         ],
-        {}
-      )
+        {},
+      ),
     ).toThrow(/invalid timestamp.*StageStarted.*event index 1/s);
   });
 
   it('rejects stage completion before stage start', () => {
-    expect(() => assertTraceInvariants([initialized(), event('StageCompleted', { stage: 2 }, 2)], {})).toThrow(
-      /stage 2 completed before start.*event index 1/s
-    );
+    expect(() =>
+      assertTraceInvariants([initialized(), event('StageCompleted', { stage: 2 }, 2)], {}),
+    ).toThrow(/stage 2 completed before start.*event index 1/s);
   });
 
   it('rejects stage retry before stage failure', () => {
-    expect(() => assertTraceInvariants([initialized(), event('StageRetrying', { stage: 3 }, 2)], {})).toThrow(
-      /stage 3 retried before failure.*event index 1/s
-    );
+    expect(() =>
+      assertTraceInvariants([initialized(), event('StageRetrying', { stage: 3 }, 2)], {}),
+    ).toThrow(/stage 3 retried before failure.*event index 1/s);
   });
 
   it('rejects agent retry before agent failure', () => {
     expect(() =>
-      assertTraceInvariants([initialized(), event('AgentRetryScheduled', { stage: 4, agent: 'qa' }, 2)], {})
+      assertTraceInvariants(
+        [initialized(), event('AgentRetryScheduled', { stage: 4, agent: 'qa' }, 2)],
+        {},
+      ),
     ).toThrow(/agent 4:qa retried before failure.*event index 1/s);
   });
 
@@ -89,8 +92,8 @@ describe('Boss fault trace invariants', () => {
     expect(() =>
       assertTraceInvariants([pipeline], {
         ...(pipeline.data.initialState as Record<string, unknown>),
-        status: 'completed'
-      })
+        status: 'completed',
+      }),
     ).toThrow(/projector replay mismatch/s);
   });
 });

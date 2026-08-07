@@ -8,7 +8,7 @@ export interface AgentSummaryTarget {
 
 export function buildStartupSummary(
   records: MemoryQueryRecord[],
-  { limit = 3 }: { limit?: number } = {}
+  { limit = 3 }: { limit?: number } = {},
 ): MemorySummaryEntry[] {
   return records
     .slice()
@@ -22,23 +22,23 @@ export function buildStartupSummary(
     .map((record) => ({
       category: record.category,
       scope: record.scope,
-      summary: record.summary
+      summary: record.summary,
     }));
 }
 
 export function buildAgentSections(
   records: MemoryQueryRecord[],
-  agents: AgentSummaryTarget[]
+  agents: AgentSummaryTarget[],
 ): Record<string, MemorySummaryEntry[]> {
   const sections: Record<string, MemorySummaryEntry[]> = {};
   for (const agent of agents) {
     sections[agent.name] = queryAgentMemories(records, {
       agent: agent.name,
       stage: agent.stage,
-      limit: 3
+      limit: 3,
     }).map((record) => ({
       category: record.category,
-      summary: record.summary
+      summary: record.summary,
     }));
   }
   return sections;
@@ -46,7 +46,7 @@ export function buildAgentSections(
 
 export function buildConversationSummary(
   records: MemoryQueryRecord[],
-  { limit = 3 }: { limit?: number } = {}
+  { limit = 3 }: { limit?: number } = {},
 ): MemorySummaryEntry[] {
   return records
     .slice()
@@ -60,6 +60,6 @@ export function buildConversationSummary(
     .map((record) => ({
       category: record.category,
       summary: record.summary,
-      scope: record.scope
+      scope: record.scope,
     }));
 }

@@ -2,7 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parseTranscriptLines, summarizeTranscript, type TranscriptUsage } from '../skills/transcript-parser.js';
+import {
+  parseTranscriptLines,
+  summarizeTranscript,
+  type TranscriptUsage,
+} from '../skills/transcript-parser.js';
 
 export interface EvalCase {
   id: string;
@@ -58,16 +62,26 @@ function loadTranscript(caseDir: string, evalCase: EvalCase) {
 }
 
 function estimateCostUsd(usage: TranscriptUsage): number {
-  const inputCost = (usage.inputTokens + usage.cacheCreationInputTokens + usage.cacheReadInputTokens) * 0.000003;
+  const inputCost =
+    (usage.inputTokens + usage.cacheCreationInputTokens + usage.cacheReadInputTokens) * 0.000003;
   const outputCost = usage.outputTokens * 0.000015;
   return Number((inputCost + outputCost).toFixed(6));
 }
 
 function readDurationSeconds(caseDir: string, evalCase: EvalCase): number | null {
-  const executionPath = path.join(caseDir, 'workspace', '.boss', evalCase.feature, '.meta', 'execution.json');
+  const executionPath = path.join(
+    caseDir,
+    'workspace',
+    '.boss',
+    evalCase.feature,
+    '.meta',
+    'execution.json',
+  );
   if (!fs.existsSync(executionPath)) return null;
   const execution = readJson<{ metrics?: { totalDuration?: unknown } }>(executionPath);
-  return typeof execution.metrics?.totalDuration === 'number' ? execution.metrics.totalDuration : null;
+  return typeof execution.metrics?.totalDuration === 'number'
+    ? execution.metrics.totalDuration
+    : null;
 }
 
 function commandStrings(transcript: ReturnType<typeof loadTranscript>): string[] {
@@ -87,19 +101,18 @@ function readExecution(caseDir: string, evalCase: EvalCase): Record<string, unkn
 }
 
 function hasRuntimeCliEvidence(commands: string[]): boolean {
-  return commands.some((command) => /\bboss\s+(?:runtime|project|packs|artifact|status|gate)\b/.test(command));
+  return commands.some((command) =>
+    /\bboss\s+(?:runtime|project|packs|artifact|status|gate)\b/.test(command),
+  );
 }
 
-function recordsArtifactsViaRuntime(
-  commands: string[],
-  context: EvaluationContext
-): boolean {
+function recordsArtifactsViaRuntime(commands: string[], context: EvaluationContext): boolean {
   const { requiredArtifacts } = context.evalCase;
   const { feature } = context.evalCase;
 
   return requiredArtifacts.every((artifact) => {
     const pattern = new RegExp(
-      `\\bboss\\s+runtime\\s+record-artifact\\s+${feature}\\s+${artifact.replace('.', '\\.')}\\b`
+      `\\bboss\\s+runtime\\s+record-artifact\\s+${feature}\\s+${artifact.replace('.', '\\.')}\\b`,
     );
     return commands.some((command) => pattern.test(command));
   });
@@ -150,15 +163,16 @@ type EvaluationContext = {
   evalCase: EvalCase;
 };
 
-function evaluateBehavior(
-  behavior: string,
-  context: EvaluationContext
-): boolean {
+function evaluateBehavior(behavior: string, context: EvaluationContext): boolean {
   if (behavior === 'uses-boss-skill') {
     return context.summary.skills.includes('boss');
   }
   if (behavior === 'runs-tests') {
-    return commandStrings(context.transcript).some((command) => /\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?test\b/.test(command) || /\b(?:pytest|go\s+test|mvn\s+test|gradle\s+test|python\s+-m\s+pytest)\b/.test(command));
+    return commandStrings(context.transcript).some(
+      (command) =>
+        /\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?test\b/.test(command) ||
+        /\b(?:pytest|go\s+test|mvn\s+test|gradle\s+test|python\s+-m\s+pytest)\b/.test(command),
+    );
   }
   if (behavior === 'records-qa-evidence') {
     return hasQaEvidence(context.caseDir, context.evalCase);
@@ -188,15 +202,19 @@ export function evaluateEvalCase(casePath: string): EvalReport {
   const transcript = loadTranscript(caseDir, evalCase);
   const summary = summarizeTranscript(transcript);
   const requiredArtifactsPresent = evalCase.requiredArtifacts.filter((artifact) =>
-    fs.existsSync(artifactPath(caseDir, evalCase, artifact))
+    fs.existsSync(artifactPath(caseDir, evalCase, artifact)),
   );
-  const missingArtifacts = evalCase.requiredArtifacts.filter((artifact) => !requiredArtifactsPresent.includes(artifact));
-  const artifactCompleteness = Number((requiredArtifactsPresent.length / evalCase.requiredArtifacts.length).toFixed(2));
+  const missingArtifacts = evalCase.requiredArtifacts.filter(
+    (artifact) => !requiredArtifactsPresent.includes(artifact),
+  );
+  const artifactCompleteness = Number(
+    (requiredArtifactsPresent.length / evalCase.requiredArtifacts.length).toFixed(2),
+  );
   const behaviorResults = Object.fromEntries(
     evalCase.requiredBehaviors.map((behavior) => [
       behavior,
-      evaluateBehavior(behavior, { summary, transcript, caseDir, evalCase })
-    ])
+      evaluateBehavior(behavior, { summary, transcript, caseDir, evalCase }),
+    ]),
   );
   const usage = summary.usage;
   const estimatedCostUsd = estimateCostUsd(usage);
@@ -205,7 +223,7 @@ export function evaluateEvalCase(casePath: string): EvalReport {
     ...missingArtifacts.map((artifact) => `missing artifact: ${artifact}`),
     ...Object.entries(behaviorResults)
       .filter(([, passed]) => !passed)
-      .map(([behavior]) => `behavior failed: ${behavior}`)
+      .map(([behavior]) => `behavior failed: ${behavior}`),
   ];
 
   if (artifactCompleteness < evalCase.metrics.minArtifactCompleteness) {
@@ -228,7 +246,7 @@ export function evaluateEvalCase(casePath: string): EvalReport {
     usage,
     estimatedCostUsd,
     durationSeconds,
-    failures
+    failures,
   };
 }
 
@@ -246,7 +264,9 @@ function parseCliArgs(argv: string[]): string[] {
 }
 
 const currentFile = fileURLToPath(import.meta.url);
-const isCliExecution = process.argv.some((arg) => arg.endsWith('eval-runner.ts') && path.resolve(arg) === currentFile);
+const isCliExecution = process.argv.some(
+  (arg) => arg.endsWith('eval-runner.ts') && path.resolve(arg) === currentFile,
+);
 if (isCliExecution) {
   try {
     const casePaths = parseCliArgs(process.argv.slice(2));
@@ -254,7 +274,9 @@ if (isCliExecution) {
       throw new Error('Missing --case');
     }
     const reports = casePaths.map((casePath) => evaluateEvalCase(casePath));
-    process.stdout.write(`${JSON.stringify({ reports, passed: reports.every((report) => report.passed) }, null, 2)}\n`);
+    process.stdout.write(
+      `${JSON.stringify({ reports, passed: reports.every((report) => report.passed) }, null, 2)}\n`,
+    );
     process.exit(reports.every((report) => report.passed) ? 0 : 1);
   } catch (err) {
     process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);

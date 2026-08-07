@@ -31,7 +31,8 @@ export interface SkillBeforeActionsResult {
 }
 
 const NON_ACTION_TOOLS = new Set(['Skill', 'TodoWrite']);
-const METHODOLOGY_SKILL_PATTERN = /^(pm|architect|backend|frontend|qa|devops|scrum-master|tech-lead|ui-designer|shared)\//;
+const METHODOLOGY_SKILL_PATTERN =
+  /^(pm|architect|backend|frontend|qa|devops|scrum-master|tech-lead|ui-designer|shared)\//;
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -54,9 +55,11 @@ function addUsage(target: TranscriptUsage, usage: unknown): void {
   target.inputTokens += asNumber(data.input_tokens ?? data.inputTokens);
   target.outputTokens += asNumber(data.output_tokens ?? data.outputTokens);
   target.cacheCreationInputTokens += asNumber(
-    data.cache_creation_input_tokens ?? data.cacheCreationInputTokens
+    data.cache_creation_input_tokens ?? data.cacheCreationInputTokens,
   );
-  target.cacheReadInputTokens += asNumber(data.cache_read_input_tokens ?? data.cacheReadInputTokens);
+  target.cacheReadInputTokens += asNumber(
+    data.cache_read_input_tokens ?? data.cacheReadInputTokens,
+  );
 }
 
 function contentItems(record: Record<string, unknown>): unknown[] {
@@ -68,15 +71,18 @@ function contentItems(record: Record<string, unknown>): unknown[] {
   return [];
 }
 
-function extractToolCallsFromRecord(record: Record<string, unknown>, nextIndex: () => number): TranscriptToolCall[] {
+function extractToolCallsFromRecord(
+  record: Record<string, unknown>,
+  nextIndex: () => number,
+): TranscriptToolCall[] {
   const directToolName = asString(record.tool ?? record.name);
   if (record.type === 'tool_call' && directToolName) {
     return [
       {
         index: nextIndex(),
         name: directToolName,
-        input: asObject(record.arguments ?? record.input)
-      }
+        input: asObject(record.arguments ?? record.input),
+      },
     ];
   }
 
@@ -88,7 +94,7 @@ function extractToolCallsFromRecord(record: Record<string, unknown>, nextIndex: 
     calls.push({
       index: nextIndex(),
       name,
-      input: asObject(content.input ?? content.arguments)
+      input: asObject(content.input ?? content.arguments),
     });
   }
   return calls;
@@ -105,7 +111,7 @@ export function parseTranscriptLines(lines: string[]): ParsedTranscript {
     inputTokens: 0,
     outputTokens: 0,
     cacheCreationInputTokens: 0,
-    cacheReadInputTokens: 0
+    cacheReadInputTokens: 0,
   };
 
   for (const line of lines) {
@@ -138,7 +144,7 @@ export function parseTranscriptLines(lines: string[]): ParsedTranscript {
 
 export function assertSkillBeforeActions(
   transcript: ParsedTranscript,
-  skill: string
+  skill: string,
 ): SkillBeforeActionsResult {
   const firstSkill = transcript.skillCalls.find((call) => call.skill === skill);
   const firstAction = transcript.toolCalls.find((call) => !NON_ACTION_TOOLS.has(call.name));
@@ -151,7 +157,7 @@ export function assertSkillBeforeActions(
       skill,
       firstSkillIndex,
       firstActionIndex,
-      reason: `Skill(${skill}) was not invoked`
+      reason: `Skill(${skill}) was not invoked`,
     };
   }
 
@@ -161,7 +167,7 @@ export function assertSkillBeforeActions(
       skill,
       firstSkillIndex,
       firstActionIndex,
-      reason: `tool ${firstAction.name} ran before Skill(${skill})`
+      reason: `tool ${firstAction.name} ran before Skill(${skill})`,
     };
   }
 
@@ -179,6 +185,6 @@ export function summarizeTranscript(transcript: ParsedTranscript): {
     skills,
     methodologySkills: skills.filter((skill) => METHODOLOGY_SKILL_PATTERN.test(skill)),
     toolNames: [...new Set(transcript.toolCalls.map((call) => call.name))],
-    usage: transcript.usage
+    usage: transcript.usage,
   };
 }

@@ -1,9 +1,12 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-
-import * as pipelineRuntime from './pipeline.js';
-import { projectState, type ExecutionState, type RuntimeEvent } from '../projectors/materialize-state.js';
 import type { FeatureMemorySummary } from '../memory/store.js';
+import {
+  type ExecutionState,
+  projectState,
+  type RuntimeEvent,
+} from '../projectors/materialize-state.js';
+import * as pipelineRuntime from './pipeline.js';
 
 export interface ActiveAgentSummary {
   stage: number;
@@ -107,7 +110,9 @@ export function readProgress(feature: string, cwd = process.cwd()): Array<Record
     .map((line: string) => JSON.parse(line) as Record<string, unknown>);
 }
 
-function sortedStageEntries(stages: ExecutionState['stages']): Array<[string, ExecutionState['stages'][string]]> {
+function sortedStageEntries(
+  stages: ExecutionState['stages'],
+): Array<[string, ExecutionState['stages'][string]]> {
   return Object.entries(stages ?? {}).sort((left, right) => Number(left[0]) - Number(right[0]));
 }
 
@@ -122,7 +127,7 @@ function getActiveAgents(execution: ExecutionState): ActiveAgentSummary[] {
       activeAgents.push({
         stage: Number(stageId),
         agent: agentName,
-        status: agentState.status
+        status: agentState.status,
       });
     }
   }
@@ -131,14 +136,14 @@ function getActiveAgents(execution: ExecutionState): ActiveAgentSummary[] {
 
 function getCurrentStage(
   execution: ExecutionState,
-  activeAgents: ActiveAgentSummary[]
+  activeAgents: ActiveAgentSummary[],
 ): CurrentStageSummary | null {
   for (const [stageId, stage] of sortedStageEntries(execution.stages)) {
     if (stage && (stage.status === 'running' || stage.status === 'retrying')) {
       return {
         id: Number(stageId),
         name: stage.name || '',
-        status: stage.status
+        status: stage.status,
       };
     }
   }
@@ -149,7 +154,7 @@ function getCurrentStage(
     return {
       id: stageId,
       name: stage?.name || '',
-      status: stage?.status || 'pending'
+      status: stage?.status || 'pending',
     };
   }
 
@@ -158,7 +163,7 @@ function getCurrentStage(
       return {
         id: Number(stageId),
         name: stage.name || '',
-        status: stage.status
+        status: stage.status,
       };
     }
   }
@@ -168,7 +173,7 @@ function getCurrentStage(
       return {
         id: Number(stageId),
         name: stage.name || '',
-        status: stage.status
+        status: stage.status,
       };
     }
   }
@@ -181,7 +186,7 @@ function getCurrentStage(
   return {
     id: Number(stageId),
     name: stage?.name || '',
-    status: stage?.status || 'pending'
+    status: stage?.status || 'pending',
   };
 }
 
@@ -192,7 +197,7 @@ function getRecentFailures(execution: ExecutionState): FailureSummary[] {
       failures.push({
         scope: 'stage',
         stage: Number(stageId),
-        reason: stage.failureReason || ''
+        reason: stage.failureReason || '',
       });
     }
     const agents = stage?.agents ?? {};
@@ -204,7 +209,7 @@ function getRecentFailures(execution: ExecutionState): FailureSummary[] {
         scope: 'agent',
         stage: Number(stageId),
         agent: agentName,
-        reason: agentState.failureReason || ''
+        reason: agentState.failureReason || '',
       });
     }
   }
@@ -223,14 +228,14 @@ function readFeatureSummary(feature: string, cwd = process.cwd()): FeatureMemory
       feature,
       generatedAt: null,
       startupSummary: [],
-      agentSections: {}
+      agentSections: {},
     };
   }
 }
 
 export function inspectPipeline(
   feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): PipelineInspection {
   ensureFeatureName(feature);
   const execution = readExecution(feature, cwd);
@@ -267,7 +272,8 @@ export function inspectPipeline(
         ? initialHash === currentHash
         : null;
     if (dagMatches === false) {
-      dagWarning = 'Artifact DAG has changed since PipelineInitialized; cached agent/artifact decisions may be stale.';
+      dagWarning =
+        'Artifact DAG has changed since PipelineInitialized; cached agent/artifact decisions may be stale.';
     }
   } catch (err) {
     dagWarning = (err as Error).message;
@@ -290,7 +296,7 @@ export function inspectPipeline(
       version:
         execution.parameters && typeof execution.parameters.pipelinePackVersion === 'string'
           ? execution.parameters.pipelinePackVersion
-          : ''
+          : '',
     },
     plugins: {
       active: Array.isArray(execution.plugins) ? execution.plugins : [],
@@ -309,7 +315,7 @@ export function inspectPipeline(
       failed:
         execution.pluginLifecycle && Array.isArray(execution.pluginLifecycle.failed)
           ? execution.pluginLifecycle.failed
-          : []
+          : [],
     },
     metrics: execution.metrics || {
       totalDuration: null,
@@ -320,14 +326,14 @@ export function inspectPipeline(
       agentFailureCount: 0,
       meanRetriesPerStage: 0,
       revisionLoopCount: 0,
-      pluginFailureCount: 0
+      pluginFailureCount: 0,
     },
     conversationMetrics: execution.conversationMetrics || {
       opened: 0,
       resolved: 0,
       todos: 0,
       huddles: 0,
-      unresolved: 0
+      unresolved: 0,
     },
     derivedTodos: Array.isArray(execution.derivedTodos) ? execution.derivedTodos : [],
     pause: execution.pause || null,
@@ -335,14 +341,18 @@ export function inspectPipeline(
       initialized: initializedDag,
       current: currentDag,
       matches: dagMatches,
-      warning: dagWarning
-    }
+      warning: dagWarning,
+    },
   };
 }
 
 export function inspectEvents(
   feature: string,
-  { cwd = process.cwd(), limit = 20, type = '' }: { cwd?: string; limit?: number | string; type?: string } = {}
+  {
+    cwd = process.cwd(),
+    limit = 20,
+    type = '',
+  }: { cwd?: string; limit?: number | string; type?: string } = {},
 ): EventInspection<RuntimeEvent> {
   ensureFeatureName(feature);
   const max = Number(limit);
@@ -359,13 +369,17 @@ export function inspectEvents(
     feature,
     limit: max,
     type: type || null,
-    events: events.slice(0, max)
+    events: events.slice(0, max),
   };
 }
 
 export function inspectProgress(
   feature: string,
-  { cwd = process.cwd(), limit = 20, type = '' }: { cwd?: string; limit?: number | string; type?: string } = {}
+  {
+    cwd = process.cwd(),
+    limit = 20,
+    type = '',
+  }: { cwd?: string; limit?: number | string; type?: string } = {},
 ): EventInspection<Record<string, unknown>> {
   ensureFeatureName(feature);
   const max = Number(limit);
@@ -382,7 +396,7 @@ export function inspectProgress(
     feature,
     limit: max,
     type: type || null,
-    events: events.slice(0, max)
+    events: events.slice(0, max),
   };
 }
 
@@ -409,15 +423,15 @@ function buildStageSummary(execution: ExecutionState): {
       agentFailureCount: 0,
       meanRetriesPerStage: 0,
       revisionLoopCount: 0,
-      pluginFailureCount: 0
-    }
+      pluginFailureCount: 0,
+    },
   };
 }
 
 export function checkStage(
   feature: string,
   stageId = '',
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): ExecutionState['stages'][string] | ReturnType<typeof buildStageSummary> | null {
   ensureFeatureName(feature);
   const execution = readExecution(feature, cwd);
@@ -431,7 +445,7 @@ export function checkStage(
 export function checkCanProceed(
   feature: string,
   stageId: string | number,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): { ok: boolean; reason: string } {
   ensureFeatureName(feature);
   if (!stageId) {
@@ -447,7 +461,7 @@ export function checkCanProceed(
   if (Number(stageId) === 1) {
     return {
       ok: status === 'pending',
-      reason: status === 'pending' ? '' : `阶段 1 当前状态为 ${status}`
+      reason: status === 'pending' ? '' : `阶段 1 当前状态为 ${status}`,
     };
   }
   const prevStage =
@@ -460,14 +474,14 @@ export function checkCanProceed(
     ok,
     reason: ok
       ? ''
-      : `阶段 ${stageId} 不能开始：阶段 ${Number(stageId) - 1} 状态为 ${prevStatus}（需要 completed 或 skipped）`
+      : `阶段 ${stageId} 不能开始：阶段 ${Number(stageId) - 1} 状态为 ${prevStatus}（需要 completed 或 skipped）`,
   };
 }
 
 export function checkCanRetry(
   feature: string,
   stageId: string | number,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): { ok: boolean; reason: string } {
   ensureFeatureName(feature);
   if (!stageId) {
@@ -485,14 +499,21 @@ export function checkCanRetry(
     return { ok: false, reason: `阶段 ${stageId} 状态为 ${status}，只有 failed 状态可以重试` };
   }
   if (retryCount >= maxRetries) {
-    return { ok: false, reason: `阶段 ${stageId} 已达到最大重试次数（${retryCount}/${maxRetries}）` };
+    return {
+      ok: false,
+      reason: `阶段 ${stageId} 已达到最大重试次数（${retryCount}/${maxRetries}）`,
+    };
   }
   return { ok: true, reason: '' };
 }
 
 export function replayEvents(
   feature: string,
-  { cwd = process.cwd(), limit = 20, type = '' }: { cwd?: string; limit?: number | string; type?: string } = {}
+  {
+    cwd = process.cwd(),
+    limit = 20,
+    type = '',
+  }: { cwd?: string; limit?: number | string; type?: string } = {},
 ): EventInspection<RuntimeEvent> {
   return inspectEvents(feature, { cwd, limit, type });
 }
@@ -500,7 +521,7 @@ export function replayEvents(
 export function replaySnapshot(
   feature: string,
   at: string | number,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): { feature: string; at: number; snapshot: ExecutionState } {
   ensureFeatureName(feature);
   const target = Number(at);
@@ -511,6 +532,6 @@ export function replaySnapshot(
   return {
     feature,
     at: target,
-    snapshot: projectState(allEvents.slice(0, target), feature)
+    snapshot: projectState(allEvents.slice(0, target), feature),
   };
 }

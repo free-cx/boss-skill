@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { initPipeline } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { runHook } from '../../packages/boss-cli/src/runtime/application/plugins.js';
@@ -17,14 +17,18 @@ describe('plugin hook execution', () => {
   function writePlugin(
     dirName: string,
     manifest: Record<string, unknown>,
-    scripts: Record<string, string> = {}
+    scripts: Record<string, string> = {},
   ) {
     const pluginDir = path.join(tmpDir, '.boss', 'plugins', dirName);
     fs.mkdirSync(pluginDir, { recursive: true });
     for (const [fileName, content] of Object.entries(scripts)) {
       fs.writeFileSync(path.join(pluginDir, fileName), content, 'utf8');
     }
-    fs.writeFileSync(path.join(pluginDir, 'plugin.json'), JSON.stringify(manifest, null, 2), 'utf8');
+    fs.writeFileSync(
+      path.join(pluginDir, 'plugin.json'),
+      JSON.stringify(manifest, null, 2),
+      'utf8',
+    );
   }
 
   function readEvents() {
@@ -37,7 +41,7 @@ describe('plugin hook execution', () => {
 
   function readExecution() {
     return JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8'),
     ) as {
       pluginLifecycle: {
         executed: Array<{ plugin: { name: string }; hook: string; stage: number }>;
@@ -64,14 +68,14 @@ describe('plugin hook execution', () => {
         type: 'reporter',
         hooks: {
           report: 'report.sh',
-          'post-gate': 'post-gate.sh'
+          'post-gate': 'post-gate.sh',
         },
-        stages: [3]
+        stages: [3],
       },
       {
         'report.sh': '#!/bin/bash\nexit 0\n',
-        'post-gate.sh': '#!/bin/bash\necho \"$1:$2\" > .boss/test-feat/.meta/post-gate.log\nexit 0\n'
-      }
+        'post-gate.sh': '#!/bin/bash\necho "$1:$2" > .boss/test-feat/.meta/post-gate.log\nexit 0\n',
+      },
     );
 
     const result = runHook('post-gate', 'test-feat', { cwd: tmpDir, stage: 3 });
@@ -110,14 +114,14 @@ describe('plugin hook execution', () => {
         type: 'reporter',
         hooks: {
           report: 'report.sh',
-          'post-gate': 'post-gate.sh'
+          'post-gate': 'post-gate.sh',
         },
-        stages: [3]
+        stages: [3],
       },
       {
         'report.sh': '#!/bin/bash\nexit 0\n',
-        'post-gate.sh': '#!/bin/bash\nexit 7\n'
-      }
+        'post-gate.sh': '#!/bin/bash\nexit 7\n',
+      },
     );
 
     const result = runHook('post-gate', 'test-feat', { cwd: tmpDir, stage: 3 });
@@ -149,20 +153,24 @@ describe('plugin hook execution', () => {
         type: 'reporter',
         hooks: {
           report: 'report.sh',
-          'post-gate': 'post-gate.sh'
+          'post-gate': 'post-gate.sh',
         },
-        stages: [3]
+        stages: [3],
       },
       {
         'report.sh': '#!/bin/bash\nexit 0\n',
-        'post-gate.sh': '#!/bin/bash\nexit 0\n'
-      }
+        'post-gate.sh': '#!/bin/bash\nexit 0\n',
+      },
     );
 
-    const result = spawnSync(process.execPath, [BOSS_BIN, 'runtime', 'run-plugin-hook', 'post-gate', 'test-feat', '--stage', '3'], {
-      cwd: tmpDir,
-      encoding: 'utf8'
-    });
+    const result = spawnSync(
+      process.execPath,
+      [BOSS_BIN, 'runtime', 'run-plugin-hook', 'post-gate', 'test-feat', '--stage', '3'],
+      {
+        cwd: tmpDir,
+        encoding: 'utf8',
+      },
+    );
 
     expect(result.status).toBe(0);
     const payload = JSON.parse(result.stdout) as {
@@ -187,20 +195,24 @@ describe('plugin hook execution', () => {
         type: 'reporter',
         hooks: {
           report: 'report.sh',
-          'post-gate': 'post-gate.sh'
+          'post-gate': 'post-gate.sh',
         },
-        stages: [3]
+        stages: [3],
       },
       {
         'report.sh': '#!/bin/bash\nexit 0\n',
-        'post-gate.sh': '#!/bin/bash\nexit 4\n'
-      }
+        'post-gate.sh': '#!/bin/bash\nexit 4\n',
+      },
     );
 
-    const result = spawnSync(process.execPath, [BOSS_BIN, 'runtime', 'run-plugin-hook', 'post-gate', 'test-feat', '--stage', '3'], {
-      cwd: tmpDir,
-      encoding: 'utf8'
-    });
+    const result = spawnSync(
+      process.execPath,
+      [BOSS_BIN, 'runtime', 'run-plugin-hook', 'post-gate', 'test-feat', '--stage', '3'],
+      {
+        cwd: tmpDir,
+        encoding: 'utf8',
+      },
+    );
 
     expect(result.status).toBe(1);
     const payload = JSON.parse(result.stdout) as {

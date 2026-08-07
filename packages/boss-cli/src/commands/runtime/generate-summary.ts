@@ -9,14 +9,14 @@ import {
   createCliContext,
   describeCommand,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import { printRuntimeHelp } from './agent-command-utils.js';
 import { renderArtifactHtml } from '../../runtime/report/render-artifact-html.js';
 import { renderJson } from '../../runtime/report/render-json.js';
 import { renderMarkdown } from '../../runtime/report/render-markdown.js';
 import { buildSummaryModel } from '../../runtime/report/summary-model.js';
+import { printRuntimeHelp } from './agent-command-utils.js';
 
 function printHelp(): void {
   printRuntimeHelp('generate-summary', 'boss runtime generate-summary FEATURE [options]');
@@ -30,7 +30,7 @@ export function parseArgs(argv: string[]) {
   const parsed = {
     feature: '',
     json: false,
-    stdout: false
+    stdout: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -72,7 +72,7 @@ function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline <feature> first'
+      suggestion: 'Run boss runtime init-pipeline <feature> first',
     });
   }
   return err;
@@ -80,10 +80,15 @@ function toFeatureNotFoundError(err: unknown, feature: string): unknown {
 
 function isInsideDirectory(child: string, parent: string): boolean {
   const relative = path.relative(parent, child);
-  return relative === '' || Boolean(relative && !relative.startsWith('..') && !path.isAbsolute(relative));
+  return (
+    relative === '' || Boolean(relative && !relative.startsWith('..') && !path.isAbsolute(relative))
+  );
 }
 
-function resolveFeatureDir(cwd: string, feature: string): { featureDir: string; safeFeature: string } {
+function resolveFeatureDir(
+  cwd: string,
+  feature: string,
+): { featureDir: string; safeFeature: string } {
   const bossDir = path.resolve(cwd, '.boss');
   const featureDir = path.resolve(bossDir, feature);
   if (featureDir === bossDir || !isInsideDirectory(featureDir, bossDir)) {
@@ -91,17 +96,20 @@ function resolveFeatureDir(cwd: string, feature: string): { featureDir: string; 
   }
   return {
     featureDir,
-    safeFeature: path.relative(bossDir, featureDir).split(path.sep).join('/')
+    safeFeature: path.relative(bossDir, featureDir).split(path.sep).join('/'),
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime generate-summary' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['generate-summary']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['generate-summary'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['generate-summary'], null, 2)}\n`,
     );
     return 0;
   }
@@ -130,10 +138,10 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         {
           actions,
           risk_tier: 'medium',
-          requires_approval: false
+          requires_approval: false,
         },
         context,
-        () => `would write ${relativeOutputPath}\n`
+        () => `would write ${relativeOutputPath}\n`,
       );
       return 0;
     }
@@ -151,7 +159,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         cwd,
         feature: safeFeature,
         sourceArtifact: 'summary-report.md',
-        markdown: rendered
+        markdown: rendered,
       });
       fs.writeFileSync(outputPath, rendered, 'utf8');
       fs.writeFileSync(htmlOutputPath, html, 'utf8');
@@ -163,10 +171,10 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         feature: safeFeature,
         outputPath: relativeOutputPath,
         ...(parsed.json ? {} : { htmlOutputPath: relativeHtmlOutputPath }),
-        format
+        format,
       },
       context,
-      () => `报告已生成: ${outputPath}\n`
+      () => `报告已生成: ${outputPath}\n`,
     );
     return 0;
   } catch (err) {
@@ -175,6 +183,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime generate-summary', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime generate-summary',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

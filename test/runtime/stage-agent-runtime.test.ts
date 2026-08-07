@@ -1,13 +1,22 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import * as runtime from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
-const BOSS_BIN = path.resolve(import.meta.dirname, '..', '..', 'packages', 'boss-cli', 'dist', 'bin', 'boss.js');
+const BOSS_BIN = path.resolve(
+  import.meta.dirname,
+  '..',
+  '..',
+  'packages',
+  'boss-cli',
+  'dist',
+  'bin',
+  'boss.js',
+);
 
 type RuntimeEvent = {
   type: string;
@@ -32,18 +41,27 @@ describe('stage/agent runtime updates', () => {
 
   function readEvents(): RuntimeEvent[] {
     const eventsPath = path.join(tmpDir, '.boss', 'test-feat', '.meta', 'events.jsonl');
-    return fs.readFileSync(eventsPath, 'utf8').trim().split('\n').map((line) => JSON.parse(line) as RuntimeEvent);
+    return fs
+      .readFileSync(eventsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as RuntimeEvent);
   }
 
   function runRuntimeCommand(name: string, args: string[]) {
-    return spawnSync(process.execPath, [BOSS_BIN, 'runtime', name, ...args], { cwd: tmpDir, encoding: 'utf8' });
+    return spawnSync(process.execPath, [BOSS_BIN, 'runtime', name, ...args], {
+      cwd: tmpDir,
+      encoding: 'utf8',
+    });
   }
 
   it('updates stage then agent status', () => {
     const stageExecution = runtime.updateStage('test-feat', 1, 'running', { cwd: tmpDir });
     expect(stageExecution.stages['1']?.status).toBe('running');
 
-    const agentExecution = runtime.updateAgent('test-feat', 1, 'boss-pm', 'running', { cwd: tmpDir });
+    const agentExecution = runtime.updateAgent('test-feat', 1, 'boss-pm', 'running', {
+      cwd: tmpDir,
+    });
     expect(agentExecution.stages['1']?.agents?.['boss-pm']?.status).toBe('running');
   });
 
@@ -64,14 +82,22 @@ describe('stage/agent runtime updates', () => {
   it('returns a stable handle from launch and attach commands', () => {
     const launch = runRuntimeCommand('launch', ['test-feat', '--json']);
     expect(launch.status, launch.stderr).toBe(0);
-    const launched = JSON.parse(launch.stdout) as { feature: string; runId: string; handle: string };
+    const launched = JSON.parse(launch.stdout) as {
+      feature: string;
+      runId: string;
+      handle: string;
+    };
     expect(launched.feature).toBe('test-feat');
     expect(launched.runId).toMatch(/^[a-f0-9]{64}$/);
     expect(launched.handle).toBe(`test-feat:${launched.runId}`);
 
     const attach = runRuntimeCommand('attach', ['test-feat', '--json']);
     expect(attach.status, attach.stderr).toBe(0);
-    const attached = JSON.parse(attach.stdout) as { feature: string; runId: string; handle: string };
+    const attached = JSON.parse(attach.stdout) as {
+      feature: string;
+      runId: string;
+      handle: string;
+    };
     expect(attached.feature).toBe('test-feat');
     expect(attached.runId).toBe(launched.runId);
     expect(attached.handle).toBe(launched.handle);
@@ -105,7 +131,7 @@ describe('stage/agent runtime updates', () => {
     const execution = runtime.pausePipeline('test-feat', {
       cwd: tmpDir,
       reason: 'checkpoint',
-      requestedBy: 'test'
+      requestedBy: 'test',
     });
     expect(execution.status).toBe('paused');
     expect(execution.pause?.reason).toBe('checkpoint');
@@ -157,7 +183,7 @@ describe('stage/agent runtime updates', () => {
       cwd: tmpDir,
       artifacts: ['prd.md'],
       gate: 'gate1',
-      gatePassed: true
+      gatePassed: true,
     });
 
     expect(execution.stages['1']?.artifacts.includes('prd.md')).toBe(true);
@@ -176,7 +202,7 @@ describe('stage/agent runtime updates', () => {
       cwd: tmpDir,
       prompt: 'review auth',
       dependencyArtifacts: ['prd.md'],
-      opts: { temperature: 0 }
+      opts: { temperature: 0 },
     });
 
     const completed = readEvents().find((event) => event.type === 'AgentCompleted')!;
@@ -187,7 +213,7 @@ describe('stage/agent runtime updates', () => {
       cwd: tmpDir,
       prompt: 'review auth',
       dependencyArtifacts: ['prd.md'],
-      opts: { temperature: 0 }
+      opts: { temperature: 0 },
     });
     expect(reusable.reusable).toBe(true);
 
@@ -195,7 +221,7 @@ describe('stage/agent runtime updates', () => {
       cwd: tmpDir,
       prompt: 'review auth differently',
       dependencyArtifacts: ['prd.md'],
-      opts: { temperature: 0 }
+      opts: { temperature: 0 },
     });
     expect(changedPrompt.reusable).toBe(false);
     expect(changedPrompt.reason).toBe('prompt-fingerprint-changed');
@@ -205,7 +231,7 @@ describe('stage/agent runtime updates', () => {
       cwd: tmpDir,
       prompt: 'review auth',
       dependencyArtifacts: ['prd.md'],
-      opts: { temperature: 0 }
+      opts: { temperature: 0 },
     });
     expect(changedInput.reusable).toBe(false);
     expect(changedInput.reason).toBe('input-digest-changed');
@@ -214,7 +240,7 @@ describe('stage/agent runtime updates', () => {
   it('marks agent cache stale when the DAG changed after pause', () => {
     runtime.updateAgent('test-feat', 1, 'boss-pm', 'completed', {
       cwd: tmpDir,
-      prompt: 'review auth'
+      prompt: 'review auth',
     });
     runtime.pausePipeline('test-feat', { cwd: tmpDir });
 
@@ -222,12 +248,12 @@ describe('stage/agent runtime updates', () => {
     fs.writeFileSync(
       path.join(tmpDir, '.boss', 'artifact-dag.json'),
       JSON.stringify({ version: 'changed', artifacts: {} }, null, 2) + '\n',
-      'utf8'
+      'utf8',
     );
 
     const decision = runtime.evaluateAgentReuse('test-feat', 1, 'boss-pm', {
       cwd: tmpDir,
-      prompt: 'review auth'
+      prompt: 'review auth',
     });
     expect(decision.dagStale).toBe(true);
     expect(decision.reusable).toBe(false);
@@ -240,7 +266,7 @@ describe('stage/agent runtime updates', () => {
       cwd: tmpDir,
       prompt: 'review auth',
       dependencyArtifacts: ['prd.md'],
-      opts: { temperature: 0 }
+      opts: { temperature: 0 },
     });
 
     const result = runRuntimeCommand('agent-cache', [
@@ -253,7 +279,7 @@ describe('stage/agent runtime updates', () => {
       'prd.md',
       '--opts',
       '{"temperature":0}',
-      '--json'
+      '--json',
     ]);
     expect(result.status, result.stderr).toBe(0);
     const payload = JSON.parse(result.stdout) as { reusable: boolean; dagStale: boolean };
@@ -266,18 +292,30 @@ describe('stage/agent runtime updates', () => {
       'boss-pm',
       '--opts',
       '{bad',
-      '--json'
+      '--json',
     ]);
     expect(invalid.status).not.toBe(0);
     expect(invalid.stderr).toContain('--opts 不是有效的 JSON');
   });
 
   it('fails CLI when option value is missing', () => {
-    const stageResult = runRuntimeCommand('update-stage', ['test-feat', '1', 'running', '--reason']);
+    const stageResult = runRuntimeCommand('update-stage', [
+      'test-feat',
+      '1',
+      'running',
+      '--reason',
+    ]);
     expect(stageResult.status).not.toBe(0);
     expect(stageResult.stderr).toMatch(/--reason/);
 
-    const agentResult = runRuntimeCommand('update-agent', ['test-feat', '1', 'boss-pm', 'running', '--reason', '--artifact']);
+    const agentResult = runRuntimeCommand('update-agent', [
+      'test-feat',
+      '1',
+      'boss-pm',
+      'running',
+      '--reason',
+      '--artifact',
+    ]);
     expect(agentResult.status).not.toBe(0);
     expect(agentResult.stderr).toMatch(/--reason/);
   });
@@ -296,7 +334,13 @@ describe('stage/agent runtime updates', () => {
     expect(stagePayload.previousStatus).toBe('pending');
     expect(stagePayload.status).toBe('running');
 
-    const agentResult = runRuntimeCommand('update-agent', ['test-feat', '1', 'boss-pm', 'running', '--json']);
+    const agentResult = runRuntimeCommand('update-agent', [
+      'test-feat',
+      '1',
+      'boss-pm',
+      'running',
+      '--json',
+    ]);
     expect(agentResult.status, agentResult.stderr).toBe(0);
     const agentPayload = JSON.parse(agentResult.stdout) as {
       feature: string;

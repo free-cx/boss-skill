@@ -2,8 +2,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { EVENT_TYPES } from '../domain/event-types.js';
-import { appendRuntimeEvent, ensureFeatureName } from './state.js';
 import type { RuntimeEvent } from '../projectors/materialize-state.js';
+import { appendRuntimeEvent, ensureFeatureName } from './state.js';
 
 export interface AcceptanceCriterion {
   id: string;
@@ -30,8 +30,25 @@ export interface RequirementsVerificationResult {
   event?: { id: number; type: string };
 }
 
-const EXCLUDED_DIRS = new Set(['node_modules', '.git', '.boss', 'dist', '.next', '.nuxt', 'coverage']);
-const TEST_EXTENSIONS = ['.test.ts', '.spec.ts', '.test.js', '.spec.js', '.test.tsx', '.spec.tsx', '.test.jsx', '.spec.jsx'];
+const EXCLUDED_DIRS = new Set([
+  'node_modules',
+  '.git',
+  '.boss',
+  'dist',
+  '.next',
+  '.nuxt',
+  'coverage',
+]);
+const TEST_EXTENSIONS = [
+  '.test.ts',
+  '.spec.ts',
+  '.test.js',
+  '.spec.js',
+  '.test.tsx',
+  '.spec.tsx',
+  '.test.jsx',
+  '.spec.jsx',
+];
 
 export function parseAcceptanceCriteria(prdContent: string): AcceptanceCriterion[] {
   const criteria: AcceptanceCriterion[] = [];
@@ -50,7 +67,7 @@ export function parseAcceptanceCriteria(prdContent: string): AcceptanceCriterion
       criteria.push({
         id: acMatch[1]!.toUpperCase(),
         description: acMatch[2]!.trim(),
-        section: currentSection
+        section: currentSection,
       });
     }
   }
@@ -103,8 +120,8 @@ export function verifyRequirements(
   {
     cwd = process.cwd(),
     testDir,
-    dryRun = false
-  }: { cwd?: string; testDir?: string; dryRun?: boolean } = {}
+    dryRun = false,
+  }: { cwd?: string; testDir?: string; dryRun?: boolean } = {},
 ): RequirementsVerificationResult {
   ensureFeatureName(feature);
 
@@ -141,7 +158,7 @@ export function verifyRequirements(
     description: ac.description,
     section: ac.section,
     testFiles: acToFiles.get(ac.id) || [],
-    covered: (acToFiles.get(ac.id) || []).length > 0
+    covered: (acToFiles.get(ac.id) || []).length > 0,
   }));
 
   const coveredACs = matrix.filter((r) => r.covered).length;
@@ -155,7 +172,7 @@ export function verifyRequirements(
     uncoveredACs: totalACs - coveredACs,
     coveragePercent: totalACs > 0 ? Math.round((coveredACs / totalACs) * 1000) / 10 : 0,
     matrix,
-    verified
+    verified,
   };
 
   if (!dryRun) {
@@ -167,7 +184,7 @@ export function verifyRequirements(
         uncoveredACs: totalACs - coveredACs,
         coveragePercent: result.coveragePercent,
         verified,
-        uncoveredList: matrix.filter((r) => !r.covered).map((r) => r.ac)
+        uncoveredList: matrix.filter((r) => !r.covered).map((r) => r.ac),
       });
       result.event = { id: event.id, type: event.type };
     } catch {

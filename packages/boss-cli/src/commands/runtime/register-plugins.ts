@@ -3,24 +3,28 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import {
+  discoverPlugins,
+  registerPlugins,
+  validatePlugins,
+} from '../../runtime/application/plugins.js';
 import {
   optionalInputString,
   printRuntimeHelp,
   requireInputString,
   requireOptionValue,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { discoverPlugins, registerPlugins, validatePlugins } from '../../runtime/application/plugins.js';
 
 type RegisterPluginsAction = 'list' | 'validate' | 'register' | 'help';
 
@@ -38,7 +42,7 @@ function parseFlatInput(argv: string[]): RegisterPluginsInput {
   const parsed: RegisterPluginsInput = {
     action: 'list',
     type: '',
-    feature: ''
+    feature: '',
   };
   let explicitAction = false;
 
@@ -96,19 +100,25 @@ function resolveInput(argv: string[], context: CliContext): RegisterPluginsInput
     return {
       action: action as RegisterPluginsAction,
       type: optionalInputString(input.type) || '',
-      feature: action === 'register' ? requireInputString(input.feature, 'feature') : optionalInputString(input.feature) || ''
+      feature:
+        action === 'register'
+          ? requireInputString(input.feature, 'feature')
+          : optionalInputString(input.feature) || '',
     };
   }
   return parseFlatInput(argv);
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime register-plugins' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['register-plugins']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['register-plugins'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['register-plugins'], null, 2)}\n`,
     );
     return 0;
   }
@@ -121,13 +131,10 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 
   if (input.action === 'list') {
     const result = discoverPlugins({ cwd, type: input.type, strict: false });
-    writeOutput(
-      { plugins: result.plugins, errors: result.errors },
-      context,
-      () =>
-        result.plugins.length === 0
-          ? '未发现已启用插件\n'
-          : `${result.plugins.map((plugin) => `  ${plugin.name}@${plugin.version} (${plugin.type})`).join('\n')}\n共发现 ${result.plugins.length} 个插件\n`
+    writeOutput({ plugins: result.plugins, errors: result.errors }, context, () =>
+      result.plugins.length === 0
+        ? '未发现已启用插件\n'
+        : `${result.plugins.map((plugin) => `  ${plugin.name}@${plugin.version} (${plugin.type})`).join('\n')}\n共发现 ${result.plugins.length} 个插件\n`,
     );
     if (result.errors.length > 0 && !context.useJson) {
       process.stderr.write(`${result.errors.join('\n')}\n`);
@@ -143,7 +150,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       () =>
         result.valid
           ? `${result.plugins.map((plugin) => `${plugin.name}@${plugin.version} (${plugin.type}) - valid`).join('\n')}\n所有插件验证通过\n`
-          : `${result.errors.join('\n')}\n`
+          : `${result.errors.join('\n')}\n`,
     );
     return result.valid ? 0 : 1;
   }
@@ -157,11 +164,11 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
             type: 'register_plugins',
             feature: input.feature,
             plugin_count: result.plugins.length,
-            plugin_names: result.plugins.map((plugin) => plugin.name)
-          }
+            plugin_names: result.plugins.map((plugin) => plugin.name),
+          },
         ],
         context,
-        'medium'
+        'medium',
       );
       return result.errors.length > 0 ? 1 : 0;
     }
@@ -174,10 +181,11 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
           feature: input.feature,
           plugin_count: result.plugins.length,
           plugin_names: result.plugins.map((plugin) => plugin.name),
-          executionPath
+          executionPath,
         },
         context,
-        () => `已追加 ${result.plugins.length} 个插件注册事件，并物化 read model: ${path.join(cwd, executionPath)}\n`
+        () =>
+          `已追加 ${result.plugins.length} 个插件注册事件，并物化 read model: ${path.join(cwd, executionPath)}\n`,
       );
       return 0;
     } catch (err) {
@@ -189,6 +197,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime register-plugins', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime register-plugins',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

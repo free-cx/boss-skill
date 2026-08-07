@@ -1,12 +1,12 @@
-import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 import {
   buildArtifactHtmlModel,
   renderArtifactHtml,
-  writeArtifactHtmlCompanion
+  writeArtifactHtmlCompanion,
 } from '../../packages/boss-cli/src/runtime/report/render-artifact-html.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -28,7 +28,7 @@ describe('artifact html renderer', () => {
     '',
     '```ts',
     'const answer = 42;',
-    '```'
+    '```',
   ].join('\n');
 
   it('builds a bounded render model from markdown', () => {
@@ -36,7 +36,7 @@ describe('artifact html renderer', () => {
       feature: 'checkout-flow',
       sourceArtifact: 'prd.md',
       markdown,
-      generatedAt: '2026-05-11T10:00:00.000Z'
+      generatedAt: '2026-05-11T10:00:00.000Z',
     });
 
     expect(model).toMatchObject({
@@ -46,7 +46,7 @@ describe('artifact html renderer', () => {
       sourceArtifact: 'prd.md',
       title: '产品需求文档',
       generatedAt: '2026-05-11T10:00:00.000Z',
-      summaryItems: ['支持用户创建订单', '阻止 `<script>alert(1)</script>` 注入']
+      summaryItems: ['支持用户创建订单', '阻止 `<script>alert(1)</script>` 注入'],
     });
     expect(model.toc.map((item) => item.text)).toEqual(['产品需求文档', '摘要', '范围']);
     expect(model.bodyHtml).toContain('<h1 id="产品需求文档">产品需求文档</h1>');
@@ -66,7 +66,7 @@ describe('artifact html renderer', () => {
         feature: 'checkout-flow',
         sourceArtifact: 'prd.md',
         markdown,
-        generatedAt: '2026-05-11T10:00:00.000Z'
+        generatedAt: '2026-05-11T10:00:00.000Z',
       });
       expect(html).toMatch(/<!doctype html>/i);
       expect(html).toContain('产品需求文档 - checkout-flow');
@@ -78,14 +78,14 @@ describe('artifact html renderer', () => {
       fs.writeFileSync(
         path.join(templateDir, 'artifact.html.template'),
         '<article>{{TITLE}}|{{FEATURE}}|{{SOURCE_ARTIFACT}}|{{SUMMARY_HTML}}|{{BODY_HTML}}</article>',
-        'utf8'
+        'utf8',
       );
       const overridden = renderArtifactHtml({
         cwd: tmpDir,
         feature: 'checkout-flow',
         sourceArtifact: 'prd.md',
         markdown,
-        generatedAt: '2026-05-11T10:00:00.000Z'
+        generatedAt: '2026-05-11T10:00:00.000Z',
       });
       expect(overridden.startsWith('<article>产品需求文档|checkout-flow|prd.md|')).toBe(true);
     } finally {
@@ -101,7 +101,7 @@ describe('artifact html renderer', () => {
         feature: 'checkout-flow',
         sourceArtifact: 'prd.md',
         markdown,
-        generatedAt: '2026-05-11T10:00:00.000Z'
+        generatedAt: '2026-05-11T10:00:00.000Z',
       });
 
       expect(artifact).toBe('prd.html');
@@ -120,8 +120,8 @@ describe('artifact html renderer', () => {
           feature: 'checkout-flow',
           sourceArtifact: '../outside.md',
           markdown,
-          generatedAt: '2026-05-11T10:00:00.000Z'
-        })
+          generatedAt: '2026-05-11T10:00:00.000Z',
+        }),
       ).toThrow(/sourceArtifact/);
       expect(fs.existsSync(path.join(tmpDir, '.boss', 'outside.html'))).toBe(false);
       expect(fs.existsSync(path.join(tmpDir, 'outside.html'))).toBe(false);
@@ -131,8 +131,8 @@ describe('artifact html renderer', () => {
           feature: 'checkout-flow',
           sourceArtifact: 'docs/prd.md',
           markdown,
-          generatedAt: '2026-05-11T10:00:00.000Z'
-        })
+          generatedAt: '2026-05-11T10:00:00.000Z',
+        }),
       ).toThrow(/sourceArtifact/);
     } finally {
       cleanupTempDir(tmpDir);
@@ -148,8 +148,8 @@ describe('artifact html renderer', () => {
           feature: '../escape',
           sourceArtifact: 'prd.md',
           markdown,
-          generatedAt: '2026-05-11T10:00:00.000Z'
-        })
+          generatedAt: '2026-05-11T10:00:00.000Z',
+        }),
       ).toThrow(/featureDir|feature/);
       expect(fs.existsSync(path.join(tmpDir, 'escape', 'prd.html'))).toBe(false);
     } finally {
@@ -162,7 +162,7 @@ describe('artifact html renderer', () => {
       feature: 'checkout-flow',
       sourceArtifact: 'prd.md',
       markdown: '代码 `**literal** <b>x</b>` and **bold**',
-      generatedAt: '2026-05-11T10:00:00.000Z'
+      generatedAt: '2026-05-11T10:00:00.000Z',
     });
 
     expect(model.bodyHtml).toContain('<code>**literal** &lt;b&gt;x&lt;/b&gt;</code>');

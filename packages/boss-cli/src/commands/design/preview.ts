@@ -4,25 +4,22 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  CliUserError,
   type CliContext,
+  CliUserError,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   runMain,
   validatePathInside,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { commandDescriptions } from '../../cli/registry.js';
 import { openUrl } from '../../runtime/design/open.js';
 import { renderUiDesignHtml } from '../../runtime/design/render.js';
-import {
-  validateUiDesignArtifact,
-  type UiDesignArtifact
-} from '../../runtime/design/schema.js';
+import { type UiDesignArtifact, validateUiDesignArtifact } from '../../runtime/design/schema.js';
 import {
   startUiDesignPreviewServer,
-  type UiDesignPreviewServer
+  type UiDesignPreviewServer,
 } from '../../runtime/design/server.js';
 
 const designPreviewDescription = commandDescriptions['boss design preview']!;
@@ -59,8 +56,8 @@ function showHelp(): void {
       '  --json',
       '  --describe',
       '  -h, --help          Show help',
-      ''
-    ].join('\n')
+      '',
+    ].join('\n'),
   );
 }
 
@@ -70,7 +67,7 @@ function invalidPort(port: string): never {
     message: `Invalid --port value: ${port}`,
     input: { port },
     retryable: false,
-    suggestion: 'Use an integer between 0 and 65535'
+    suggestion: 'Use an integer between 0 and 65535',
   });
 }
 
@@ -88,7 +85,8 @@ function validateFeatureName(feature: string): void {
       message: 'Invalid feature name',
       input: { feature },
       retryable: false,
-      suggestion: 'Use lowercase letters, numbers, and hyphens; do not use path separators or dot segments'
+      suggestion:
+        'Use lowercase letters, numbers, and hyphens; do not use path separators or dot segments',
     });
   }
 }
@@ -124,7 +122,7 @@ function parsePreviewInput(argv: string[]): PreviewInput {
           message: '--port requires a value',
           input: { option: '--port' },
           retryable: false,
-          suggestion: 'Pass a port number after --port'
+          suggestion: 'Pass a port number after --port',
         });
       }
       input.port = parsePort(value);
@@ -143,7 +141,7 @@ function parsePreviewInput(argv: string[]): PreviewInput {
         message: `Unknown option: ${arg}`,
         input: { option: arg },
         retryable: false,
-        suggestion: 'Run boss design preview --describe to verify supported options'
+        suggestion: 'Run boss design preview --describe to verify supported options',
       });
     }
 
@@ -157,7 +155,7 @@ function parsePreviewInput(argv: string[]): PreviewInput {
       message: `Extra argument: ${positionals[1]}`,
       input: { argument: positionals[1] },
       retryable: false,
-      suggestion: 'Pass only the feature name'
+      suggestion: 'Pass only the feature name',
     });
   }
 
@@ -167,7 +165,7 @@ function parsePreviewInput(argv: string[]): PreviewInput {
       message: 'Usage: boss design preview <feature> [--no-open] [--port <port>]',
       input: { feature: input.feature },
       retryable: false,
-      suggestion: 'Pass the feature that contains .boss/<feature>/ui-design.json'
+      suggestion: 'Pass the feature that contains .boss/<feature>/ui-design.json',
     });
   }
   validateFeatureName(input.feature);
@@ -175,7 +173,10 @@ function parsePreviewInput(argv: string[]): PreviewInput {
   return input;
 }
 
-function readUiDesignArtifact(cwd: string, feature: string): { artifactPath: string; relativeArtifactPath: string; design: unknown } {
+function readUiDesignArtifact(
+  cwd: string,
+  feature: string,
+): { artifactPath: string; relativeArtifactPath: string; design: unknown } {
   const relativeArtifactPath = path.posix.join('.boss', feature, 'ui-design.json');
   const artifactPath = validatePathInside(relativeArtifactPath, cwd, 'ui design artifact');
 
@@ -185,7 +186,7 @@ function readUiDesignArtifact(cwd: string, feature: string): { artifactPath: str
       message: `UI design artifact not found: ${relativeArtifactPath}`,
       input: { feature, artifact: relativeArtifactPath },
       retryable: false,
-      suggestion: `Create ${relativeArtifactPath} before running the preview`
+      suggestion: `Create ${relativeArtifactPath} before running the preview`,
     });
   }
 
@@ -194,7 +195,7 @@ function readUiDesignArtifact(cwd: string, feature: string): { artifactPath: str
     return {
       artifactPath,
       relativeArtifactPath,
-      design: JSON.parse(text) as unknown
+      design: JSON.parse(text) as unknown,
     };
   } catch {
     throw new CliUserError({
@@ -202,7 +203,7 @@ function readUiDesignArtifact(cwd: string, feature: string): { artifactPath: str
       message: `Invalid JSON in ${relativeArtifactPath}`,
       input: { feature, artifact: relativeArtifactPath },
       retryable: false,
-      suggestion: 'Fix the JSON syntax and run the preview again'
+      suggestion: 'Fix the JSON syntax and run the preview again',
     });
   }
 }
@@ -211,14 +212,17 @@ function renderTextPayload(data: unknown): string {
   const payload = data as PreviewPayload;
   const status = payload.valid ? 'valid' : 'invalid';
   const opened = payload.opened ? 'opened' : 'not opened';
-  const errors = payload.errors.length > 0 ? `\nErrors:\n${payload.errors.map((error) => `- ${error}`).join('\n')}\n` : '';
+  const errors =
+    payload.errors.length > 0
+      ? `\nErrors:\n${payload.errors.map((error) => `- ${error}`).join('\n')}\n`
+      : '';
   return `Preview ${status}: ${payload.artifact}\nURL: ${payload.url}\nBrowser: ${opened}\n${errors}`;
 }
 
 export function shouldOpenPreviewBrowser(
   context: Pick<CliContext, 'stdinIsTTY' | 'stdoutIsTTY'>,
   input: Pick<PreviewInput, 'noOpen'>,
-  env: PreviewEnvironment = process.env
+  env: PreviewEnvironment = process.env,
 ): boolean {
   return !input.noOpen && context.stdinIsTTY && context.stdoutIsTTY && !env.CI;
 }
@@ -231,9 +235,12 @@ function forceInteractivePreview(env: PreviewEnvironment = process.env): boolean
 export function shouldKeepPreviewAlive(
   context: Pick<CliContext, 'useJson' | 'stdinIsTTY' | 'stdoutIsTTY'>,
   input: Pick<PreviewInput, 'noOpen'>,
-  env: PreviewEnvironment = process.env
+  env: PreviewEnvironment = process.env,
 ): boolean {
-  return !context.useJson && (forceInteractivePreview(env) || shouldOpenPreviewBrowser(context, input, env));
+  return (
+    !context.useJson &&
+    (forceInteractivePreview(env) || shouldOpenPreviewBrowser(context, input, env))
+  );
 }
 
 export function previewSignalExitCode(valid: boolean): 0 | 1 {
@@ -262,7 +269,7 @@ async function keepPreviewAlive(preview: UiDesignPreviewServer, exitCode: 0 | 1)
 
 export async function main(
   argv: string[] = process.argv.slice(2),
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): Promise<number> {
   const parsedContext = createCliContext(argv, { command: 'boss design preview' });
   const context = forceInteractivePreview()
@@ -270,11 +277,15 @@ export async function main(
         ...parsedContext,
         stdinIsTTY: true,
         stdoutIsTTY: true,
-        useJson: parsedContext.values.json
+        useJson: parsedContext.values.json,
       }
     : parsedContext;
   if (context.values.describe) {
-    writeOutput(describeCommand(designPreviewDescription), context, (data) => `${JSON.stringify(data, null, 2)}\n`);
+    writeOutput(
+      describeCommand(designPreviewDescription),
+      context,
+      (data) => `${JSON.stringify(data, null, 2)}\n`,
+    );
     return 0;
   }
 
@@ -292,9 +303,10 @@ export async function main(
   const forcedInteractive = forceInteractivePreview();
   const shouldOpen = !forcedInteractive && shouldOpenPreviewBrowser(context, input);
   const opened = shouldOpen ? openUrl(preview.url) : false;
-  const mode = typeof (design as Partial<UiDesignArtifact>).mode === 'string'
-    ? (design as Partial<UiDesignArtifact>).mode
-    : undefined;
+  const mode =
+    typeof (design as Partial<UiDesignArtifact>).mode === 'string'
+      ? (design as Partial<UiDesignArtifact>).mode
+      : undefined;
   const payload: PreviewPayload = {
     feature: input.feature,
     artifact: relativeArtifactPath,
@@ -302,7 +314,7 @@ export async function main(
     mode,
     opened,
     valid: validation.ok,
-    errors: validation.errors
+    errors: validation.errors,
   };
 
   writeOutput(payload, context, renderTextPayload);
@@ -320,6 +332,9 @@ export async function main(
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss design preview', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss design preview',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

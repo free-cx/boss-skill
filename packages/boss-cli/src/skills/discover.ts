@@ -21,7 +21,11 @@ export interface DiscoveredSkill {
 const SKIP_DIRS = new Set(['.git', 'node_modules', 'dist', '.venv', '__pycache__']);
 
 function stripQuotes(value: string): string {
-  if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+  if (
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'")))
+  ) {
     return value.slice(1, -1);
   }
   return value;
@@ -45,7 +49,10 @@ export function parseSkillFrontmatter(content: string): SkillFrontmatter {
 
 /** Directory-name-safe skill identifier; rejects traversal from untrusted frontmatter. */
 export function sanitizeSkillName(name: string): string {
-  const cleaned = name.trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^[.-]+|[.-]+$/g, '');
+  const cleaned = name
+    .trim()
+    .replace(/[^A-Za-z0-9._-]+/g, '-')
+    .replace(/^[.-]+|[.-]+$/g, '');
   return cleaned;
 }
 
@@ -67,7 +74,7 @@ export function readSkillAt(dir: string, relDir: string): DiscoveredSkill | null
     description: frontmatter.description ?? '',
     version: frontmatter.version,
     dir,
-    relDir
+    relDir,
   };
 }
 

@@ -1,14 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-
-import { replayEvents } from '../../packages/boss-cli/src/runtime/application/inspection.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { evaluateGates } from '../../packages/boss-cli/src/runtime/application/gates.js';
+import { replayEvents } from '../../packages/boss-cli/src/runtime/application/inspection.js';
 import {
   recordArtifact,
   registerPlugins,
-  updateStage
+  updateStage,
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { materializeState } from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
@@ -33,33 +32,77 @@ describe('event-sourcing', () => {
       status: 'initialized',
       parameters: {},
       stages: {
-        '1': { name: 'planning', status: 'pending', startTime: null, endTime: null, retryCount: 0, maxRetries: 2, failureReason: null, artifacts: [], gateResults: {} },
-        '2': { name: 'review', status: 'pending', startTime: null, endTime: null, retryCount: 0, maxRetries: 2, failureReason: null, artifacts: [], gateResults: {} },
-        '3': { name: 'development', status: 'pending', startTime: null, endTime: null, retryCount: 0, maxRetries: 2, failureReason: null, artifacts: [], gateResults: {} },
-        '4': { name: 'deployment', status: 'pending', startTime: null, endTime: null, retryCount: 0, maxRetries: 2, failureReason: null, artifacts: [], gateResults: {} }
+        '1': {
+          name: 'planning',
+          status: 'pending',
+          startTime: null,
+          endTime: null,
+          retryCount: 0,
+          maxRetries: 2,
+          failureReason: null,
+          artifacts: [],
+          gateResults: {},
+        },
+        '2': {
+          name: 'review',
+          status: 'pending',
+          startTime: null,
+          endTime: null,
+          retryCount: 0,
+          maxRetries: 2,
+          failureReason: null,
+          artifacts: [],
+          gateResults: {},
+        },
+        '3': {
+          name: 'development',
+          status: 'pending',
+          startTime: null,
+          endTime: null,
+          retryCount: 0,
+          maxRetries: 2,
+          failureReason: null,
+          artifacts: [],
+          gateResults: {},
+        },
+        '4': {
+          name: 'deployment',
+          status: 'pending',
+          startTime: null,
+          endTime: null,
+          retryCount: 0,
+          maxRetries: 2,
+          failureReason: null,
+          artifacts: [],
+          gateResults: {},
+        },
       },
       qualityGates: {
         gate0: { status: 'pending', passed: null, checks: [], executedAt: null },
         gate1: { status: 'pending', passed: null, checks: [], executedAt: null },
-        gate2: { status: 'pending', passed: null, checks: [], executedAt: null }
+        gate2: { status: 'pending', passed: null, checks: [], executedAt: null },
       },
       metrics: { totalDuration: null, stageTimings: {}, gatePassRate: null, retryTotal: 0 },
       plugins: [],
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
     };
 
-    fs.writeFileSync(path.join(metaDir, 'execution.json'), JSON.stringify(initState, null, 2), 'utf8');
+    fs.writeFileSync(
+      path.join(metaDir, 'execution.json'),
+      JSON.stringify(initState, null, 2),
+      'utf8',
+    );
     fs.writeFileSync(
       path.join(metaDir, 'events.jsonl'),
       `${JSON.stringify({
         id: 1,
         type: 'PipelineInitialized',
         timestamp: '2024-01-01T00:00:00Z',
-        data: { initialState: initState }
+        data: { initialState: initState },
       })}\n`,
-      'utf8'
+      'utf8',
     );
   });
 
@@ -94,7 +137,7 @@ describe('event-sourcing', () => {
     materializeState('test-feat', tmpDir);
 
     const execJson = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8'),
     ) as {
       stages: { '1': { status: string; artifacts: string[] } };
     };
@@ -119,9 +162,9 @@ describe('event-sourcing', () => {
         id: 2,
         type: 'InvalidEvent',
         timestamp: '2024-01-01T00:00:01Z',
-        data: { stage: 1 }
+        data: { stage: 1 },
       })}\n`,
-      'utf8'
+      'utf8',
     );
 
     expect(() => {
@@ -148,7 +191,7 @@ describe('event-sourcing', () => {
     evaluateGates('test-feat', 'gate1', { cwd: tmpDir });
 
     const execJson = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8'),
     ) as {
       qualityGates: { gate0: { status: string; passed: boolean } };
     };
@@ -164,19 +207,29 @@ describe('event-sourcing', () => {
         id: 2,
         type: 'GateEvaluated',
         timestamp: '2024-01-01T00:00:01Z',
-        data: { gate: 'gate0', passed: true, stage: 3, checks: [{ name: 'lint', passed: true, detail: 'ok' }] }
+        data: {
+          gate: 'gate0',
+          passed: true,
+          stage: 3,
+          checks: [{ name: 'lint', passed: true, detail: 'ok' }],
+        },
       })}\n${JSON.stringify({
         id: 3,
         type: 'GateEvaluated',
         timestamp: '2024-01-01T00:00:02Z',
-        data: { gate: 'gate1', passed: false, stage: 3, checks: [{ name: 'unit-tests', passed: false, detail: 'failed' }] }
+        data: {
+          gate: 'gate1',
+          passed: false,
+          stage: 3,
+          checks: [{ name: 'unit-tests', passed: false, detail: 'failed' }],
+        },
       })}\n`,
-      'utf8'
+      'utf8',
     );
     materializeState('test-feat', tmpDir);
 
     const execJson = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8'),
     ) as {
       qualityGates: {
         gate0: { checks: Array<{ name: string; passed: boolean; detail: string }> };
@@ -184,8 +237,12 @@ describe('event-sourcing', () => {
       };
       metrics: { gatePassRate: number };
     };
-    expect(execJson.qualityGates.gate0.checks).toEqual([{ name: 'lint', passed: true, detail: 'ok' }]);
-    expect(execJson.qualityGates.gate1.checks).toEqual([{ name: 'unit-tests', passed: false, detail: 'failed' }]);
+    expect(execJson.qualityGates.gate0.checks).toEqual([
+      { name: 'lint', passed: true, detail: 'ok' },
+    ]);
+    expect(execJson.qualityGates.gate1.checks).toEqual([
+      { name: 'unit-tests', passed: false, detail: 'failed' },
+    ]);
     expect(execJson.metrics.gatePassRate).toBe(50);
   });
 
@@ -194,7 +251,7 @@ describe('event-sourcing', () => {
     materializeState('test-feat', tmpDir);
 
     const execJson = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8'),
     ) as {
       plugins: Array<{ name: string; version: string; type: string }>;
     };
@@ -209,9 +266,9 @@ describe('event-sourcing', () => {
         id: 2,
         type: 'ArtifactRecorded',
         timestamp: '2024-01-01T00:00:01Z',
-        data: { artifact: 'prd.md' }
+        data: { artifact: 'prd.md' },
       })}\n`,
-      'utf8'
+      'utf8',
     );
 
     expect(() => {
@@ -227,9 +284,9 @@ describe('event-sourcing', () => {
         id: 2,
         type: 'GateEvaluated',
         timestamp: '2024-01-01T00:00:01Z',
-        data: { gate: 'gate0', stage: 3 }
+        data: { gate: 'gate0', stage: 3 },
       })}\n`,
-      'utf8'
+      'utf8',
     );
 
     expect(() => {

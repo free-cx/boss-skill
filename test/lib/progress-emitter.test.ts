@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { emitProgress } from '../../packages/boss-cli/src/infrastructure/process.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
@@ -20,7 +20,7 @@ describe('progress emitter runtime', () => {
   it('emits progress events to progress.jsonl with feature and timestamp fields', () => {
     emitProgress(tmpDir, 'test-feat', {
       type: 'stage-start',
-      data: { stage: 1 }
+      data: { stage: 1 },
     });
 
     const progressFile = path.join(tmpDir, '.boss', 'test-feat', '.meta', 'progress.jsonl');
@@ -51,18 +51,18 @@ describe('progress emitter runtime', () => {
     expect(JSON.parse(lines[0] ?? '{}')).toMatchObject({ type: 'agent-start' });
     expect(JSON.parse(lines[1] ?? '{}')).toMatchObject({
       type: 'custom-event',
-      data: {}
+      data: {},
     });
   });
 
   it('creates the meta directory when it does not exist yet', () => {
     emitProgress(path.join(tmpDir, 'nested'), 'new-feat', {
       type: 'stage-start',
-      data: {}
+      data: {},
     });
 
     expect(
-      fs.existsSync(path.join(tmpDir, 'nested', '.boss', 'new-feat', '.meta', 'progress.jsonl'))
+      fs.existsSync(path.join(tmpDir, 'nested', '.boss', 'new-feat', '.meta', 'progress.jsonl')),
     ).toBe(true);
   });
 });

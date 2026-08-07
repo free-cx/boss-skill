@@ -8,7 +8,7 @@ import {
   describeCommand,
   runMain,
   validatePathInside,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { commandDescriptions } from '../../cli/registry.js';
 import { detectPipelinePacks } from '../../runtime/application/packs.js';
@@ -21,15 +21,22 @@ function showHelp(): void {
       'Boss Harness - Pipeline Pack 自动检测',
       '',
       '用法: boss packs detect [project-dir] [--json]',
-      ''
-    ].join('\n')
+      '',
+    ].join('\n'),
   );
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss packs detect' });
   if (context.values.describe) {
-    writeOutput(describeCommand(packsDetectDescription), context, (data) => `${JSON.stringify(data, null, 2)}\n`);
+    writeOutput(
+      describeCommand(packsDetectDescription),
+      context,
+      (data) => `${JSON.stringify(data, null, 2)}\n`,
+    );
     return 0;
   }
 
@@ -55,7 +62,11 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       index += 1;
       continue;
     }
-    if (arg.startsWith('--fields=') || arg.startsWith('--limit=') || arg.startsWith('--json-input=')) {
+    if (
+      arg.startsWith('--fields=') ||
+      arg.startsWith('--limit=') ||
+      arg.startsWith('--json-input=')
+    ) {
       continue;
     }
     if (arg.startsWith('-')) {
@@ -64,7 +75,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         message: `未知选项: ${arg}`,
         input: { option: arg },
         retryable: false,
-        suggestion: 'Run boss packs detect --describe to verify supported options'
+        suggestion: 'Run boss packs detect --describe to verify supported options',
       });
     }
     if (projectArg !== '.') {
@@ -73,22 +84,25 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         message: `多余的参数: ${arg}`,
         input: { argument: arg },
         retryable: false,
-        suggestion: 'Pass only one project directory'
+        suggestion: 'Pass only one project directory',
       });
     }
     projectArg = arg;
   }
 
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control character detection
   if (/[\x00-\x1f]/.test(projectArg)) {
     throw new CliUserError({
       code: 'invalid_path',
       message: 'Control characters rejected in project directory',
       input: { path: projectArg },
       retryable: false,
-      suggestion: 'Pass a project directory path without control characters'
+      suggestion: 'Pass a project directory path without control characters',
     });
   }
-  const projectDir = path.isAbsolute(projectArg) ? projectArg : validatePathInside(projectArg, cwd, 'project directory');
+  const projectDir = path.isAbsolute(projectArg)
+    ? projectArg
+    : validatePathInside(projectArg, cwd, 'project directory');
   const result = detectPipelinePacks(projectDir);
   if (!context.useJson) {
     for (const pack of result.matched) {
@@ -101,13 +115,16 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
     detectedPack: result.detected,
     matched: result.matched.map((pack) => pack.name),
     matchedPacks: result.matched,
-    reason: result.matched.length === 0 ? 'no pack matched' : undefined
+    reason: result.matched.length === 0 ? 'no pack matched' : undefined,
   };
   writeOutput(payload, context, () => `${result.detected.name}\n`);
   return 0;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss packs detect', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss packs detect',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

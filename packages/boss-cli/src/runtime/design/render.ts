@@ -2,7 +2,7 @@ import type {
   UiDesignArtifact,
   UiDesignFrame,
   UiDesignPage,
-  UiDesignValidationResult
+  UiDesignValidationResult,
 } from './schema.js';
 
 const DEFAULT_VIEWPORT_WIDTH = 1440;
@@ -22,7 +22,9 @@ function escapeAttribute(value: unknown): string {
 }
 
 function coerceViewportDimension(value: unknown, fallback: number): number {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : fallback;
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? Math.round(value)
+    : fallback;
 }
 
 function buildPrototypeTargets(design: UiDesignArtifact): Map<string, string> {
@@ -33,10 +35,18 @@ function buildPrototypeTargets(design: UiDesignArtifact): Map<string, string> {
   return targets;
 }
 
-function renderFrame(frame: UiDesignFrame, prototypeTargets: Map<string, string>, depth = 0): string {
+function renderFrame(
+  frame: UiDesignFrame,
+  prototypeTargets: Map<string, string>,
+  depth = 0,
+): string {
   const targetPageId = prototypeTargets.get(frame.id);
-  const targetAttribute = targetPageId ? ` data-target-page="${escapeAttribute(targetPageId)}"` : '';
-  const childFrames = frame.children.map((child) => renderFrame(child, prototypeTargets, depth + 1)).join('');
+  const targetAttribute = targetPageId
+    ? ` data-target-page="${escapeAttribute(targetPageId)}"`
+    : '';
+  const childFrames = frame.children
+    .map((child) => renderFrame(child, prototypeTargets, depth + 1))
+    .join('');
   const displayName = frame.name || frame.type;
   const depthStyle = `--depth:${depth}`;
 
@@ -60,7 +70,11 @@ function renderPageNav(pages: UiDesignPage[], activePageId: string): string {
     .join('');
 }
 
-function renderPage(page: UiDesignPage, prototypeTargets: Map<string, string>, isActive: boolean): string {
+function renderPage(
+  page: UiDesignPage,
+  prototypeTargets: Map<string, string>,
+  isActive: boolean,
+): string {
   const activeClass = isActive ? ' is-active' : '';
   const frameHtml = page.frames.map((frame) => renderFrame(frame, prototypeTargets)).join('');
   const viewportWidth = coerceViewportDimension(page.viewport.width, DEFAULT_VIEWPORT_WIDTH);
@@ -109,17 +123,26 @@ function renderValidationErrors(errors: string[]): string {
 </html>`;
 }
 
-export function renderUiDesignHtml(design: UiDesignArtifact, validation: UiDesignValidationResult): string {
+export function renderUiDesignHtml(
+  design: UiDesignArtifact,
+  validation: UiDesignValidationResult,
+): string {
   if (!validation.ok) return renderValidationErrors(validation.errors);
 
-  const startPage = design.pages.find((page) => page.id === design.prototype.startPageId) ?? design.pages[0];
+  const startPage =
+    design.pages.find((page) => page.id === design.prototype.startPageId) ?? design.pages[0];
   if (!startPage) return renderValidationErrors(['pages must contain at least one page']);
 
   const prototypeTargets = buildPrototypeTargets(design);
   const pageNav = renderPageNav(design.pages, startPage.id);
-  const pages = design.pages.map((page) => renderPage(page, prototypeTargets, page.id === startPage.id)).join('');
+  const pages = design.pages
+    .map((page) => renderPage(page, prototypeTargets, page.id === startPage.id))
+    .join('');
   const components = design.components
-    .map((component) => `<li><strong>${escapeHtml(component.name)}</strong><span>${escapeHtml(component.type)}</span></li>`)
+    .map(
+      (component) =>
+        `<li><strong>${escapeHtml(component.name)}</strong><span>${escapeHtml(component.type)}</span></li>`,
+    )
     .join('');
   const accessibilityNotes = design.implementationHints.accessibilityNotes
     .map((note) => `<li>${escapeHtml(note)}</li>`)

@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -15,12 +15,15 @@ describe('pack/plugin runtime integration', () => {
   function runRuntimeCommand(name: string, args: string[]) {
     return spawnSync(process.execPath, [BOSS_BIN, 'runtime', name, ...args], {
       cwd: tmpDir,
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
   }
 
   function expectSuccess(result: ReturnType<typeof spawnSync>, label: string) {
-    expect(result.status, `${label} should exit 0\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`).toBe(0);
+    expect(
+      result.status,
+      `${label} should exit 0\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
+    ).toBe(0);
   }
 
   beforeEach(() => {
@@ -33,7 +36,7 @@ describe('pack/plugin runtime integration', () => {
     fs.writeFileSync(
       path.join(pluginDir, 'post-gate.sh'),
       '#!/bin/bash\necho "$1:$2" > .boss/test-feat/.meta/local-reporter.log\nexit 0\n',
-      'utf8'
+      'utf8',
     );
     fs.writeFileSync(
       path.join(pluginDir, 'plugin.json'),
@@ -44,14 +47,14 @@ describe('pack/plugin runtime integration', () => {
           type: 'reporter',
           hooks: {
             report: 'report.sh',
-            'post-gate': 'post-gate.sh'
+            'post-gate': 'post-gate.sh',
           },
-          stages: [3]
+          stages: [3],
         },
         null,
-        2
+        2,
       ),
-      'utf8'
+      'utf8',
     );
   });
 
@@ -61,11 +64,17 @@ describe('pack/plugin runtime integration', () => {
 
   it('reconstructs pack and plugin hook state from events only', () => {
     expectSuccess(runRuntimeCommand('init-pipeline', ['test-feat']), 'init-pipeline');
-    expectSuccess(runRuntimeCommand('register-plugins', ['--register', 'test-feat']), 'register-plugins');
-    expectSuccess(runRuntimeCommand('run-plugin-hook', ['post-gate', 'test-feat', '--stage', '3']), 'run-plugin-hook');
+    expectSuccess(
+      runRuntimeCommand('register-plugins', ['--register', 'test-feat']),
+      'register-plugins',
+    );
+    expectSuccess(
+      runRuntimeCommand('run-plugin-hook', ['post-gate', 'test-feat', '--stage', '3']),
+      'run-plugin-hook',
+    );
 
     const execution = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8'),
     ) as {
       parameters: { pipelinePack: string };
       plugins: Array<{ name: string }>;
@@ -78,8 +87,12 @@ describe('pack/plugin runtime integration', () => {
 
     expect(execution.parameters.pipelinePack).toBe('api-only');
     expect(execution.plugins.some((plugin) => plugin.name === 'local-reporter')).toBe(true);
-    expect(execution.pluginLifecycle.discovered.some((plugin) => plugin.name === 'local-reporter')).toBe(true);
-    expect(execution.pluginLifecycle.activated.some((plugin) => plugin.name === 'local-reporter')).toBe(true);
+    expect(
+      execution.pluginLifecycle.discovered.some((plugin) => plugin.name === 'local-reporter'),
+    ).toBe(true);
+    expect(
+      execution.pluginLifecycle.activated.some((plugin) => plugin.name === 'local-reporter'),
+    ).toBe(true);
     expect(execution.pluginLifecycle.executed).toHaveLength(1);
     expect(execution.pluginLifecycle.executed[0]?.plugin.name).toBe('local-reporter');
     expect(execution.pluginLifecycle.executed[0]?.hook).toBe('post-gate');

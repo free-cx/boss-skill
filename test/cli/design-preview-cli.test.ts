@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 
@@ -8,10 +8,10 @@ import { describe, expect, it } from 'vitest';
 import { createCliContext } from '../../packages/boss-cli/src/cli/contract.js';
 import {
   previewSignalExitCode,
-  shouldKeepPreviewAlive
+  shouldKeepPreviewAlive,
 } from '../../packages/boss-cli/src/commands/design/preview.js';
-import { ensureBuilt, runCli } from '../helpers/run-cli.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
+import { ensureBuilt, runCli } from '../helpers/run-cli.js';
 
 const root = resolve(import.meta.dirname, '..', '..');
 
@@ -30,18 +30,18 @@ function minimalUiDesign(feature: string) {
         route: '/',
         viewport: { width: 1440, height: 960 },
         frames: [
-          { id: 'main-page', type: 'page', name: 'Main page', layout: 'vertical', children: [] }
+          { id: 'main-page', type: 'page', name: 'Main page', layout: 'vertical', children: [] },
         ],
-        states: []
-      }
+        states: [],
+      },
     ],
     components: [],
     prototype: { startPageId: 'main', links: [] },
     implementationHints: {
       preferredFramework: 'react',
       requiredComponents: [],
-      accessibilityNotes: []
-    }
+      accessibilityNotes: [],
+    },
   };
 }
 
@@ -49,7 +49,9 @@ function runPreview(args: string[], cwd: string) {
   return runCli(['packages/boss-cli/dist/bin/boss.js', ...args], { cwd });
 }
 
-async function waitForExit(child: ReturnType<typeof spawn>): Promise<{ code: number | null; signal: NodeJS.Signals | null }> {
+async function waitForExit(
+  child: ReturnType<typeof spawn>,
+): Promise<{ code: number | null; signal: NodeJS.Signals | null }> {
   return new Promise((resolveExit) => {
     child.once('exit', (code, signal) => resolveExit({ code, signal }));
   });
@@ -76,7 +78,9 @@ async function waitForPreviewUrl(child: ReturnType<typeof spawn>): Promise<strin
     });
     child.once('exit', (code, signal) => {
       clearTimeout(timeout);
-      reject(new Error(`Preview exited before URL. code=${code} signal=${signal} output=${output}`));
+      reject(
+        new Error(`Preview exited before URL. code=${code} signal=${signal} output=${output}`),
+      );
     });
   });
 }
@@ -87,15 +91,20 @@ function spawnPreview(args: string[], cwd: string) {
     cwd,
     env: {
       ...process.env,
-      BOSS_DESIGN_PREVIEW_FORCE_INTERACTIVE: '1'
+      BOSS_DESIGN_PREVIEW_FORCE_INTERACTIVE: '1',
     },
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
 }
 
 describe('boss design preview CLI', () => {
   it('returns structured metadata with --describe', () => {
-    const result = runCli(['packages/boss-cli/dist/bin/boss.js', 'design', 'preview', '--describe']);
+    const result = runCli([
+      'packages/boss-cli/dist/bin/boss.js',
+      'design',
+      'preview',
+      '--describe',
+    ]);
 
     expect(result.status).toBe(0);
     const payload = JSON.parse(result.stdout) as {
@@ -103,7 +112,9 @@ describe('boss design preview CLI', () => {
       options: Array<{ name: string }>;
     };
     expect(payload.command).toBe('boss design preview');
-    expect(payload.options.map((option) => option.name)).toEqual(expect.arrayContaining(['no-open', 'port']));
+    expect(payload.options.map((option) => option.name)).toEqual(
+      expect.arrayContaining(['no-open', 'port']),
+    );
   });
 
   it('previews a valid ui-design artifact without opening the browser when requested', () => {
@@ -115,10 +126,13 @@ describe('boss design preview CLI', () => {
       writeFileSync(
         resolve(workspace, '.boss', feature, 'ui-design.json'),
         `${JSON.stringify(minimalUiDesign(feature), null, 2)}\n`,
-        'utf8'
+        'utf8',
       );
 
-      const result = runPreview(['design', 'preview', feature, '--json', '--no-open', '--port', '0'], workspace);
+      const result = runPreview(
+        ['design', 'preview', feature, '--json', '--no-open', '--port', '0'],
+        workspace,
+      );
 
       expect(result.status, result.stderr).toBe(0);
       const payload = JSON.parse(result.stdout) as {
@@ -136,7 +150,7 @@ describe('boss design preview CLI', () => {
         mode: 'wireframe',
         opened: false,
         valid: true,
-        errors: []
+        errors: [],
       });
       expect(payload.url).toMatch(/^http:\/\/localhost:\d+$/);
     } finally {
@@ -148,7 +162,10 @@ describe('boss design preview CLI', () => {
     const workspace = mkdtempSync(resolve(tmpdir(), 'boss-design-preview-missing-'));
 
     try {
-      const result = runPreview(['design', 'preview', 'missing-feature', '--json', '--no-open'], workspace);
+      const result = runPreview(
+        ['design', 'preview', 'missing-feature', '--json', '--no-open'],
+        workspace,
+      );
 
       expect(result.status).toBe(1);
       const payload = JSON.parse(result.stderr) as { error: { code: string } };
@@ -167,7 +184,7 @@ describe('boss design preview CLI', () => {
       writeFileSync(
         resolve(workspace, '.boss', feature, 'ui-design.json'),
         `${JSON.stringify({ artifact: 'ui-design', mode: 'wireframe', pages: [{ id: 'p', frames: [] }] })}\n`,
-        'utf8'
+        'utf8',
       );
 
       const result = runPreview(['design', 'preview', feature, '--json', '--no-open'], workspace);
@@ -186,10 +203,15 @@ describe('boss design preview CLI', () => {
     const workspace = mkdtempSync(resolve(tmpdir(), 'boss-design-preview-traversal-'));
 
     try {
-      const result = runPreview(['design', 'preview', '../escaped', '--json', '--no-open'], workspace);
+      const result = runPreview(
+        ['design', 'preview', '../escaped', '--json', '--no-open'],
+        workspace,
+      );
 
       expect(result.status).toBe(1);
-      const payload = JSON.parse(result.stderr) as { error: { code: string; input?: Record<string, unknown> } };
+      const payload = JSON.parse(result.stderr) as {
+        error: { code: string; input?: Record<string, unknown> };
+      };
       expect(payload.error.code).toBe('invalid_feature');
       expect(payload.error.input).toEqual({ feature: '../escaped' });
     } finally {
@@ -201,24 +223,26 @@ describe('boss design preview CLI', () => {
     const interactiveContext = createCliContext([], {
       command: 'boss design preview',
       stdinIsTTY: true,
-      stdoutIsTTY: true
+      stdoutIsTTY: true,
     });
     const jsonContext = createCliContext(['--json'], {
       command: 'boss design preview',
       stdinIsTTY: true,
-      stdoutIsTTY: true
+      stdoutIsTTY: true,
     });
     const nonInteractiveContext = createCliContext([], {
       command: 'boss design preview',
       stdinIsTTY: false,
-      stdoutIsTTY: true
+      stdoutIsTTY: true,
     });
 
     expect(shouldKeepPreviewAlive(interactiveContext, { noOpen: false }, {})).toBe(true);
     expect(shouldKeepPreviewAlive(interactiveContext, { noOpen: true }, {})).toBe(false);
     expect(shouldKeepPreviewAlive(jsonContext, { noOpen: false }, {})).toBe(false);
     expect(shouldKeepPreviewAlive(nonInteractiveContext, { noOpen: false }, {})).toBe(false);
-    expect(shouldKeepPreviewAlive(interactiveContext, { noOpen: false }, { CI: 'true' })).toBe(false);
+    expect(shouldKeepPreviewAlive(interactiveContext, { noOpen: false }, { CI: 'true' })).toBe(
+      false,
+    );
   });
 
   it('uses validation-derived exit codes when signal cleanup closes a live preview', () => {
@@ -236,7 +260,7 @@ describe('boss design preview CLI', () => {
       writeFileSync(
         resolve(workspace, '.boss', feature, 'ui-design.json'),
         `${JSON.stringify(minimalUiDesign(feature), null, 2)}\n`,
-        'utf8'
+        'utf8',
       );
 
       child = spawnPreview(['design', 'preview', feature, '--port', '0'], workspace);
@@ -269,7 +293,7 @@ describe('boss design preview CLI', () => {
       writeFileSync(
         resolve(workspace, '.boss', feature, 'ui-design.json'),
         `${JSON.stringify({ artifact: 'ui-design', mode: 'wireframe', pages: [{ id: 'p', frames: [] }] })}\n`,
-        'utf8'
+        'utf8',
       );
 
       child = spawnPreview(['design', 'preview', feature, '--port', '0'], workspace);

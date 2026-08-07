@@ -3,24 +3,24 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { pausePipeline } from '../../runtime/application/pipeline.js';
 import {
   optionalInputString,
   printRuntimeHelp,
   requireInputString,
   requireOptionValue,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { pausePipeline } from '../../runtime/application/pipeline.js';
 
 interface PauseInput {
   feature: string;
@@ -62,7 +62,7 @@ function parseFlatInput(argv: string[]): PauseInput {
   return {
     feature: requireInputString(feature, 'feature'),
     reason,
-    requestedBy
+    requestedBy,
   };
 }
 
@@ -73,7 +73,7 @@ function resolveInput(argv: string[], context: CliContext): PauseInput {
     return {
       feature: requireInputString(input.feature, 'feature'),
       reason: optionalInputString(input.reason),
-      requestedBy: optionalInputString(input.requestedBy)
+      requestedBy: optionalInputString(input.requestedBy),
     };
   }
   return parseFlatInput(argv);
@@ -84,17 +84,20 @@ function actionFor(input: PauseInput) {
     type: 'pause_pipeline',
     feature: input.feature,
     reason: input.reason || '',
-    requested_by: input.requestedBy || 'user'
+    requested_by: input.requestedBy || 'user',
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime pause' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions.pause!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions.pause, null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions.pause, null, 2)}\n`,
     );
     return 0;
   }
@@ -114,16 +117,16 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
     const execution = pausePipeline(input.feature, {
       cwd,
       reason: input.reason || '',
-      requestedBy: input.requestedBy || 'user'
+      requestedBy: input.requestedBy || 'user',
     });
     writeOutput(
       {
         feature: input.feature,
         status: execution.status,
-        pause: execution.pause || null
+        pause: execution.pause || null,
       },
       context,
-      () => `Pipeline ${input.feature}: paused\n`
+      () => `Pipeline ${input.feature}: paused\n`,
     );
     return 0;
   } catch (err) {
@@ -132,6 +135,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime pause', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime pause',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

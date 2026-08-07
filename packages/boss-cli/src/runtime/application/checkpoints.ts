@@ -1,6 +1,6 @@
-import { inspectPipeline, type CurrentStageSummary } from './inspection.js';
-import { resolveDriverCapabilities, type BossDriverCapabilities } from './drivers.js';
-import { readWaves, type EvidenceWave } from './waves.js';
+import { type BossDriverCapabilities, resolveDriverCapabilities } from './drivers.js';
+import { type CurrentStageSummary, inspectPipeline } from './inspection.js';
+import { type EvidenceWave, readWaves } from './waves.js';
 import { listWipCheckpoints, type WipCheckpointListItem } from './wip-checkpoint.js';
 
 export interface RequiredCheck {
@@ -37,20 +37,21 @@ function defaultRequiredChecks(stage: CurrentStageSummary | null): RequiredCheck
 
   return [
     { id: 'typecheck', command: 'npm run typecheck', required: true },
-    { id: 'tests', command: 'npm test', required: true }
+    { id: 'tests', command: 'npm test', required: true },
   ];
 }
 
 export function buildBossStatus(
   feature: string,
-  { cwd = process.cwd(), driver = 'generic' }: { cwd?: string; driver?: string } = {}
+  { cwd = process.cwd(), driver = 'generic' }: { cwd?: string; driver?: string } = {},
 ): BossStatus {
   const inspection = inspectPipeline(feature, { cwd });
   const driverCapabilities = resolveDriverCapabilities(driver);
   const requiredChecks = defaultRequiredChecks(inspection.currentStage);
   const blockedReason = inspection.recentFailures[0]?.reason || null;
   const checkpointRequired = requiredChecks.length > 0 || blockedReason !== null;
-  const currentWave = readWaves(feature, { cwd }).find((wave) => wave.status !== 'completed') ?? null;
+  const currentWave =
+    readWaves(feature, { cwd }).find((wave) => wave.status !== 'completed') ?? null;
   const wipCheckpoints = listWipCheckpoints(feature, { cwd });
 
   return {
@@ -61,7 +62,7 @@ export function buildBossStatus(
       hooks: driverCapabilities.hooks,
       checkpointPrompt: driverCapabilities.checkpointPrompt,
       stopGuards: driverCapabilities.stopGuards,
-      subagents: driverCapabilities.subagents
+      subagents: driverCapabilities.subagents,
     },
     currentStage: inspection.currentStage,
     currentWave,
@@ -69,11 +70,13 @@ export function buildBossStatus(
     blockedReason,
     checkpoint: {
       checkpointRequired,
-      reason: checkpointRequired ? 'next-action-requires-explicit-confirmation' : 'next-action-ready',
+      reason: checkpointRequired
+        ? 'next-action-requires-explicit-confirmation'
+        : 'next-action-ready',
       changedFiles: [],
       requiredChecks,
       continueCommand: `boss continue ${feature}`,
-      wipCheckpoints
-    }
+      wipCheckpoints,
+    },
   };
 }

@@ -1,9 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-
-import { writeJson } from '../lib/boss-utils.js';
-import { buildSummaryModel } from '../../packages/boss-cli/dist/runtime/report/summary-model.js';
 import { renderMarkdown } from '../../packages/boss-cli/dist/runtime/report/render-markdown.js';
+import { buildSummaryModel } from '../../packages/boss-cli/dist/runtime/report/summary-model.js';
+import { writeJson } from '../lib/boss-utils.js';
 
 function run(rawInput) {
   const input = JSON.parse(rawInput);
@@ -43,7 +42,7 @@ function run(rawInput) {
         const stage = stages[sKey] || {};
         stagesSummary[sKey] = {
           name: stage.name || 'unknown',
-          status: stage.status || 'unknown'
+          status: stage.status || 'unknown',
         };
       }
 
@@ -52,7 +51,7 @@ function run(rawInput) {
         pipelineStatus: status,
         stagesSummary,
         timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-        cwd
+        cwd,
       };
 
       const sessionStatePath = path.join(cwd, '.boss', '.session-state.json');

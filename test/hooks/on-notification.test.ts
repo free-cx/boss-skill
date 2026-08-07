@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cleanupTempDir, createExecData, createTempBossDir } from '../helpers/fixtures.js';
 
@@ -29,9 +29,9 @@ describe('on-notification hook', () => {
       hook.run(
         JSON.stringify({
           message: 'test notification',
-          cwd: '/nonexistent'
-        })
-      )
+          cwd: '/nonexistent',
+        }),
+      ),
     ).toBe('');
   });
 
@@ -43,8 +43,8 @@ describe('on-notification hook', () => {
       JSON.stringify({
         message: 'Build completed',
         notification_type: 'info',
-        cwd: tmpDir
-      })
+        cwd: tmpDir,
+      }),
     );
 
     const logFile = path.join(tmpDir, '.boss', 'test-feat', '.meta', 'notifications.jsonl');
@@ -66,8 +66,8 @@ describe('on-notification hook', () => {
     hook.run(
       JSON.stringify({
         message: 'test',
-        cwd: tmpDir
-      })
+        cwd: tmpDir,
+      }),
     );
 
     const logFile = path.join(tmpDir, '.boss', 'test-feat', '.meta', 'notifications.jsonl');

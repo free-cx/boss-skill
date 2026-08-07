@@ -1,9 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-
+import * as runtime from '../../packages/boss-cli/dist/runtime/application/pipeline.js';
 import { STAGE_MAP } from '../lib/boss-utils.js';
 import { emitProgress } from '../lib/progress-emitter.js';
-import * as runtime from '../../packages/boss-cli/dist/runtime/application/pipeline.js';
 import { normalizeHookInput } from './lib/normalize-input.js';
 
 function hasArtifactInEventLog(eventsPath, artifact, stage) {
@@ -11,7 +10,7 @@ function hasArtifactInEventLog(eventsPath, artifact, stage) {
 
   try {
     const lines = fs.readFileSync(eventsPath, 'utf8').split('\n').filter(Boolean);
-    return lines.some(line => {
+    return lines.some((line) => {
       const event = JSON.parse(line);
       if (event.type === 'ArtifactRecorded' && event.data) {
         return event.data.artifact === artifact && String(event.data.stage) === String(stage);
@@ -19,7 +18,7 @@ function hasArtifactInEventLog(eventsPath, artifact, stage) {
 
       if (event.type === 'PipelineInitialized' && event.data && event.data.initialState) {
         const stages = event.data.initialState.stages || {};
-        const artifacts = ((stages[String(stage)] || {}).artifacts) || [];
+        const artifacts = (stages[String(stage)] || {}).artifacts || [];
         return artifacts.includes(artifact);
       }
 
@@ -45,7 +44,11 @@ function run(rawInput) {
 
     if (!match || !artifact) continue;
 
-    if (artifact === 'execution.json' || artifact === 'summary-report.md' || artifact === 'summary-report.json') {
+    if (
+      artifact === 'execution.json' ||
+      artifact === 'summary-report.md' ||
+      artifact === 'summary-report.json'
+    ) {
       continue;
     }
 
@@ -62,7 +65,7 @@ function run(rawInput) {
 
     emitProgress(cwd, feature, {
       type: 'artifact-written',
-      data: { artifact, stage }
+      data: { artifact, stage },
     });
 
     try {
@@ -84,8 +87,8 @@ function run(rawInput) {
   return JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PostToolUse',
-      additionalContext: context
-    }
+      additionalContext: context,
+    },
   });
 }
 

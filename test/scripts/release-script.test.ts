@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
 const RELEASE_SCRIPT = path.join(REPO_ROOT, 'scripts', 'release.js');
@@ -13,7 +13,7 @@ describe('release script contract', () => {
       'packages/boss-cli/package.json',
       '.claude-plugin/plugin.json',
       '.claude-plugin/marketplace.json',
-      'skill/SKILL.md'
+      'skill/SKILL.md',
     ]) {
       expect(source).toContain(`path: '${expectedPath}'`);
     }

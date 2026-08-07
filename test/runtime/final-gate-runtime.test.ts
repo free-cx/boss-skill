@@ -1,13 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { evaluateFinalGate } from '../../packages/boss-cli/src/runtime/application/final-gate.js';
 import {
   initPipeline,
   recordArtifact,
-  updateAgent
+  updateAgent,
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -36,7 +36,7 @@ describe('final gate runtime', () => {
       passed: false,
       required: ['prd.md', 'architecture.md', 'tasks.md', 'qa-report.md'],
       recorded: [],
-      missing: ['prd.md', 'architecture.md', 'tasks.md', 'qa-report.md']
+      missing: ['prd.md', 'architecture.md', 'tasks.md', 'qa-report.md'],
     });
   });
 
@@ -51,7 +51,7 @@ describe('final gate runtime', () => {
     expect(result.checks.find((check) => check.name === 'required-artifacts')).toMatchObject({
       name: 'required-artifacts',
       passed: true,
-      missing: []
+      missing: [],
     });
   });
 
@@ -68,11 +68,11 @@ describe('final gate runtime', () => {
     expect(result.passed).toBe(false);
     expect(result.checks.find((check) => check.name === 'no-active-agents')).toMatchObject({
       passed: false,
-      activeAgents: [{ stage: 3, agent: 'boss-backend', status: 'running' }]
+      activeAgents: [{ stage: 3, agent: 'boss-backend', status: 'running' }],
     });
     expect(result.checks.find((check) => check.name === 'no-recent-failures')).toMatchObject({
       passed: false,
-      recentFailures: [{ scope: 'agent', stage: 3, agent: 'boss-qa', reason: 'tests failed' }]
+      recentFailures: [{ scope: 'agent', stage: 3, agent: 'boss-qa', reason: 'tests failed' }],
     });
   });
 
@@ -100,8 +100,8 @@ describe('final gate runtime', () => {
         '',
         '## Known Failures',
         '- none',
-        ''
-      ].join('\n')
+        '',
+      ].join('\n'),
     );
 
     const result = evaluateFinalGate('test-feat', { cwd: tmpDir });
@@ -113,9 +113,9 @@ describe('final gate runtime', () => {
         expect.objectContaining({
           id: 'qa-report-open-critical',
           severity: 'critical',
-          status: 'open'
-        })
-      ]
+          status: 'open',
+        }),
+      ],
     });
   });
 });

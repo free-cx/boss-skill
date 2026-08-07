@@ -3,24 +3,24 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { recordFeedback } from '../../runtime/application/pipeline.js';
 import {
   optionalInputString,
   printRuntimeHelp,
   requireInputString,
   requireOptionValue,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { recordFeedback } from '../../runtime/application/pipeline.js';
 
 interface RecordFeedbackInput {
   feature: string;
@@ -83,7 +83,7 @@ function parseFlatInput(argv: string[]): RecordFeedbackInput {
     to: requireInputString(to, 'to'),
     artifact: requireInputString(artifact, 'artifact'),
     reason: requireInputString(reason, 'reason'),
-    priority
+    priority,
   };
 }
 
@@ -97,7 +97,7 @@ function resolveInput(argv: string[], context: CliContext): RecordFeedbackInput 
       to: requireInputString(input.to, 'to'),
       artifact: requireInputString(input.artifact, 'artifact'),
       reason: requireInputString(input.reason, 'reason'),
-      priority: optionalInputString(input.priority) || 'recommended'
+      priority: optionalInputString(input.priority) || 'recommended',
     };
   }
   return parseFlatInput(argv);
@@ -109,17 +109,20 @@ function actionFor(input: RecordFeedbackInput) {
     feature: input.feature,
     artifact: input.artifact,
     priority: input.priority,
-    reason: input.reason
+    reason: input.reason,
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime record-feedback' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['record-feedback']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['record-feedback'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['record-feedback'], null, 2)}\n`,
     );
     return 0;
   }
@@ -142,13 +145,18 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       artifact: input.artifact,
       reason: input.reason,
       priority: input.priority,
-      cwd
+      cwd,
     });
     const feedbackLoops = state.feedbackLoops || {};
     writeOutput(
-      { feature: input.feature, round: feedbackLoops.currentRound, maxRounds: feedbackLoops.maxRounds },
+      {
+        feature: input.feature,
+        round: feedbackLoops.currentRound,
+        maxRounds: feedbackLoops.maxRounds,
+      },
       context,
-      () => `${JSON.stringify({ feature: input.feature, round: feedbackLoops.currentRound, maxRounds: feedbackLoops.maxRounds }, null, 2)}\n`
+      () =>
+        `${JSON.stringify({ feature: input.feature, round: feedbackLoops.currentRound, maxRounds: feedbackLoops.maxRounds }, null, 2)}\n`,
     );
     return 0;
   } catch (err) {
@@ -157,6 +165,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime record-feedback', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime record-feedback',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

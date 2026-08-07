@@ -40,7 +40,7 @@ function run(rawInput) {
       const logEntry = JSON.stringify({
         timestamp: now,
         type: notificationType,
-        message
+        message,
       });
 
       try {

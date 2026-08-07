@@ -1,12 +1,12 @@
 import {
+  type CliContext,
   CliUserError,
   createCliContext,
   describeCommand,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { commandDescriptions } from '../../cli/registry.js';
-import { runQaAttack, type QaAttackResult } from '../../runtime/application/qa-attack.js';
+import { type QaAttackResult, runQaAttack } from '../../runtime/application/qa-attack.js';
 
 function removeFirstPositional(argv: string[], positional: string | undefined): string[] {
   if (!positional) return argv;
@@ -35,7 +35,7 @@ function parseAttackFeature(argv: string[]): string {
       message: 'Usage: boss qa attack FEATURE [options]',
       input: { argument: 'feature' },
       retryable: false,
-      suggestion: 'Run boss qa attack --describe to verify command parameters'
+      suggestion: 'Run boss qa attack --describe to verify command parameters',
     });
   }
   return feature;
@@ -44,7 +44,7 @@ function parseAttackFeature(argv: string[]): string {
 function renderAttackText(result: QaAttackResult): string {
   const lines = [
     result.status === 'passed' ? 'QA attack passed' : 'QA attack failed',
-    `Feature: ${result.feature}`
+    `Feature: ${result.feature}`,
   ];
   for (const finding of result.findings) {
     lines.push(`${finding.severity.toUpperCase()} ${finding.status}: ${finding.id}`);
@@ -66,13 +66,16 @@ function toFeatureNotFound(err: unknown, feature: string): never {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline before QA attack'
+      suggestion: 'Run boss runtime init-pipeline before QA attack',
     });
   }
   throw err;
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss qa' });
   const subcommand = context.positionals[0];
 
@@ -87,7 +90,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       message: 'Usage: boss qa attack FEATURE [options]',
       input: { argument: 'subcommand' },
       retryable: false,
-      suggestion: 'Run boss qa --describe to list available commands'
+      suggestion: 'Run boss qa --describe to list available commands',
     });
   }
 

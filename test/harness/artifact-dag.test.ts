@@ -1,13 +1,30 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
-const BOSS_BIN = path.join(import.meta.dirname, '..', '..', 'packages', 'boss-cli', 'dist', 'bin', 'boss.js');
-const DAG_PATH = path.join(import.meta.dirname, '..', '..', 'packages', 'boss-cli', 'assets', 'artifact-dag.json');
+const BOSS_BIN = path.join(
+  import.meta.dirname,
+  '..',
+  '..',
+  'packages',
+  'boss-cli',
+  'dist',
+  'bin',
+  'boss.js',
+);
+const DAG_PATH = path.join(
+  import.meta.dirname,
+  '..',
+  '..',
+  'packages',
+  'boss-cli',
+  'assets',
+  'artifact-dag.json',
+);
 
 function getExecFileError(error: unknown) {
   return error as Error & { status?: number; stdout?: string; stderr?: string };
@@ -33,24 +50,68 @@ describe('artifact-dag', () => {
       status: 'running',
       parameters: { skipUI: false, skipDeploy: false },
       stages: {
-        '1': { name: 'planning', status: 'pending', startTime: null, endTime: null, retryCount: 0, maxRetries: 2, failureReason: null, artifacts: [], gateResults: {} },
-        '2': { name: 'review', status: 'pending', startTime: null, endTime: null, retryCount: 0, maxRetries: 2, failureReason: null, artifacts: [], gateResults: {} },
-        '3': { name: 'development', status: 'pending', startTime: null, endTime: null, retryCount: 0, maxRetries: 2, failureReason: null, artifacts: [], gateResults: {} },
-        '4': { name: 'deployment', status: 'pending', startTime: null, endTime: null, retryCount: 0, maxRetries: 2, failureReason: null, artifacts: [], gateResults: {} }
+        '1': {
+          name: 'planning',
+          status: 'pending',
+          startTime: null,
+          endTime: null,
+          retryCount: 0,
+          maxRetries: 2,
+          failureReason: null,
+          artifacts: [],
+          gateResults: {},
+        },
+        '2': {
+          name: 'review',
+          status: 'pending',
+          startTime: null,
+          endTime: null,
+          retryCount: 0,
+          maxRetries: 2,
+          failureReason: null,
+          artifacts: [],
+          gateResults: {},
+        },
+        '3': {
+          name: 'development',
+          status: 'pending',
+          startTime: null,
+          endTime: null,
+          retryCount: 0,
+          maxRetries: 2,
+          failureReason: null,
+          artifacts: [],
+          gateResults: {},
+        },
+        '4': {
+          name: 'deployment',
+          status: 'pending',
+          startTime: null,
+          endTime: null,
+          retryCount: 0,
+          maxRetries: 2,
+          failureReason: null,
+          artifacts: [],
+          gateResults: {},
+        },
       },
       qualityGates: {
         gate0: { status: 'pending', passed: null, checks: [], executedAt: null },
         gate1: { status: 'pending', passed: null, checks: [], executedAt: null },
-        gate2: { status: 'pending', passed: null, checks: [], executedAt: null }
+        gate2: { status: 'pending', passed: null, checks: [], executedAt: null },
       },
       metrics: { totalDuration: null, stageTimings: {}, gatePassRate: null, retryTotal: 0 },
       plugins: [],
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
     };
 
-    fs.writeFileSync(path.join(metaDir, 'execution.json'), JSON.stringify(initState, null, 2), 'utf8');
+    fs.writeFileSync(
+      path.join(metaDir, 'execution.json'),
+      JSON.stringify(initState, null, 2),
+      'utf8',
+    );
   });
 
   afterEach(() => {
@@ -63,7 +124,7 @@ describe('artifact-dag', () => {
       return execFileSync(process.execPath, [BOSS_BIN, 'runtime', 'get-ready-artifacts', ...args], {
         encoding: 'utf8',
         cwd: tmpDir,
-        env: { ...process.env, PATH: process.env.PATH }
+        env: { ...process.env, PATH: process.env.PATH },
       }).trim();
     } catch (error) {
       const execError = getExecFileError(error);
@@ -98,7 +159,16 @@ describe('artifact-dag', () => {
 
   it('DAG defines ui-design.json as a first-class UI artifact', () => {
     const dag = JSON.parse(fs.readFileSync(DAG_PATH, 'utf8')) as {
-      artifacts: Record<string, { inputs?: string[]; agent?: string; stage?: number; optional?: boolean; description?: string }>;
+      artifacts: Record<
+        string,
+        {
+          inputs?: string[];
+          agent?: string;
+          stage?: number;
+          optional?: boolean;
+          description?: string;
+        }
+      >;
     };
 
     expect(dag.artifacts['ui-design.json']).toEqual({
@@ -106,7 +176,7 @@ describe('artifact-dag', () => {
       agent: 'boss-ui-designer',
       stage: 1,
       optional: true,
-      description: '可渲染 UI 原型与机器约束 JSON'
+      description: '可渲染 UI 原型与机器约束 JSON',
     });
     expect(dag.artifacts['tech-review.md']?.inputs).toContain('ui-design.json');
   });
@@ -142,7 +212,9 @@ describe('artifact-dag', () => {
   });
 
   it('--ready returns prd.md initially (design-brief is optional)', () => {
-    const ready = JSON.parse(runCli(['test-feat', '--ready', '--dag', DAG_PATH, '--json'])) as string[];
+    const ready = JSON.parse(
+      runCli(['test-feat', '--ready', '--dag', DAG_PATH, '--json']),
+    ) as string[];
     expect(ready).toContain('prd.md');
   });
 
@@ -154,7 +226,9 @@ describe('artifact-dag', () => {
     data.stages['1'].artifacts = ['prd.md'];
     fs.writeFileSync(execPath, JSON.stringify(data, null, 2), 'utf8');
 
-    const ready = JSON.parse(runCli(['test-feat', '--ready', '--dag', DAG_PATH, '--json'])) as string[];
+    const ready = JSON.parse(
+      runCli(['test-feat', '--ready', '--dag', DAG_PATH, '--json']),
+    ) as string[];
     expect(ready).toContain('architecture.md');
     expect(ready).toContain('ui-spec.md');
     expect(ready).toContain('ui-design.json');
@@ -175,7 +249,9 @@ describe('artifact-dag', () => {
     data.stages['1'].artifacts = ['prd.md'];
     fs.writeFileSync(execPath, JSON.stringify(data, null, 2), 'utf8');
 
-    const status = JSON.parse(runCli(['test-feat', 'architecture.md', '--can-start', '--dag', DAG_PATH])) as {
+    const status = JSON.parse(
+      runCli(['test-feat', 'architecture.md', '--can-start', '--dag', DAG_PATH]),
+    ) as {
       status: string;
     };
     expect(status.status).toBe('ready');
@@ -196,7 +272,9 @@ describe('artifact-dag', () => {
     data.stages['1'].artifacts = ['prd.md', 'architecture.md', 'ui-spec.md', 'ui-design.json'];
     fs.writeFileSync(execPath, JSON.stringify(data, null, 2), 'utf8');
 
-    const status = JSON.parse(runCli(['test-feat', 'tech-review.md', '--can-start', '--dag', DAG_PATH])) as {
+    const status = JSON.parse(
+      runCli(['test-feat', 'tech-review.md', '--can-start', '--dag', DAG_PATH]),
+    ) as {
       status: string;
     };
     expect(status.status).toBe('ready');
@@ -212,7 +290,9 @@ describe('artifact-dag', () => {
     data.stages['1'].artifacts = ['prd.md'];
     fs.writeFileSync(execPath, JSON.stringify(data, null, 2), 'utf8');
 
-    const ready = JSON.parse(runCli(['test-feat', '--ready', '--dag', DAG_PATH, '--json'])) as string[];
+    const ready = JSON.parse(
+      runCli(['test-feat', '--ready', '--dag', DAG_PATH, '--json']),
+    ) as string[];
     expect(ready).not.toContain('ui-spec.md');
     expect(ready).not.toContain('ui-design.json');
     expect(ready).toContain('architecture.md');
@@ -228,7 +308,9 @@ describe('artifact-dag', () => {
     data.stages['1'].artifacts = ['prd.md', 'architecture.md'];
     fs.writeFileSync(execPath, JSON.stringify(data, null, 2), 'utf8');
 
-    const ready = JSON.parse(runCli(['test-feat', '--ready', '--dag', DAG_PATH, '--json'])) as string[];
+    const ready = JSON.parse(
+      runCli(['test-feat', '--ready', '--dag', DAG_PATH, '--json']),
+    ) as string[];
     expect(ready).not.toContain('tech-review.md');
     expect(ready).not.toContain('tasks.md');
     expect(ready).toContain('code');
@@ -236,10 +318,12 @@ describe('artifact-dag', () => {
 
   it('DAG contains gate entries with type "gate"', () => {
     const dag = JSON.parse(fs.readFileSync(DAG_PATH, 'utf8')) as {
-      artifacts: Record<string, { type?: string; agent?: string | null; stage?: number; runtime?: string; script?: string }>;
+      artifacts: Record<
+        string,
+        { type?: string; agent?: string | null; stage?: number; runtime?: string; script?: string }
+      >;
     };
-    const gateEntries = Object.entries(dag.artifacts)
-      .filter(([, def]) => def.type === 'gate');
+    const gateEntries = Object.entries(dag.artifacts).filter(([, def]) => def.type === 'gate');
     expect(gateEntries.length).toBeGreaterThanOrEqual(3);
     for (const [, def] of gateEntries) {
       expect(def.type).toBe('gate');
@@ -262,7 +346,9 @@ describe('artifact-dag', () => {
     data.stages['3'] = { ...data.stages['3'], artifacts: ['code'] };
     fs.writeFileSync(execPath, JSON.stringify(data, null, 2), 'utf8');
 
-    const ready = JSON.parse(runCli(['test-feat', '--ready', '--dag', DAG_PATH, '--json'])) as string[];
+    const ready = JSON.parse(
+      runCli(['test-feat', '--ready', '--dag', DAG_PATH, '--json']),
+    ) as string[];
     const gateNames = ready.filter((name: string) => name.startsWith('gate'));
     expect(gateNames).toEqual([]);
   });

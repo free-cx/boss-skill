@@ -3,24 +3,24 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { updateAgent } from '../../runtime/application/pipeline.js';
 import {
   optionalInputString,
   printRuntimeHelp,
   requireInputString,
   requireOptionValue,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { updateAgent } from '../../runtime/application/pipeline.js';
 
 interface UpdateAgentInput {
   feature: string;
@@ -35,7 +35,10 @@ interface UpdateAgentInput {
 }
 
 function showHelp(): void {
-  printRuntimeHelp('update-agent', 'boss runtime update-agent FEATURE STAGE AGENT STATUS [options]');
+  printRuntimeHelp(
+    'update-agent',
+    'boss runtime update-agent FEATURE STAGE AGENT STATUS [options]',
+  );
 }
 
 function parseFlatInput(argv: string[]): UpdateAgentInput {
@@ -107,7 +110,7 @@ function parseFlatInput(argv: string[]): UpdateAgentInput {
     prompt,
     promptFingerprint,
     dependencyArtifacts,
-    opts
+    opts,
   };
 }
 
@@ -124,12 +127,14 @@ function resolveInput(argv: string[], context: CliContext): UpdateAgentInput {
       prompt: optionalInputString(input.prompt),
       promptFingerprint: optionalInputString(input.promptFingerprint),
       dependencyArtifacts: Array.isArray(input.dependencyArtifacts)
-        ? input.dependencyArtifacts.filter((item): item is string => typeof item === 'string' && item.length > 0)
+        ? input.dependencyArtifacts.filter(
+            (item): item is string => typeof item === 'string' && item.length > 0,
+          )
         : [],
       opts:
         input.opts && typeof input.opts === 'object' && !Array.isArray(input.opts)
           ? (input.opts as Record<string, unknown>)
-          : undefined
+          : undefined,
     };
   }
   return parseFlatInput(argv);
@@ -143,17 +148,20 @@ function actionFor(input: UpdateAgentInput) {
     agent: input.agent,
     target_status: input.status,
     reason: input.reason,
-    dependency_artifacts: input.dependencyArtifacts
+    dependency_artifacts: input.dependencyArtifacts,
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime update-agent' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['update-agent']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['update-agent'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['update-agent'], null, 2)}\n`,
     );
     return 0;
   }
@@ -176,17 +184,17 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       prompt: input.prompt,
       promptFingerprint: input.promptFingerprint,
       dependencyArtifacts: input.dependencyArtifacts,
-      opts: input.opts || {}
+      opts: input.opts || {},
     });
     writeOutput(
       {
         feature: input.feature,
         stage: Number(input.stage),
         agent: input.agent,
-        status: input.status
+        status: input.status,
       },
       context,
-      () => `Agent ${input.agent} (阶段 ${input.stage}): -> ${input.status}\n`
+      () => `Agent ${input.agent} (阶段 ${input.stage}): -> ${input.status}\n`,
     );
     return 0;
   } catch (err) {
@@ -195,6 +203,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime update-agent', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime update-agent',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

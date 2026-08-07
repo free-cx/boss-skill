@@ -1,13 +1,12 @@
-import { afterEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-
-import { run } from '../../scripts/hooks/subagent-start.js';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   buildFeatureSummary,
-  writeFeatureMemory
+  writeFeatureMemory,
 } from '../../packages/boss-cli/src/runtime/application/memory.js';
+import { run } from '../../scripts/hooks/subagent-start.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
 function createTempBossDir(feature: string, execData?: Record<string, unknown>) {
@@ -19,18 +18,19 @@ function createTempBossDir(feature: string, execData?: Record<string, unknown>) 
     fs.writeFileSync(
       path.join(metaDir, 'execution.json'),
       `${JSON.stringify(execData, null, 2)}\n`,
-      'utf8'
+      'utf8',
     );
-    const timestamp = typeof execData.createdAt === 'string' ? execData.createdAt : '2024-01-01T00:00:00Z';
+    const timestamp =
+      typeof execData.createdAt === 'string' ? execData.createdAt : '2024-01-01T00:00:00Z';
     fs.writeFileSync(
       path.join(metaDir, 'events.jsonl'),
       `${JSON.stringify({
         id: 1,
         type: 'PipelineInitialized',
         timestamp,
-        data: { initialState: execData }
+        data: { initialState: execData },
       })}\n`,
-      'utf8'
+      'utf8',
     );
   }
 
@@ -46,9 +46,9 @@ function createExecData(overrides: Record<string, unknown>) {
       '1': { name: 'Planning', status: 'completed', artifacts: [] },
       '2': { name: 'Review', status: 'running', artifacts: [] },
       '3': { name: 'Development', status: 'pending', artifacts: [] },
-      '4': { name: 'Deployment', status: 'pending', artifacts: [] }
+      '4': { name: 'Deployment', status: 'pending', artifacts: [] },
     },
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -74,10 +74,12 @@ describe('subagent-start hook', () => {
     const execData = createExecData({ feature: 'test-feat', status: 'running' });
     tmpDir = createTempBossDir('test-feat', execData);
 
-    const result = run(JSON.stringify({
-      cwd: tmpDir,
-      agent_type: 'code'
-    }));
+    const result = run(
+      JSON.stringify({
+        cwd: tmpDir,
+        agent_type: 'code',
+      }),
+    );
 
     expect(result.length).toBeGreaterThan(0);
 
@@ -101,23 +103,25 @@ describe('subagent-start hook', () => {
           name: 'Development',
           status: 'running',
           artifacts: [],
-          agents: { 'boss-backend': { status: 'pending' } }
+          agents: { 'boss-backend': { status: 'pending' } },
         },
-        '4': { name: 'Deployment', status: 'pending', artifacts: [] }
-      }
+        '4': { name: 'Deployment', status: 'pending', artifacts: [] },
+      },
     });
     tmpDir = createTempBossDir('test-feat', execData);
 
-    const result = run(JSON.stringify({
-      cwd: tmpDir,
-      agent_type: 'boss-backend'
-    }));
+    const result = run(
+      JSON.stringify({
+        cwd: tmpDir,
+        agent_type: 'boss-backend',
+      }),
+    );
 
     const parsed = JSON.parse(result) as {
       hookSpecificOutput: { additionalContext: string };
     };
     const execution = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8'),
     ) as {
       stages: {
         '3': {
@@ -129,7 +133,7 @@ describe('subagent-start hook', () => {
     };
     const progressLog = fs.readFileSync(
       path.join(tmpDir, '.boss', 'test-feat', '.meta', 'progress.jsonl'),
-      'utf8'
+      'utf8',
     );
 
     expect(parsed.hookSpecificOutput.additionalContext).toContain('boss-backend');
@@ -148,32 +152,38 @@ describe('subagent-start hook', () => {
           name: 'Development',
           status: 'running',
           artifacts: [],
-          agents: { 'boss-backend': { status: 'pending' } }
+          agents: { 'boss-backend': { status: 'pending' } },
         },
-        '4': { name: 'Deployment', status: 'pending', artifacts: [] }
-      }
+        '4': { name: 'Deployment', status: 'pending', artifacts: [] },
+      },
     });
     tmpDir = createTempBossDir('test-feat', execData);
 
-    writeFeatureMemory('test-feat', [{
-      id: 'm1',
-      scope: 'feature',
-      kind: 'execution',
-      category: 'agent_failure_pattern',
-      feature: 'test-feat',
-      stage: 3,
-      agent: 'boss-backend',
-      summary: 'Backend timed out in stage 3',
-      source: { type: 'events' },
-      evidence: [{ type: 'event', ref: '5' }],
-      tags: ['boss-backend'],
-      confidence: 0.9,
-      createdAt: '2026-04-17T00:00:00Z',
-      lastSeenAt: '2026-04-17T00:00:00Z',
-      expiresAt: null,
-      decayScore: 10,
-      influence: 'preference'
-    }], { cwd: tmpDir });
+    writeFeatureMemory(
+      'test-feat',
+      [
+        {
+          id: 'm1',
+          scope: 'feature',
+          kind: 'execution',
+          category: 'agent_failure_pattern',
+          feature: 'test-feat',
+          stage: 3,
+          agent: 'boss-backend',
+          summary: 'Backend timed out in stage 3',
+          source: { type: 'events' },
+          evidence: [{ type: 'event', ref: '5' }],
+          tags: ['boss-backend'],
+          confidence: 0.9,
+          createdAt: '2026-04-17T00:00:00Z',
+          lastSeenAt: '2026-04-17T00:00:00Z',
+          expiresAt: null,
+          decayScore: 10,
+          influence: 'preference',
+        },
+      ],
+      { cwd: tmpDir },
+    );
     buildFeatureSummary('test-feat', { cwd: tmpDir });
 
     const result = run(JSON.stringify({ cwd: tmpDir, agent_type: 'boss-backend' }));

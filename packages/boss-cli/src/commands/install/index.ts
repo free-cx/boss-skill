@@ -12,7 +12,7 @@ import {
   describeCommand,
   renderHelp,
   runMain,
-  writeOutput
+  writeOutput,
 } from '../../cli/contract.js';
 import { commandDescriptions } from '../../cli/registry.js';
 import { copyDirectory, readJsonFile, writeJsonFile } from '../../infrastructure/fs.js';
@@ -75,14 +75,14 @@ export const LEGACY_BOSS_HOOK_IDS = [
   'subagent:stop',
   'post:stage:wip-checkpoint',
   'notification:log',
-  'session:end'
+  'session:end',
 ];
 
 const CODEX_MATCHER_ALIASES: Record<string, string[]> = {
   apply_patch: ['apply_patch', 'Edit', 'Write', 'Edit|Write'],
   Edit: ['apply_patch', 'Edit', 'Write', 'Edit|Write'],
   Write: ['apply_patch', 'Edit', 'Write', 'Edit|Write'],
-  'Edit|Write': ['apply_patch', 'Edit', 'Write', 'Edit|Write']
+  'Edit|Write': ['apply_patch', 'Edit', 'Write', 'Edit|Write'],
 };
 
 const METADATA: Record<string, string> = {
@@ -239,14 +239,16 @@ function mergeHooksConfig(existingConfig: HooksConfig, bossConfig: HooksConfig):
   const result: HooksConfig = { hooks: {} };
   const allEventNames = new Set([
     ...Object.keys(existingConfig.hooks || {}),
-    ...Object.keys(bossConfig.hooks || {})
+    ...Object.keys(bossConfig.hooks || {}),
   ]);
   const bossHookIds = new Set(getBossHookIds(bossConfig));
 
   for (const eventName of allEventNames) {
     const existingEntries = (existingConfig.hooks || {})[eventName] || [];
     const bossEntries = (bossConfig.hooks || {})[eventName] || [];
-    const preservedExisting = existingEntries.filter((entry) => !entry.id || !bossHookIds.has(String(entry.id)));
+    const preservedExisting = existingEntries.filter(
+      (entry) => !entry.id || !bossHookIds.has(String(entry.id)),
+    );
     const mergedEntries = [...preservedExisting, ...bossEntries];
     if (mergedEntries.length > 0) {
       result.hooks![eventName] = mergedEntries;
@@ -278,15 +280,22 @@ function fileSha256(filePath: string): string {
   return 'sha256:' + createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
 }
 
-function findDuplicateMatcherWarnings(existingConfig: HooksConfig, bossConfig: HooksConfig): string[] {
+function findDuplicateMatcherWarnings(
+  existingConfig: HooksConfig,
+  bossConfig: HooksConfig,
+): string[] {
   const warnings: string[] = [];
   for (const [eventName, bossEntries] of Object.entries(bossConfig.hooks || {})) {
     const existingEntries = existingConfig.hooks?.[eventName] || [];
     for (const bossEntry of bossEntries || []) {
       if (typeof bossEntry.matcher !== 'string') continue;
-      const equivalentMatchers = new Set(CODEX_MATCHER_ALIASES[bossEntry.matcher] || [bossEntry.matcher]);
+      const equivalentMatchers = new Set(
+        CODEX_MATCHER_ALIASES[bossEntry.matcher] || [bossEntry.matcher],
+      );
       const duplicate = existingEntries.find((entry) => {
-        return !entry.id && typeof entry.matcher === 'string' && equivalentMatchers.has(entry.matcher);
+        return (
+          !entry.id && typeof entry.matcher === 'string' && equivalentMatchers.has(entry.matcher)
+        );
       });
       if (duplicate) {
         warnings.push(`${eventName}/${bossEntry.matcher}`);
@@ -317,15 +326,23 @@ function installCodexHooks(dryRun: boolean, silent = false): void {
     version: pkg.version,
     installMode: 'hooks-json',
     hookIds: getBossHookIds(bossConfig),
-    manifestChecksum: currentChecksum
+    manifestChecksum: currentChecksum,
   } satisfies CodexHooksState);
 
   if (!silent) console.log(`  ✅ Codex: merged hooks into ${hooksPath}`);
-  if (!silent && previousState?.manifestChecksum && previousState.manifestChecksum !== currentChecksum) {
-    console.log('  ℹ️  Codex: hook manifest changed since last install; refreshed Boss-managed hooks.');
+  if (
+    !silent &&
+    previousState?.manifestChecksum &&
+    previousState.manifestChecksum !== currentChecksum
+  ) {
+    console.log(
+      '  ℹ️  Codex: hook manifest changed since last install; refreshed Boss-managed hooks.',
+    );
   }
   if (!silent && duplicateWarnings.length > 0) {
-    console.log(`  ⚠️  Codex: existing hook(s) without id share matcher(s): ${duplicateWarnings.join(', ')}`);
+    console.log(
+      `  ⚠️  Codex: existing hook(s) without id share matcher(s): ${duplicateWarnings.join(', ')}`,
+    );
   }
 }
 
@@ -368,7 +385,7 @@ export function buildInstallPlan(): InstallAction[] {
   return AGENTS.filter((agent) => agent.detect()).map((agent) => ({
     type: agent.method === 'plugin' ? 'register_plugin' : 'install_skill',
     agent: agent.name,
-    path: agent.dest()
+    path: agent.dest(),
   }));
 }
 
@@ -393,7 +410,10 @@ async function runInteractiveInstall(): Promise<number> {
         sideEffects,
         postInstallNote:
           agent.method === 'plugin'
-            ? [`Use:  claude --plugin-dir "${PKG_ROOT}"`, `Or:   claude --plugin-dir "$(boss-skill path)"`]
+            ? [
+                `Use:  claude --plugin-dir "${PKG_ROOT}"`,
+                `Or:   claude --plugin-dir "$(boss-skill path)"`,
+              ]
             : undefined,
         install: () => {
           if (agent.method === 'copy') {
@@ -402,9 +422,9 @@ async function runInteractiveInstall(): Promise<number> {
             copyInstall(agent, false, true);
             installCodexHooks(false, true);
           }
-        }
+        },
       };
-    })
+    }),
   });
 }
 
@@ -425,7 +445,7 @@ export function buildUninstallPlan(): UninstallAction[] {
     return {
       type: fs.existsSync(dest) ? 'remove_skill' : 'skip_missing',
       agent: agent.name,
-      path: dest
+      path: dest,
     };
   });
 }
@@ -492,21 +512,24 @@ export function installMain(argv: string[] = process.argv.slice(2)): number | Pr
     context.useJson = false;
   }
   const cmd = normalizedArgv[0];
-  const rest = normalizedArgv.slice(1);
   const dryRun = context.values.dryRun;
 
   switch (cmd) {
     case 'install':
     case undefined:
       if (context.values.describe) {
-        writeOutput(describeCommand(installDescription), context, (data) => `${JSON.stringify(data, null, 2)}\n`);
+        writeOutput(
+          describeCommand(installDescription),
+          context,
+          (data) => `${JSON.stringify(data, null, 2)}\n`,
+        );
         return 0;
       }
       if (dryRun && context.useJson) {
         writeOutput(
           { actions: buildInstallPlan(), risk_tier: 'medium', requires_approval: false },
           context,
-          () => ''
+          () => '',
         );
         return 0;
       }
@@ -516,7 +539,7 @@ export function installMain(argv: string[] = process.argv.slice(2)): number | Pr
         writeOutput(
           { actions, risk_tier: 'medium', requires_approval: false, status: 'installed' },
           context,
-          () => ''
+          () => '',
         );
         return 0;
       }
@@ -528,14 +551,18 @@ export function installMain(argv: string[] = process.argv.slice(2)): number | Pr
 
     case 'uninstall':
       if (context.values.describe) {
-        writeOutput(describeCommand(uninstallDescription), context, (data) => `${JSON.stringify(data, null, 2)}\n`);
+        writeOutput(
+          describeCommand(uninstallDescription),
+          context,
+          (data) => `${JSON.stringify(data, null, 2)}\n`,
+        );
         return 0;
       }
       if (dryRun && context.useJson) {
         writeOutput(
           { actions: buildUninstallPlan(), risk_tier: 'high', requires_approval: true },
           context,
-          () => ''
+          () => '',
         );
         return 0;
       }
@@ -546,7 +573,7 @@ export function installMain(argv: string[] = process.argv.slice(2)): number | Pr
         writeOutput(
           { actions, risk_tier: 'high', requires_approval: true, status: 'uninstalled' },
           context,
-          () => ''
+          () => '',
         );
         return 0;
       }
@@ -555,7 +582,11 @@ export function installMain(argv: string[] = process.argv.slice(2)): number | Pr
 
     case 'path':
       if (context.values.describe) {
-        writeOutput(describeCommand(pathDescription), context, (data) => `${JSON.stringify(data, null, 2)}\n`);
+        writeOutput(
+          describeCommand(pathDescription),
+          context,
+          (data) => `${JSON.stringify(data, null, 2)}\n`,
+        );
         return 0;
       }
       if (context.values.json) {
@@ -581,7 +612,7 @@ export function installMain(argv: string[] = process.argv.slice(2)): number | Pr
         message: `Unknown command: ${cmd}`,
         input: { command: cmd },
         retryable: false,
-        suggestion: 'Run boss-skill --help to list available commands'
+        suggestion: 'Run boss-skill --help to list available commands',
       });
   }
 }
@@ -590,6 +621,9 @@ export const main = installMain;
 
 const entrypoint = process.argv[1];
 if (entrypoint && fs.realpathSync(entrypoint) === fs.realpathSync(__filename)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss install', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss install',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => installMain(), context));
 }

@@ -24,7 +24,13 @@ const CANCELLED = 130;
 // Self-install wizard styled after `npx skills add`: pixel banner, single-skill
 // summary, then a search-multiselect with detected agents locked as
 // "always included" and the remaining agents searchable.
-export async function runInstallWizard({ version, agents }: { version: string; agents: WizardAgent[] }): Promise<number> {
+export async function runInstallWizard({
+  version,
+  agents,
+}: {
+  version: string;
+  agents: WizardAgent[];
+}): Promise<number> {
   printBanner();
   intro(`@blade-ai/boss-skill v${version}`);
 
@@ -45,10 +51,10 @@ export async function runInstallWizard({ version, agents }: { version: string; a
       title: 'Detected agents',
       items: detected.map((agent) => ({
         value: agent.name,
-        label: agent.name
-      }))
+        label: agent.name,
+      })),
     },
-    required: true
+    required: true,
   });
   if (picked === PROMPT_CANCELLED) {
     cancel('Install cancelled.');
@@ -63,7 +69,10 @@ export async function runInstallWizard({ version, agents }: { version: string; a
 
   const failures: { agent: WizardAgent; error: string }[] = [];
   for (const agent of targets) {
-    const previous = agent.method !== 'plugin' && fs.existsSync(agent.dest) ? readInstalledVersion(agent.dest) : undefined;
+    const previous =
+      agent.method !== 'plugin' && fs.existsSync(agent.dest)
+        ? readInstalledVersion(agent.dest)
+        : undefined;
     const spin = spinner();
     spin.start(`Installing to ${agent.name}…`);
     try {
@@ -86,7 +95,9 @@ export async function runInstallWizard({ version, agents }: { version: string; a
   const succeeded = targets.length - failures.length;
   if (failures.length > 0) {
     log.error(`Failed: ${failures.map((failure) => failure.agent.name).join(', ')}`);
-    outro(`Installed to ${succeeded}/${targets.length} agent(s). Retry failed agents with: boss-skill install --yes`);
+    outro(
+      `Installed to ${succeeded}/${targets.length} agent(s). Retry failed agents with: boss-skill install --yes`,
+    );
     return 1;
   }
 

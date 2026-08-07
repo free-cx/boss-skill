@@ -1,6 +1,6 @@
 import { createCliContext, describeCommand, writeOutput } from '../cli/contract.js';
 import { commandDescriptions } from '../cli/registry.js';
-import { buildBossStatus, type BossStatus } from '../runtime/application/checkpoints.js';
+import { type BossStatus, buildBossStatus } from '../runtime/application/checkpoints.js';
 
 function parseFeatureAndDriver(argv: string[]): { feature: string; driver: string } {
   let feature = '';
@@ -56,11 +56,14 @@ function renderText(status: BossStatus): string {
         ? 'Checkpoint: hooks-managed by Claude Code'
         : 'Checkpoint: ready',
     `Continue: ${status.checkpoint.continueCommand}`,
-    ''
+    '',
   ].join('\n');
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss status' });
   if (context.values.describe) {
     const description = describeCommand(commandDescriptions['boss status']!);

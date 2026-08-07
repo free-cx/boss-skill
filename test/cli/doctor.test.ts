@@ -1,13 +1,22 @@
+import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { spawnSync } from 'node:child_process';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { ensureBuilt } from '../helpers/run-cli.js';
 
-const BOSS_BIN = path.resolve(import.meta.dirname, '..', '..', 'packages', 'boss-cli', 'dist', 'bin', 'boss.js');
+const BOSS_BIN = path.resolve(
+  import.meta.dirname,
+  '..',
+  '..',
+  'packages',
+  'boss-cli',
+  'dist',
+  'bin',
+  'boss.js',
+);
 
 let tmpDir: string | null = null;
 
@@ -18,7 +27,10 @@ function runDoctor(args: string[], cwd: string) {
 
 function initFeature(cwd: string, feature = 'demo') {
   ensureBuilt('packages/boss-cli/dist/bin/boss.js');
-  const r = spawnSync(process.execPath, [BOSS_BIN, 'runtime', 'init-pipeline', feature, '--json'], { cwd, encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [BOSS_BIN, 'runtime', 'init-pipeline', feature, '--json'], {
+    cwd,
+    encoding: 'utf8',
+  });
   expect(r.status, r.stderr).toBe(0);
 }
 
@@ -70,7 +82,11 @@ describe('boss doctor', () => {
   it('warns (not errors) on a crash-corrupted trailing event line', () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'boss-doctor-'));
     initFeature(tmpDir);
-    fs.appendFileSync(path.join(tmpDir, '.boss', 'demo', '.meta', 'events.jsonl'), '{"broken', 'utf8');
+    fs.appendFileSync(
+      path.join(tmpDir, '.boss', 'demo', '.meta', 'events.jsonl'),
+      '{"broken',
+      'utf8',
+    );
     const result = runDoctor(['--json'], tmpDir);
     expect(result.status).toBe(0); // warn 不阻断
     const report = JSON.parse(result.stdout) as {

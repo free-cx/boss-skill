@@ -7,7 +7,10 @@ export interface UiDesignPreviewServer {
   close: () => Promise<void>;
 }
 
-export async function startUiDesignPreviewServer(html: string, port = 0): Promise<UiDesignPreviewServer> {
+export async function startUiDesignPreviewServer(
+  html: string,
+  port = 0,
+): Promise<UiDesignPreviewServer> {
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
     if (url.pathname === '/healthz') {
@@ -44,6 +47,6 @@ export async function startUiDesignPreviewServer(html: string, port = 0): Promis
           else resolve();
         });
       });
-    }
+    },
   };
 }

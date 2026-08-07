@@ -1,12 +1,14 @@
-import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
 const MANIFEST_PATH = path.join(REPO_ROOT, '.codex-plugin', 'plugin.json');
 
 function readManifest(): { interface?: Record<string, unknown> } {
-  return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8')) as { interface?: Record<string, unknown> };
+  return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8')) as {
+    interface?: Record<string, unknown>;
+  };
 }
 
 function isHttpsUrl(value: unknown): value is string {

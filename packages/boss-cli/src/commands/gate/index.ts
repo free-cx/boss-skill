@@ -1,9 +1,9 @@
 import {
+  type CliContext,
   CliUserError,
   createCliContext,
   describeCommand,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { commandDescriptions } from '../../cli/registry.js';
 import { evaluateFinalGate, type FinalGateResult } from '../../runtime/application/final-gate.js';
@@ -50,7 +50,7 @@ function parseGateInput(argv: string[]): GateInput {
       message: 'Usage: boss gate FEATURE [--gate gateName] [options]',
       input: { argument: 'feature' },
       retryable: false,
-      suggestion: 'Run boss gate --describe to verify command parameters'
+      suggestion: 'Run boss gate --describe to verify command parameters',
     });
   }
   return { feature, gateName };
@@ -76,7 +76,7 @@ function parseFinalFeature(argv: string[]): string {
       message: 'Usage: boss gate final FEATURE [options]',
       input: { argument: 'feature' },
       retryable: false,
-      suggestion: 'Run boss gate final --describe to verify command parameters'
+      suggestion: 'Run boss gate final --describe to verify command parameters',
     });
   }
   return feature;
@@ -87,7 +87,7 @@ function renderGateText(payload: { feature: string; gate: string; passed: boolea
     payload.passed ? 'Gate passed' : 'Gate failed',
     `Feature: ${payload.feature}`,
     `Gate: ${payload.gate}`,
-    ''
+    '',
   ].join('\n');
 }
 
@@ -96,7 +96,7 @@ function renderFinalText(result: FinalGateResult): string {
     result.passed ? 'Final gate passed' : 'Final gate failed',
     `Feature: ${result.feature}`,
     ...result.checks.map((check) => `${check.passed ? 'PASS' : 'FAIL'} ${check.name}`),
-    ''
+    '',
   ].join('\n');
 }
 
@@ -105,7 +105,10 @@ function writeDescribe(command: 'boss gate' | 'boss gate final', context: CliCon
   writeOutput(description, context, () => `${JSON.stringify(description, null, 2)}\n`);
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss gate' });
   const subcommand = context.positionals[0];
 
@@ -134,7 +137,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
     gate: result.gate,
     passed: result.passed,
     checks: result.checks,
-    skipped: Boolean(result.skipped)
+    skipped: Boolean(result.skipped),
   };
   writeOutput(payload, context, (data) => renderGateText(data as typeof payload));
   return result.passed ? 0 : 1;

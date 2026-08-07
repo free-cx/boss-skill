@@ -1,30 +1,32 @@
 import {
+  type CliContext,
+  CliUserError,
+  consumeCliContractOption,
+  type JsonObject,
+  outputList,
+  readJsonInput,
+} from '../../cli/contract.js';
+import {
   appendConversationMessage,
   listConversations,
   listTodos,
   openConversation,
-  resolveConversation
+  resolveConversation,
 } from '../../runtime/application/conversations.js';
-import { EVENT_TYPES } from '../../runtime/domain/event-types.js';
-import {
-  CliUserError,
-  consumeCliContractOption,
-  createCliContext,
-  outputList,
-  readJsonInput,
-  type CliContext,
-  type JsonObject
-} from '../../cli/contract.js';
+import { appendRuntimeEvent } from '../../runtime/application/state.js';
 import type {
   ConversationAnchor,
   ConversationMessage,
   ConversationResolution,
   ConversationThread,
   DerivedTodo,
-  ResolutionTodo
+  ResolutionTodo,
 } from '../../runtime/domain/conversation-types.js';
-import { materializeState, type ExecutionState } from '../../runtime/projectors/materialize-state.js';
-import { appendRuntimeEvent } from '../../runtime/application/state.js';
+import { EVENT_TYPES } from '../../runtime/domain/event-types.js';
+import {
+  type ExecutionState,
+  materializeState,
+} from '../../runtime/projectors/materialize-state.js';
 
 type ConversationKind = ConversationThread['kind'];
 type ConversationPriority = ConversationThread['priority'];
@@ -32,7 +34,14 @@ type ConversationIntent = ConversationMessage['intent'];
 type TodoType = DerivedTodo['type'];
 type TodoStatus = DerivedTodo['status'];
 
-const CONVERSATION_KINDS = ['ask', 'challenge', 'propose', 'request_change', 'escalate', 'huddle'] as const;
+const CONVERSATION_KINDS = [
+  'ask',
+  'challenge',
+  'propose',
+  'request_change',
+  'escalate',
+  'huddle',
+] as const;
 const CONVERSATION_PRIORITIES = ['low', 'medium', 'high', 'critical'] as const;
 const CONVERSATION_INTENTS = ['question', 'objection', 'proposal', 'evidence', 'decision'] as const;
 const TODO_TYPES = ['change', 'clarify', 'verify', 'doc_update', 'followup'] as const;
@@ -91,7 +100,7 @@ function missingRequiredArgument(argument: string): CliUserError {
     message: `Missing ${argument} argument`,
     input: { argument },
     retryable: false,
-    suggestion: 'Run this command with --describe to see required parameters'
+    suggestion: 'Run this command with --describe to see required parameters',
   });
 }
 
@@ -113,7 +122,7 @@ function requireOptionValue(flag: string, value: string | undefined): string {
       message: `${flag} requires a value`,
       input: { option: flag },
       retryable: false,
-      suggestion: `Pass a value after ${flag}`
+      suggestion: `Pass a value after ${flag}`,
     });
   }
   return value;
@@ -127,7 +136,7 @@ export function toFeatureNotFoundError(err: unknown, feature: string): unknown {
       message,
       input: { feature },
       retryable: false,
-      suggestion: 'Run boss runtime init-pipeline <feature> first'
+      suggestion: 'Run boss runtime init-pipeline <feature> first',
     });
   }
   return err;
@@ -153,7 +162,7 @@ function ensureAnchor(anchor: ConversationAnchor): ConversationAnchor {
       message: 'Conversation requires at least one anchor field',
       input: anchor as JsonObject,
       retryable: false,
-      suggestion: 'Pass one of --artifact, --task, --scope, or --decision'
+      suggestion: 'Pass one of --artifact, --task, --scope, or --decision',
     });
   }
   return anchor;
@@ -168,7 +177,7 @@ function ensureEnum<T extends string>(value: string, allowed: readonly T[], argu
     message: `Invalid ${argument}: ${value}`,
     input: { [argument]: value },
     retryable: false,
-    suggestion: `Allowed values: ${allowed.join(', ')}`
+    suggestion: `Allowed values: ${allowed.join(', ')}`,
   });
 }
 
@@ -181,7 +190,7 @@ function parseStage(raw: string | undefined): number | undefined {
       message: `Invalid stage value: ${raw}`,
       input: { stage: raw },
       retryable: false,
-      suggestion: 'Use a non-negative integer stage number'
+      suggestion: 'Use a non-negative integer stage number',
     });
   }
   return stage;
@@ -208,7 +217,7 @@ function parseBaseFeatureArg(argv: string[]): { feature: string; consumedIndex: 
 
   return {
     feature: requireInputString(feature, 'feature'),
-    consumedIndex
+    consumedIndex,
   };
 }
 
@@ -220,30 +229,29 @@ export function buildTodoId(threadId: string): string {
   return `todo-${threadId}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function resolveOpenConversationInput(argv: string[], context: CliContext): OpenConversationInput {
+export function resolveOpenConversationInput(
+  argv: string[],
+  context: CliContext,
+): OpenConversationInput {
   const jsonInput = readJsonInput(context.values.jsonInput);
   if (jsonInput) {
     const input = jsonInput as Record<string, unknown>;
     return {
       feature: requireInputString(input.feature, 'feature'),
-      kind: ensureEnum(
-        requireInputString(input.kind, 'kind'),
-        CONVERSATION_KINDS,
-        'kind'
-      ),
+      kind: ensureEnum(requireInputString(input.kind, 'kind'), CONVERSATION_KINDS, 'kind'),
       anchor: ensureAnchor({
         artifact: optionalInputString(input.artifact),
         task: optionalInputString(input.task),
         scope: optionalInputString(input.scope),
-        decision: optionalInputString(input.decision)
+        decision: optionalInputString(input.decision),
       }),
       initiator: requireInputString(input.initiator, 'initiator'),
       participants: parseStringList(input.participants),
       priority: ensureEnum(
         optionalInputString(input.priority) || 'medium',
         CONVERSATION_PRIORITIES,
-        'priority'
-      )
+        'priority',
+      ),
     };
   }
 
@@ -314,17 +322,17 @@ export function resolveOpenConversationInput(argv: string[], context: CliContext
       artifact: optionalInputString(artifact),
       task: optionalInputString(task),
       scope: optionalInputString(scope),
-      decision: optionalInputString(decision)
+      decision: optionalInputString(decision),
     }),
     initiator: requireInputString(initiator, 'initiator'),
     participants: parseStringList(participants),
-    priority: ensureEnum(priority, CONVERSATION_PRIORITIES, 'priority')
+    priority: ensureEnum(priority, CONVERSATION_PRIORITIES, 'priority'),
   };
 }
 
 export function resolveAppendConversationMessageInput(
   argv: string[],
-  context: CliContext
+  context: CliContext,
 ): AppendConversationMessageInput {
   const jsonInput = readJsonInput(context.values.jsonInput);
   if (jsonInput) {
@@ -337,9 +345,9 @@ export function resolveAppendConversationMessageInput(
       intent: ensureEnum(
         optionalInputString(input.intent) || 'question',
         CONVERSATION_INTENTS,
-        'intent'
+        'intent',
       ),
-      content: requireInputString(input.content, 'content')
+      content: requireInputString(input.content, 'content'),
     };
   }
 
@@ -394,11 +402,14 @@ export function resolveAppendConversationMessageInput(
     from: requireInputString(from, 'from'),
     to: parseStringList(to),
     intent: ensureEnum(intent, CONVERSATION_INTENTS, 'intent'),
-    content: requireInputString(content, 'content')
+    content: requireInputString(content, 'content'),
   };
 }
 
-export function resolveMaterializeTodoInput(argv: string[], context: CliContext): MaterializeTodoInput {
+export function resolveMaterializeTodoInput(
+  argv: string[],
+  context: CliContext,
+): MaterializeTodoInput {
   const jsonInput = readJsonInput(context.values.jsonInput);
   if (jsonInput) {
     const input = jsonInput as Record<string, unknown>;
@@ -413,7 +424,7 @@ export function resolveMaterializeTodoInput(argv: string[], context: CliContext)
       artifacts: parseStringList(input.artifacts),
       scope: parseStringList(input.scope),
       stage: parseStage(optionalInputString(input.stage)),
-      agent: optionalInputString(input.agent)
+      agent: optionalInputString(input.agent),
     };
   }
 
@@ -498,11 +509,14 @@ export function resolveMaterializeTodoInput(argv: string[], context: CliContext)
     artifacts: parseStringList(artifacts),
     scope: parseStringList(scope),
     stage: parseStage(stage),
-    agent: optionalInputString(agent)
+    agent: optionalInputString(agent),
   };
 }
 
-export function resolveResolveConversationInput(argv: string[], context: CliContext): ResolveConversationInput {
+export function resolveResolveConversationInput(
+  argv: string[],
+  context: CliContext,
+): ResolveConversationInput {
   const jsonInput = readJsonInput(context.values.jsonInput);
   if (jsonInput) {
     const input = jsonInput as Record<string, unknown>;
@@ -516,11 +530,15 @@ export function resolveResolveConversationInput(argv: string[], context: CliCont
             owner: requireInputString(record.owner, 'owner'),
             type: ensureEnum(optionalInputString(record.type) || 'change', TODO_TYPES, 'type'),
             successCriteria: parseStringList(record.successCriteria),
-            status: ensureEnum(optionalInputString(record.status) || 'pending', TODO_STATUSES, 'status'),
+            status: ensureEnum(
+              optionalInputString(record.status) || 'pending',
+              TODO_STATUSES,
+              'status',
+            ),
             artifacts: parseStringList(record.artifacts),
             scope: parseStringList(record.scope),
             stage: parseStage(optionalInputString(record.stage)),
-            agent: optionalInputString(record.agent)
+            agent: optionalInputString(record.agent),
           };
         })
       : [];
@@ -530,7 +548,7 @@ export function resolveResolveConversationInput(argv: string[], context: CliCont
       threadId: requireInputString(input.threadId, 'threadId'),
       summary: requireInputString(input.summary, 'summary'),
       decision: requireInputString(input.decision, 'decision'),
-      todos
+      todos,
     };
   }
 
@@ -623,7 +641,7 @@ export function resolveResolveConversationInput(argv: string[], context: CliCont
       owner: requireInputString(todoOwner, 'todoOwner'),
       type: ensureEnum(todoType, TODO_TYPES, 'todoType'),
       successCriteria: parseStringList(successCriteria),
-      status: 'pending'
+      status: 'pending',
     });
   }
 
@@ -634,7 +652,7 @@ export function resolveResolveConversationInput(argv: string[], context: CliCont
           from: requireInputString(escalateFrom, 'escalateFrom'),
           to: requireInputString(escalateTo, 'escalateTo'),
           reason: requireInputString(escalateReason, 'escalateReason'),
-          priority: optionalInputString(escalatePriority)
+          priority: optionalInputString(escalatePriority),
         }
       : undefined;
 
@@ -644,7 +662,7 @@ export function resolveResolveConversationInput(argv: string[], context: CliCont
     summary: requireInputString(summary, 'summary'),
     decision: requireInputString(decision, 'decision'),
     todos,
-    escalation
+    escalation,
   };
 }
 
@@ -659,7 +677,7 @@ export function buildThread(input: OpenConversationInput): ConversationThread {
     status: 'open',
     priority: input.priority,
     createdAt,
-    updatedAt: createdAt
+    updatedAt: createdAt,
   };
 }
 
@@ -671,7 +689,7 @@ export function buildMessage(input: AppendConversationMessageInput): Conversatio
     to: input.to,
     intent: input.intent,
     content: input.content,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 }
 
@@ -680,7 +698,7 @@ export function buildResolution(input: ResolveConversationInput): ConversationRe
     id: buildTodoId(input.threadId),
     owner: todo.owner,
     title: todo.title,
-    status: 'pending'
+    status: 'pending',
   }));
 
   return {
@@ -688,7 +706,7 @@ export function buildResolution(input: ResolveConversationInput): ConversationRe
     summary: input.summary,
     decision: input.decision,
     todos,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 }
 
@@ -703,13 +721,13 @@ export function buildDerivedTodo(input: MaterializeTodoInput, todoId?: string): 
     successCriteria: input.successCriteria,
     impact: {
       artifacts: input.artifacts || [],
-      scope: input.scope || []
+      scope: input.scope || [],
     },
     dispatchHint: {
       stage: input.stage ?? 0,
-      agent: input.agent || input.owner
+      agent: input.agent || input.owner,
     },
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 }
 
@@ -719,7 +737,7 @@ function rematerialize(feature: string, cwd: string): ExecutionState {
 
 export function openConversationRuntime(
   input: OpenConversationInput,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ) {
   const { feature, ...serviceInput } = input;
   return openConversation(feature, serviceInput, { cwd });
@@ -727,7 +745,7 @@ export function openConversationRuntime(
 
 export function appendConversationMessageRuntime(
   input: AppendConversationMessageInput,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ) {
   const { feature, ...serviceInput } = input;
   return appendConversationMessage(feature, serviceInput, { cwd });
@@ -735,21 +753,21 @@ export function appendConversationMessageRuntime(
 
 export function materializeTodoRuntime(
   input: MaterializeTodoInput,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ) {
   const todo = buildDerivedTodo(input);
   appendRuntimeEvent(cwd, input.feature, EVENT_TYPES.TODO_MATERIALIZED, { todo });
-  const state = rematerialize(input.feature, cwd);
+  rematerialize(input.feature, cwd);
   return {
     feature: input.feature,
     threadId: input.threadId,
-    todo
+    todo,
   };
 }
 
 export function resolveConversationRuntime(
   input: ResolveConversationInput,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ) {
   const { feature, todos, ...serviceInput } = input;
   return resolveConversation(
@@ -763,18 +781,18 @@ export function resolveConversationRuntime(
         successCriteria: todo.successCriteria,
         impact: {
           artifacts: todo.artifacts,
-          scope: todo.scope
-        }
-      }))
+          scope: todo.scope,
+        },
+      })),
     },
-    { cwd }
+    { cwd },
   );
 }
 
 export function listConversationsRuntime(
   feature: string,
   context: CliContext,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ) {
   const threads = listConversations(feature, { cwd });
   const state = rematerialize(feature, cwd);
@@ -788,13 +806,18 @@ export function listConversationsRuntime(
     anchor: thread.anchor,
     createdAt: thread.createdAt,
     updatedAt: thread.updatedAt,
-    messageCount: state.conversations.messages.filter((message) => message.threadId === thread.id).length,
-    todoCount: state.derivedTodos.filter((todo) => todo.sourceThreadId === thread.id).length
+    messageCount: state.conversations.messages.filter((message) => message.threadId === thread.id)
+      .length,
+    todoCount: state.derivedTodos.filter((todo) => todo.sourceThreadId === thread.id).length,
   }));
   return outputList(items as JsonObject[], context);
 }
 
-export function listTodosRuntime(feature: string, context: CliContext, { cwd = process.cwd() }: { cwd?: string } = {}) {
+export function listTodosRuntime(
+  feature: string,
+  context: CliContext,
+  { cwd = process.cwd() }: { cwd?: string } = {},
+) {
   return outputList(listTodos(feature, { cwd }) as unknown as JsonObject[], context);
 }
 
@@ -803,7 +826,7 @@ export function renderConversationListText(items: Array<Record<string, unknown>>
   return `${items
     .map(
       (item) =>
-        `${String(item.id)} ${String(item.kind)} ${String(item.status)} messages=${String(item.messageCount ?? 0)} todos=${String(item.todoCount ?? 0)}`
+        `${String(item.id)} ${String(item.kind)} ${String(item.status)} messages=${String(item.messageCount ?? 0)} todos=${String(item.todoCount ?? 0)}`,
     )
     .join('\n')}\n`;
 }
@@ -811,7 +834,10 @@ export function renderConversationListText(items: Array<Record<string, unknown>>
 export function renderTodoListText(items: Array<Record<string, unknown>>): string {
   if (items.length === 0) return 'No todos\n';
   return `${items
-    .map((item) => `${String(item.id)} ${String(item.owner)} ${String(item.status)} ${String(item.title)}`)
+    .map(
+      (item) =>
+        `${String(item.id)} ${String(item.owner)} ${String(item.status)} ${String(item.title)}`,
+    )
     .join('\n')}\n`;
 }
 

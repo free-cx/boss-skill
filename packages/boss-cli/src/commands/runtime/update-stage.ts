@@ -4,6 +4,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   CliUserError,
   consumeCliContractOption,
   createCliContext,
@@ -11,18 +12,17 @@ import {
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { updateStage } from '../../runtime/application/pipeline.js';
 import {
   optionalInputString,
   printRuntimeHelp,
   requireInputString,
   requireOptionValue,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { updateStage } from '../../runtime/application/pipeline.js';
 
 interface UpdateStageInput {
   feature: string;
@@ -69,10 +69,12 @@ function parseFlatInput(argv: string[]): UpdateStageInput {
       case '--artifact':
         throw new CliUserError({
           code: 'unsupported_option',
-          message: 'update-stage 不再记录 artifact；请改用 boss runtime record-artifact <feature> <artifact> <stage>',
+          message:
+            'update-stage 不再记录 artifact；请改用 boss runtime record-artifact <feature> <artifact> <stage>',
           input: { option: '--artifact' },
           retryable: false,
-          suggestion: 'Run boss runtime record-artifact <feature> <artifact> <stage> before completing the stage'
+          suggestion:
+            'Run boss runtime record-artifact <feature> <artifact> <stage> before completing the stage',
         });
       case '--gate':
         gate = requireOptionValue('--gate', argv[index + 1]);
@@ -112,7 +114,7 @@ function parseFlatInput(argv: string[]): UpdateStageInput {
     status: requireInputString(status, 'status'),
     reason,
     gate,
-    gatePassed
+    gatePassed,
   };
 }
 
@@ -123,10 +125,12 @@ function resolveInput(argv: string[], context: CliContext): UpdateStageInput {
     if ('artifacts' in input || 'artifact' in input) {
       throw new CliUserError({
         code: 'unsupported_field',
-        message: 'update-stage 不再记录 artifact；请改用 boss runtime record-artifact <feature> <artifact> <stage>',
+        message:
+          'update-stage 不再记录 artifact；请改用 boss runtime record-artifact <feature> <artifact> <stage>',
         input: { field: 'artifact' },
         retryable: false,
-        suggestion: 'Run boss runtime record-artifact <feature> <artifact> <stage> before completing the stage'
+        suggestion:
+          'Run boss runtime record-artifact <feature> <artifact> <stage> before completing the stage',
       });
     }
     return {
@@ -135,7 +139,7 @@ function resolveInput(argv: string[], context: CliContext): UpdateStageInput {
       status: requireInputString(input.status, 'status'),
       reason: optionalInputString(input.reason),
       gate: optionalInputString(input.gate),
-      gatePassed: typeof input.gatePassed === 'boolean' ? input.gatePassed : null
+      gatePassed: typeof input.gatePassed === 'boolean' ? input.gatePassed : null,
     };
   }
   return parseFlatInput(argv);
@@ -148,17 +152,20 @@ function actionFor(input: UpdateStageInput) {
     stage: Number(input.stage),
     target_status: input.status,
     gate: input.gate,
-    gatePassed: input.gatePassed
+    gatePassed: input.gatePassed,
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime update-stage' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['update-stage']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['update-stage'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['update-stage'], null, 2)}\n`,
     );
     return 0;
   }
@@ -181,7 +188,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
       cwd,
       reason: input.reason || '',
       gate: input.gate || '',
-      gatePassed: input.gatePassed ?? null
+      gatePassed: input.gatePassed ?? null,
     });
 
     writeOutput(
@@ -190,10 +197,11 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         stage: Number(input.stage),
         previousStatus: currentStatus,
         status: input.status,
-        executionPath: `.boss/${input.feature}/.meta/execution.json`
+        executionPath: `.boss/${input.feature}/.meta/execution.json`,
       },
       context,
-      () => `阶段 ${input.stage}: ${currentStatus} -> ${input.status}\n文件: .boss/${input.feature}/.meta/execution.json\n`
+      () =>
+        `阶段 ${input.stage}: ${currentStatus} -> ${input.status}\n文件: .boss/${input.feature}/.meta/execution.json\n`,
     );
     return 0;
   } catch (err) {
@@ -202,6 +210,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime update-stage', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime update-stage',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

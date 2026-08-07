@@ -1,8 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-
-import { findActiveFeature, readExecJson } from '../lib/boss-utils.js';
 import { inspectPipeline } from '../../packages/boss-cli/dist/runtime/application/inspection.js';
+import { findActiveFeature, readExecJson } from '../lib/boss-utils.js';
 import { normalizeHookInput } from './lib/normalize-input.js';
 
 function run(rawInput) {
@@ -32,7 +31,11 @@ function run(rawInput) {
       if (summary.currentStage) {
         context += `\n[Boss Harness] Current stage: ${summary.currentStage.id} (${summary.currentStage.name}) ${summary.currentStage.status}`;
       }
-      if (summary.plugins && Array.isArray(summary.plugins.active) && summary.plugins.active.length > 0) {
+      if (
+        summary.plugins &&
+        Array.isArray(summary.plugins.active) &&
+        summary.plugins.active.length > 0
+      ) {
         context += `\n[Boss Harness] ${summary.plugins.active.length} plugin(s) registered`;
       }
       context += `\nTo continue this pipeline, use: /boss ${active.feature} --continue-from <stage>`;
@@ -57,8 +60,8 @@ function run(rawInput) {
   const result = {
     hookSpecificOutput: {
       hookEventName: 'SessionStart',
-      additionalContext: context
-    }
+      additionalContext: context,
+    },
   };
 
   if (previousSession) {

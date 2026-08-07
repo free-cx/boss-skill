@@ -1,12 +1,18 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cleanupTempDir, createExecData, createTempBossDir } from '../helpers/fixtures.js';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
-const BUILT_IN_DAG_PATH = path.join(REPO_ROOT, 'packages', 'boss-cli', 'assets', 'artifact-dag.json');
+const BUILT_IN_DAG_PATH = path.join(
+  REPO_ROOT,
+  'packages',
+  'boss-cli',
+  'assets',
+  'artifact-dag.json',
+);
 
 describe('boss-utils', () => {
   let bossUtils: typeof import('../../scripts/lib/boss-utils.js');
@@ -160,8 +166,8 @@ describe('boss-utils', () => {
           '1': { artifacts: [] },
           '2': { artifacts: [] },
           '3': { artifacts: [] },
-          '4': { artifacts: [] }
-        }
+          '4': { artifacts: [] },
+        },
       };
 
       const ready = bossUtils.getReadyArtifacts(dag, execData, {});
@@ -178,8 +184,8 @@ describe('boss-utils', () => {
           '1': { artifacts: ['prd.md'] },
           '2': { artifacts: [] },
           '3': { artifacts: [] },
-          '4': { artifacts: [] }
-        }
+          '4': { artifacts: [] },
+        },
       };
 
       const ready = bossUtils.getReadyArtifacts(dag, execData, {});
@@ -198,8 +204,8 @@ describe('boss-utils', () => {
           '1': { artifacts: ['prd.md'] },
           '2': { artifacts: [] },
           '3': { artifacts: [] },
-          '4': { artifacts: [] }
-        }
+          '4': { artifacts: [] },
+        },
       };
 
       const ready = bossUtils.getReadyArtifacts(dag, execData, { skipUI: true });
@@ -218,8 +224,8 @@ describe('boss-utils', () => {
           '2': { artifacts: [] },
           '3': { artifacts: [] },
           '4': { artifacts: [] },
-          '5': { artifacts: ['architecture.md'] }
-        }
+          '5': { artifacts: ['architecture.md'] },
+        },
       };
 
       const ready = bossUtils.getReadyArtifacts(dag, execData, {});
@@ -241,8 +247,8 @@ describe('boss-utils', () => {
           '1': { artifacts: [] },
           '2': { artifacts: [] },
           '3': { artifacts: ['code'] },
-          '4': { artifacts: [] }
-        }
+          '4': { artifacts: [] },
+        },
       };
 
       const ready = bossUtils.getReadyArtifacts(dag, execData, {});

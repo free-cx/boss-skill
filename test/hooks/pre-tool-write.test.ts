@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cleanupTempDir, createExecData, createTempBossDir } from '../helpers/fixtures.js';
 
@@ -25,9 +25,9 @@ describe('pre-tool-write hook', () => {
       hook.run(
         JSON.stringify({
           tool_input: { file_path: '/some/other/file.js' },
-          cwd: '/tmp'
-        })
-      )
+          cwd: '/tmp',
+        }),
+      ),
     ).toBe('');
   });
 
@@ -36,9 +36,9 @@ describe('pre-tool-write hook', () => {
       hook.run(
         JSON.stringify({
           tool_input: { file_path: '.boss/feat/.meta/execution.json' },
-          cwd: '/tmp'
-        })
-      )
+          cwd: '/tmp',
+        }),
+      ),
     ) as {
       hookSpecificOutput: { permissionDecision: string };
     };
@@ -57,11 +57,11 @@ describe('pre-tool-write hook', () => {
 @@
 -old
 +new
-*** End Patch`
+*** End Patch`,
           },
-          cwd: '/tmp/project'
-        })
-      )
+          cwd: '/tmp/project',
+        }),
+      ),
     ) as {
       hookSpecificOutput: { permissionDecision: string };
     };
@@ -77,11 +77,11 @@ describe('pre-tool-write hook', () => {
           tool_input: {
             patch: `*** Begin Patch
 *** Delete File: /tmp/project/.boss/feat/.meta/execution.json
-*** End Patch`
+*** End Patch`,
           },
-          cwd: '/tmp/project'
-        })
-      )
+          cwd: '/tmp/project',
+        }),
+      ),
     ) as {
       hookSpecificOutput: { permissionDecision: string };
     };
@@ -97,11 +97,11 @@ describe('pre-tool-write hook', () => {
           tool_input: {
             patch: `*** Begin Patch
 broken patch references /tmp/project/.boss/feat/prd.md but has no file header
-*** End Patch`
+*** End Patch`,
           },
-          cwd: '/tmp/project'
-        })
-      )
+          cwd: '/tmp/project',
+        }),
+      ),
     ) as {
       hookSpecificOutput: { permissionDecision: string; permissionDecisionReason: string };
     };
@@ -118,11 +118,11 @@ broken patch references /tmp/project/.boss/feat/prd.md but has no file header
           tool_input: {
             patch: `*** Begin Patch
 broken patch references /tmp/project/src/app.ts but has no file header
-*** End Patch`
+*** End Patch`,
           },
-          cwd: '/tmp/project'
-        })
-      )
+          cwd: '/tmp/project',
+        }),
+      ),
     ).toBe('');
   });
 
@@ -133,8 +133,8 @@ broken patch references /tmp/project/src/app.ts but has no file header
         '1': { name: 'Planning', status: 'running', artifacts: [] },
         '2': { name: 'Review', status: 'pending', artifacts: [] },
         '3': { name: 'Development', status: 'pending', artifacts: [] },
-        '4': { name: 'Deployment', status: 'pending', artifacts: [] }
-      }
+        '4': { name: 'Deployment', status: 'pending', artifacts: [] },
+      },
     });
     tmpDir = createTempBossDir('feat', execData);
 
@@ -142,9 +142,9 @@ broken patch references /tmp/project/src/app.ts but has no file header
       hook.run(
         JSON.stringify({
           tool_input: { file_path: `${tmpDir}/.boss/feat/prd.md` },
-          cwd: tmpDir
-        })
-      )
+          cwd: tmpDir,
+        }),
+      ),
     ).toBe('');
   });
 
@@ -156,8 +156,8 @@ broken patch references /tmp/project/src/app.ts but has no file header
         '1': { name: 'Planning', status: 'completed', artifacts: ['prd.md'] },
         '2': { name: 'Review', status: 'pending', artifacts: [] },
         '3': { name: 'Development', status: 'pending', artifacts: [] },
-        '4': { name: 'Deployment', status: 'pending', artifacts: [] }
-      }
+        '4': { name: 'Deployment', status: 'pending', artifacts: [] },
+      },
     });
     tmpDir = createTempBossDir('feat', execData);
 
@@ -165,9 +165,9 @@ broken patch references /tmp/project/src/app.ts but has no file header
       hook.run(
         JSON.stringify({
           tool_input: { file_path: `${tmpDir}/.boss/feat/prd.md` },
-          cwd: tmpDir
-        })
-      )
+          cwd: tmpDir,
+        }),
+      ),
     ) as {
       hookSpecificOutput: { permissionDecision: string };
     };
@@ -186,11 +186,11 @@ broken patch references /tmp/project/src/app.ts but has no file header
 @@
 -old
 +new
-*** End Patch`
+*** End Patch`,
           },
-          cwd: '/tmp/project'
-        })
-      )
+          cwd: '/tmp/project',
+        }),
+      ),
     ) as {
       hookSpecificOutput: { permissionDecision: string };
     };
@@ -233,16 +233,16 @@ broken patch references /tmp/project/src/app.ts but has no file header
           '1': { name: 'Planning', status: 'completed', artifacts: [] },
           '2': { name: 'Review', status: 'pending', artifacts: [] },
           '3': { name: 'Development', status: 'pending', artifacts: [] },
-          '4': { name: 'Deployment', status: 'pending', artifacts: [] }
-        }
+          '4': { name: 'Deployment', status: 'pending', artifacts: [] },
+        },
       });
       tmpDir = createTempBossDir('ready-feat', execData);
 
       const result = hook.run(
         JSON.stringify({
           tool_input: { file_path: path.join(tmpDir, '.boss', 'ready-feat', 'prd.md') },
-          cwd: tmpDir
-        })
+          cwd: tmpDir,
+        }),
       );
 
       expect(result).toBe('');

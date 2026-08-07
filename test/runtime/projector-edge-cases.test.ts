@@ -1,19 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import {
-  applyEvent,
-  defaultExecutionState,
-  finalizeState,
-  projectState,
-  type RuntimeEvent
-} from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
 import { EVENT_TYPES } from '../../packages/boss-cli/src/runtime/domain/event-types.js';
+import {
+  projectState,
+  type RuntimeEvent,
+} from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
 
 function makeEvent(id: number, type: string, data: Record<string, unknown> = {}): RuntimeEvent {
   return {
     id,
     type: type as RuntimeEvent['type'],
     timestamp: new Date(Date.UTC(2026, 4, 15, 8, 0, id)).toISOString(),
-    data
+    data,
   };
 }
 
@@ -37,14 +34,14 @@ function initEvent(feature = 'edge-feature'): RuntimeEvent {
         agentFailureCount: 0,
         meanRetriesPerStage: 0,
         revisionLoopCount: 0,
-        pluginFailureCount: 0
+        pluginFailureCount: 0,
       },
       plugins: [],
       pluginLifecycle: { discovered: [], activated: [], executed: [], failed: [] },
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
-    }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
+    },
   });
 }
 
@@ -55,7 +52,7 @@ describe('projector edge cases: duplicate events', () => {
       makeEvent(2, EVENT_TYPES.STAGE_STARTED, { stage: 1 }),
       makeEvent(3, EVENT_TYPES.ARTIFACT_RECORDED, { artifact: 'prd.md', stage: 1 }),
       makeEvent(4, EVENT_TYPES.ARTIFACT_RECORDED, { artifact: 'prd.md', stage: 1 }),
-      makeEvent(5, EVENT_TYPES.ARTIFACT_RECORDED, { artifact: 'prd.md', stage: 1 })
+      makeEvent(5, EVENT_TYPES.ARTIFACT_RECORDED, { artifact: 'prd.md', stage: 1 }),
     ];
 
     const state = projectState(events, 'edge-feature');
@@ -66,7 +63,7 @@ describe('projector edge cases: duplicate events', () => {
     const events: RuntimeEvent[] = [
       initEvent(),
       makeEvent(2, EVENT_TYPES.STAGE_STARTED, { stage: 1 }),
-      makeEvent(3, EVENT_TYPES.STAGE_STARTED, { stage: 1 })
+      makeEvent(3, EVENT_TYPES.STAGE_STARTED, { stage: 1 }),
     ];
 
     const state = projectState(events, 'edge-feature');
@@ -79,7 +76,7 @@ describe('projector edge cases: duplicate events', () => {
       initEvent(),
       makeEvent(2, EVENT_TYPES.STAGE_STARTED, { stage: 1 }),
       makeEvent(3, EVENT_TYPES.AGENT_STARTED, { stage: 1, agent: 'boss-pm' }),
-      makeEvent(4, EVENT_TYPES.AGENT_STARTED, { stage: 1, agent: 'boss-pm' })
+      makeEvent(4, EVENT_TYPES.AGENT_STARTED, { stage: 1, agent: 'boss-pm' }),
     ];
 
     const state = projectState(events, 'edge-feature');
@@ -92,7 +89,7 @@ describe('projector edge cases: out-of-order-like scenarios', () => {
     // The projector is lenient - it should still process
     const events: RuntimeEvent[] = [
       initEvent(),
-      makeEvent(2, EVENT_TYPES.STAGE_COMPLETED, { stage: 2 })
+      makeEvent(2, EVENT_TYPES.STAGE_COMPLETED, { stage: 2 }),
     ];
 
     const state = projectState(events, 'edge-feature');
@@ -104,7 +101,7 @@ describe('projector edge cases: out-of-order-like scenarios', () => {
     const events: RuntimeEvent[] = [
       initEvent(),
       makeEvent(2, EVENT_TYPES.STAGE_STARTED, { stage: 1 }),
-      makeEvent(3, EVENT_TYPES.AGENT_FAILED, { stage: 1, agent: 'boss-pm', reason: 'crash' })
+      makeEvent(3, EVENT_TYPES.AGENT_FAILED, { stage: 1, agent: 'boss-pm', reason: 'crash' }),
     ];
 
     const state = projectState(events, 'edge-feature');
@@ -123,7 +120,7 @@ describe('projector edge cases: retry counting', () => {
       makeEvent(5, EVENT_TYPES.AGENT_RETRY_SCHEDULED, { stage: 1, agent: 'boss-pm' }),
       makeEvent(6, EVENT_TYPES.AGENT_STARTED, { stage: 1, agent: 'boss-pm' }),
       makeEvent(7, EVENT_TYPES.AGENT_FAILED, { stage: 1, agent: 'boss-pm', reason: 'err2' }),
-      makeEvent(8, EVENT_TYPES.AGENT_RETRY_SCHEDULED, { stage: 1, agent: 'boss-pm' })
+      makeEvent(8, EVENT_TYPES.AGENT_RETRY_SCHEDULED, { stage: 1, agent: 'boss-pm' }),
     ];
 
     const state = projectState(events, 'edge-feature');
@@ -139,7 +136,7 @@ describe('projector edge cases: retry counting', () => {
       makeEvent(4, EVENT_TYPES.STAGE_RETRYING, { stage: 1 }),
       makeEvent(5, EVENT_TYPES.STAGE_STARTED, { stage: 1 }),
       makeEvent(6, EVENT_TYPES.STAGE_FAILED, { stage: 1, reason: 'err2' }),
-      makeEvent(7, EVENT_TYPES.STAGE_RETRYING, { stage: 1 })
+      makeEvent(7, EVENT_TYPES.STAGE_RETRYING, { stage: 1 }),
     ];
 
     const state = projectState(events, 'edge-feature');
@@ -155,7 +152,7 @@ describe('projector edge cases: metrics finalization', () => {
       makeEvent(2, EVENT_TYPES.STAGE_STARTED, { stage: 1 }),
       makeEvent(3, EVENT_TYPES.GATE_EVALUATED, { stage: 1, gate: 'gate0', passed: true }),
       makeEvent(4, EVENT_TYPES.GATE_EVALUATED, { stage: 1, gate: 'gate1', passed: false }),
-      makeEvent(5, EVENT_TYPES.GATE_EVALUATED, { stage: 1, gate: 'gate2', passed: true })
+      makeEvent(5, EVENT_TYPES.GATE_EVALUATED, { stage: 1, gate: 'gate2', passed: true }),
     ];
 
     const state = projectState(events, 'edge-feature');
@@ -170,7 +167,7 @@ describe('projector edge cases: metrics finalization', () => {
       makeEvent(3, EVENT_TYPES.AGENT_STARTED, { stage: 1, agent: 'boss-pm' }),
       makeEvent(4, EVENT_TYPES.AGENT_COMPLETED, { stage: 1, agent: 'boss-pm' }),
       makeEvent(5, EVENT_TYPES.AGENT_STARTED, { stage: 1, agent: 'boss-qa' }),
-      makeEvent(6, EVENT_TYPES.AGENT_FAILED, { stage: 1, agent: 'boss-qa', reason: 'err' })
+      makeEvent(6, EVENT_TYPES.AGENT_FAILED, { stage: 1, agent: 'boss-qa', reason: 'err' }),
     ];
 
     const state = projectState(events, 'edge-feature');
@@ -186,7 +183,7 @@ describe('projector edge cases: metrics finalization', () => {
       makeEvent(4, EVENT_TYPES.STAGE_SKIPPED, { stage: 2 }),
       makeEvent(5, EVENT_TYPES.STAGE_STARTED, { stage: 3 }),
       makeEvent(6, EVENT_TYPES.STAGE_COMPLETED, { stage: 3 }),
-      makeEvent(7, EVENT_TYPES.STAGE_SKIPPED, { stage: 4 })
+      makeEvent(7, EVENT_TYPES.STAGE_SKIPPED, { stage: 4 }),
     ];
 
     const state = projectState(events, 'edge-feature');
@@ -199,11 +196,17 @@ describe('projector edge cases: revision requests', () => {
     const events: RuntimeEvent[] = [
       initEvent(),
       makeEvent(2, EVENT_TYPES.REVISION_REQUESTED, {
-        from: 'qa', to: 'dev', artifact: 'code', reason: 'tests fail'
+        from: 'qa',
+        to: 'dev',
+        artifact: 'code',
+        reason: 'tests fail',
       }),
       makeEvent(3, EVENT_TYPES.REVISION_REQUESTED, {
-        from: 'qa', to: 'dev', artifact: 'code', reason: 'still failing'
-      })
+        from: 'qa',
+        to: 'dev',
+        artifact: 'code',
+        reason: 'still failing',
+      }),
     ];
 
     const state = projectState(events, 'edge-feature');
@@ -221,7 +224,7 @@ describe('projectState idempotency', () => {
       makeEvent(3, EVENT_TYPES.AGENT_STARTED, { stage: 1, agent: 'boss-pm' }),
       makeEvent(4, EVENT_TYPES.ARTIFACT_RECORDED, { artifact: 'prd.md', stage: 1 }),
       makeEvent(5, EVENT_TYPES.AGENT_COMPLETED, { stage: 1, agent: 'boss-pm' }),
-      makeEvent(6, EVENT_TYPES.STAGE_COMPLETED, { stage: 1 })
+      makeEvent(6, EVENT_TYPES.STAGE_COMPLETED, { stage: 1 }),
     ];
 
     const first = projectState(events, 'edge-feature');

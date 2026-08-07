@@ -3,21 +3,17 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import {
-  printRuntimeHelp,
-  requireInputString,
-  writeActionPlan
-} from './agent-command-utils.js';
 import { initPipeline } from '../../runtime/application/pipeline.js';
+import { printRuntimeHelp, requireInputString, writeActionPlan } from './agent-command-utils.js';
 
 interface InitPipelineInput {
   feature: string;
@@ -46,7 +42,9 @@ function parseFlatInput(argv: string[]): InitPipelineInput {
 function resolveInput(argv: string[], context: CliContext): InitPipelineInput {
   const jsonInput = readJsonInput(context.values.jsonInput);
   if (jsonInput) {
-    return { feature: requireInputString((jsonInput as Record<string, unknown>).feature, 'feature') };
+    return {
+      feature: requireInputString((jsonInput as Record<string, unknown>).feature, 'feature'),
+    };
   }
   return parseFlatInput(argv);
 }
@@ -55,17 +53,20 @@ function actionFor(input: InitPipelineInput) {
   return {
     type: 'init_pipeline',
     feature: input.feature,
-    path: `.boss/${input.feature}/.meta/execution.json`
+    path: `.boss/${input.feature}/.meta/execution.json`,
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime init-pipeline' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['init-pipeline']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['init-pipeline'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['init-pipeline'], null, 2)}\n`,
     );
     return 0;
   }
@@ -86,15 +87,19 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
     {
       feature: execution.feature,
       status: execution.status,
-      executionPath: `.boss/${execution.feature}/.meta/execution.json`
+      executionPath: `.boss/${execution.feature}/.meta/execution.json`,
     },
     context,
-    () => `${JSON.stringify({ feature: execution.feature, status: execution.status, executionPath: `.boss/${execution.feature}/.meta/execution.json` }, null, 2)}\n`
+    () =>
+      `${JSON.stringify({ feature: execution.feature, status: execution.status, executionPath: `.boss/${execution.feature}/.meta/execution.json` }, null, 2)}\n`,
   );
   return 0;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime init-pipeline', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime init-pipeline',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

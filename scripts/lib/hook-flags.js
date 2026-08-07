@@ -9,7 +9,7 @@ function getDisabledHooks() {
   const raw = process.env.BOSS_DISABLED_HOOKS || '';
   return raw
     .split(',')
-    .map(function (s) { return s.trim(); })
+    .map((s) => s.trim())
     .filter(Boolean);
 }
 
@@ -28,7 +28,7 @@ function isHookEnabled(hookId, options) {
 
   var allowed = profilesCsv
     .split(',')
-    .map(function (s) { return s.trim().toLowerCase(); })
+    .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 
   if (allowed.length === 0) {

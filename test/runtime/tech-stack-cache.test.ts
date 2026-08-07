@@ -1,11 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { cleanupTempDir } from '../helpers/fixtures.js';
-
-const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
 
 // Dynamic import of pipeline (ESM)
 let pipelineRuntime: typeof import('../../packages/boss-cli/src/runtime/application/pipeline.js');
@@ -24,7 +22,7 @@ describe('tech stack caching', () => {
     fs.mkdirSync(metaDir, { recursive: true });
     fs.writeFileSync(
       path.join(metaDir, 'execution.json'),
-      JSON.stringify({ pipeline: 'test', stages: {} }, null, 2)
+      JSON.stringify({ pipeline: 'test', stages: {} }, null, 2),
     );
   });
 
@@ -44,7 +42,7 @@ describe('tech stack caching', () => {
       testFramework: 'vitest',
       buildTool: 'Vite',
       deployEnv: 'Vercel',
-      monorepo: null
+      monorepo: null,
     };
     pipelineRuntime.cacheTechStack('test-feat', techStack, { cwd: tmpDir });
     const cached = pipelineRuntime.readCachedTechStack('test-feat', { cwd: tmpDir });

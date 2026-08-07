@@ -3,22 +3,22 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { evaluateGates } from '../../runtime/application/gates.js';
 import {
   printRuntimeHelp,
   requireInputString,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { evaluateGates } from '../../runtime/application/gates.js';
 
 interface EvaluateGatesInput {
   feature: string;
@@ -57,7 +57,7 @@ function parseFlatInput(argv: string[], context: CliContext): EvaluateGatesInput
     feature: requireInputString(feature, 'feature'),
     gateName: requireInputString(gateName, 'gate'),
     dryRun: context.values.dryRun,
-    skipOnError
+    skipOnError,
   };
 }
 
@@ -69,19 +69,22 @@ function resolveInput(argv: string[], context: CliContext): EvaluateGatesInput {
       feature: requireInputString(input.feature, 'feature'),
       gateName: requireInputString(input.gate || input.gateName, 'gate'),
       dryRun: typeof input.dryRun === 'boolean' ? input.dryRun : context.values.dryRun,
-      skipOnError: typeof input.skipOnError === 'boolean' ? input.skipOnError : false
+      skipOnError: typeof input.skipOnError === 'boolean' ? input.skipOnError : false,
     };
   }
   return parseFlatInput(argv, context);
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime evaluate-gates' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['evaluate-gates']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['evaluate-gates'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['evaluate-gates'], null, 2)}\n`,
     );
     return 0;
   }
@@ -99,11 +102,11 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
           type: 'evaluate_gate',
           feature: input.feature,
           gate: input.gateName,
-          writes_event: false
-        }
+          writes_event: false,
+        },
       ],
       context,
-      'medium'
+      'medium',
     );
     return 0;
   }
@@ -112,7 +115,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
     const result = evaluateGates(input.feature, input.gateName, {
       cwd,
       dryRun: false,
-      skipOnError: input.skipOnError
+      skipOnError: input.skipOnError,
     });
 
     const payload = {
@@ -131,6 +134,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime evaluate-gates', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime evaluate-gates',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

@@ -13,8 +13,8 @@ const checks = [
   {
     name: 'gate-harness-allow',
     passed,
-    detail: passed ? 'allow-gate present' : '缺少 allow-gate 恢复信号，门禁失败'
-  }
+    detail: passed ? 'allow-gate present' : '缺少 allow-gate 恢复信号，门禁失败',
+  },
 ];
 
 process.stdout.write(JSON.stringify(checks) + '\n');

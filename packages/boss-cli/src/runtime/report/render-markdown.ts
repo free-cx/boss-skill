@@ -45,7 +45,7 @@ function gatePassedText(gate: SummaryGate): string {
 function failedCheckCount(checks: unknown[]): number {
   return checks.filter(
     (check): check is { passed: false } =>
-      typeof check === 'object' && check !== null && 'passed' in check && check.passed === false
+      typeof check === 'object' && check !== null && 'passed' in check && check.passed === false,
   ).length;
 }
 
@@ -55,7 +55,7 @@ function gateTableRow(name: string, gate: SummaryGate, includeFailedChecks = fal
     gateLabel(name),
     `${statusIcon(gate.status)} ${gate.status}`,
     gatePassedText(gate),
-    String(checks.length)
+    String(checks.length),
   ];
   const columns = includeFailedChecks
     ? [...baseColumns, String(failedCheckCount(checks)), gate.executedAt || '—']
@@ -65,7 +65,7 @@ function gateTableRow(name: string, gate: SummaryGate, includeFailedChecks = fal
 
 export function renderMarkdown(model: SummaryModel): string {
   const completedStages = model.stages.filter(
-    (stage) => stage.status === 'completed' || stage.status === 'skipped'
+    (stage) => stage.status === 'completed' || stage.status === 'skipped',
   ).length;
   const lines = [
     '# 流水线执行报告',
@@ -90,7 +90,7 @@ export function renderMarkdown(model: SummaryModel): string {
     '## 执行协作',
     '',
     '| Todo | Owner | Status | Title |',
-    '|------|-------|--------|-------|'
+    '|------|-------|--------|-------|',
   ];
 
   for (const todo of model.derivedTodos) {
@@ -111,7 +111,7 @@ export function renderMarkdown(model: SummaryModel): string {
     '- 当前运行时摘要展示 gate 检查结果与执行时间；精确命令请在可用时查阅 gate output 或 `qa-report.md`。',
     '',
     '| 门禁 | 状态 | 通过 | 检查项 | 失败项 | 执行时间 |',
-    '|------|------|------|--------|--------|----------|'
+    '|------|------|------|--------|--------|----------|',
   );
 
   for (const [name, gate] of Object.entries(model.qualityGates || {})) {
@@ -142,12 +142,12 @@ export function renderMarkdown(model: SummaryModel): string {
     '## 阶段详情',
     '',
     '| 阶段 | 名称 | 状态 | 耗时 | 重试 | 产物数 |',
-    '|------|------|------|------|------|--------|'
+    '|------|------|------|------|------|--------|',
   );
 
   for (const stage of model.stages) {
     lines.push(
-      `| ${stage.stage} | ${stage.name} | ${statusIcon(stage.status)} ${stage.status} | ${stage.duration == null ? '—' : `${stage.duration}s`} | ${stage.retryCount} | ${stage.artifacts.length} |`
+      `| ${stage.stage} | ${stage.name} | ${statusIcon(stage.status)} ${stage.status} | ${stage.duration == null ? '—' : `${stage.duration}s`} | ${stage.retryCount} | ${stage.artifacts.length} |`,
     );
   }
 
@@ -156,7 +156,7 @@ export function renderMarkdown(model: SummaryModel): string {
     '## 质量门禁',
     '',
     '| 门禁 | 状态 | 通过 | 检查项数 | 执行时间 |',
-    '|------|------|------|----------|----------|'
+    '|------|------|------|----------|----------|',
   );
   for (const [name, gate] of Object.entries(model.qualityGates || {})) {
     lines.push(gateTableRow(name, gate));

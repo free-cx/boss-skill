@@ -1,21 +1,21 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   appendConversationMessage,
   listConversations,
   listTodos,
   openConversation,
-  resolveConversation
+  resolveConversation,
 } from '../../packages/boss-cli/src/runtime/application/conversations.js';
 import { initPipeline } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { appendRuntimeEvent } from '../../packages/boss-cli/src/runtime/application/state.js';
 import { EVENT_TYPES } from '../../packages/boss-cli/src/runtime/domain/event-types.js';
 import {
+  defaultExecutionState,
   materializeState,
-  defaultExecutionState
 } from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -34,7 +34,7 @@ describe('conversation runtime model', () => {
     expect(defaultExecutionState('test-feat')).toMatchObject({
       conversations: { threads: [], messages: [], resolutions: [] },
       derivedTodos: [],
-      conversationMetrics: { opened: 0, resolved: 0, todos: 0, huddles: 0, unresolved: 0 }
+      conversationMetrics: { opened: 0, resolved: 0, todos: 0, huddles: 0, unresolved: 0 },
     });
   });
 
@@ -50,8 +50,8 @@ describe('conversation runtime model', () => {
         status: 'open',
         priority: 'high',
         createdAt: '2026-05-18T00:00:00Z',
-        updatedAt: '2026-05-18T00:00:00Z'
-      }
+        updatedAt: '2026-05-18T00:00:00Z',
+      },
     });
     appendRuntimeEvent(tmpDir, 'test-feat', EVENT_TYPES.CONVERSATION_MESSAGE_APPENDED, {
       message: {
@@ -60,19 +60,24 @@ describe('conversation runtime model', () => {
         from: 'boss-qa',
         to: ['boss-frontend'],
         intent: 'objection',
-        content: 'The loading state does not match the design contract.'
-      }
+        content: 'The loading state does not match the design contract.',
+      },
     });
     appendRuntimeEvent(tmpDir, 'test-feat', EVENT_TYPES.CONVERSATION_RESOLVED, {
       resolution: {
         threadId: 'conv-001',
         summary: 'Agree to fix the loading state and keep the design contract intact',
         decision: 'request change',
-        todos: [{ id: 'todo-001', owner: 'boss-frontend', title: 'Fix loading state' }]
-      }
+        todos: [{ id: 'todo-001', owner: 'boss-frontend', title: 'Fix loading state' }],
+      },
     });
     appendRuntimeEvent(tmpDir, 'test-feat', EVENT_TYPES.TODO_MATERIALIZED, {
-      todo: { id: 'todo-001', owner: 'boss-frontend', title: 'Fix loading state', status: 'pending' }
+      todo: {
+        id: 'todo-001',
+        owner: 'boss-frontend',
+        title: 'Fix loading state',
+        status: 'pending',
+      },
     });
 
     const { state } = materializeState('test-feat', tmpDir);
@@ -86,35 +91,47 @@ describe('conversation runtime model', () => {
   it('opens, resolves, and materializes a conversation thread', () => {
     initPipeline('test-feat', { cwd: tmpDir });
 
-    const opened = openConversation('test-feat', {
-      kind: 'request_change',
-      anchor: { scope: 'src/app/checkout/page.tsx' },
-      initiator: 'boss-qa',
-      participants: ['boss-frontend'],
-      priority: 'high'
-    }, { cwd: tmpDir });
+    const opened = openConversation(
+      'test-feat',
+      {
+        kind: 'request_change',
+        anchor: { scope: 'src/app/checkout/page.tsx' },
+        initiator: 'boss-qa',
+        participants: ['boss-frontend'],
+        priority: 'high',
+      },
+      { cwd: tmpDir },
+    );
 
-    const appended = appendConversationMessage('test-feat', {
-      threadId: opened.threadId,
-      from: 'boss-qa',
-      to: ['boss-frontend'],
-      intent: 'objection',
-      content: 'The loading state leaks a second click.'
-    }, { cwd: tmpDir });
+    const appended = appendConversationMessage(
+      'test-feat',
+      {
+        threadId: opened.threadId,
+        from: 'boss-qa',
+        to: ['boss-frontend'],
+        intent: 'objection',
+        content: 'The loading state leaks a second click.',
+      },
+      { cwd: tmpDir },
+    );
 
-    const resolved = resolveConversation('test-feat', {
-      threadId: opened.threadId,
-      summary: 'Fix the loading state and keep the UI locked until the request finishes',
-      decision: 'request change',
-      todos: [
-        {
-          title: 'Disable the checkout button while loading',
-          owner: 'boss-frontend',
-          type: 'change',
-          successCriteria: ['button stays disabled during loading', 'existing tests still pass']
-        }
-      ]
-    }, { cwd: tmpDir });
+    const resolved = resolveConversation(
+      'test-feat',
+      {
+        threadId: opened.threadId,
+        summary: 'Fix the loading state and keep the UI locked until the request finishes',
+        decision: 'request change',
+        todos: [
+          {
+            title: 'Disable the checkout button while loading',
+            owner: 'boss-frontend',
+            type: 'change',
+            successCriteria: ['button stays disabled during loading', 'existing tests still pass'],
+          },
+        ],
+      },
+      { cwd: tmpDir },
+    );
 
     expect(opened.status).toBe('open');
     expect(appended.messageCount).toBe(1);
@@ -122,7 +139,7 @@ describe('conversation runtime model', () => {
     expect(resolved.todos[0]).toMatchObject({
       owner: 'boss-frontend',
       sourceThreadId: opened.threadId,
-      title: 'Disable the checkout button while loading'
+      title: 'Disable the checkout button while loading',
     });
     expect(listConversations('test-feat', { cwd: tmpDir })).toHaveLength(1);
     expect(listTodos('test-feat', { cwd: tmpDir })).toHaveLength(1);
@@ -131,33 +148,41 @@ describe('conversation runtime model', () => {
   it('escalates formal source-of-truth changes through revision requests', () => {
     initPipeline('test-feat', { cwd: tmpDir });
 
-    const opened = openConversation('test-feat', {
-      kind: 'challenge',
-      anchor: { artifact: 'architecture.md' },
-      initiator: 'boss-backend',
-      participants: ['boss-architect'],
-      priority: 'high'
-    }, { cwd: tmpDir });
+    const opened = openConversation(
+      'test-feat',
+      {
+        kind: 'challenge',
+        anchor: { artifact: 'architecture.md' },
+        initiator: 'boss-backend',
+        participants: ['boss-architect'],
+        priority: 'high',
+      },
+      { cwd: tmpDir },
+    );
 
-    const resolved = resolveConversation('test-feat', {
-      threadId: opened.threadId,
-      summary: 'The architecture contract must be updated before implementation continues',
-      decision: 'revise architecture doc',
-      escalation: {
-        artifact: 'architecture.md',
-        from: 'boss-backend',
-        to: 'boss-architect',
-        reason: 'The callback contract needs a formal source-of-truth update.',
-        priority: 'critical'
-      }
-    }, { cwd: tmpDir });
+    const resolved = resolveConversation(
+      'test-feat',
+      {
+        threadId: opened.threadId,
+        summary: 'The architecture contract must be updated before implementation continues',
+        decision: 'revise architecture doc',
+        escalation: {
+          artifact: 'architecture.md',
+          from: 'boss-backend',
+          to: 'boss-architect',
+          reason: 'The callback contract needs a formal source-of-truth update.',
+          priority: 'critical',
+        },
+      },
+      { cwd: tmpDir },
+    );
 
     const { state } = materializeState('test-feat', tmpDir);
     expect(resolved.escalation).toMatchObject({
       artifact: 'architecture.md',
       from: 'boss-backend',
       to: 'boss-architect',
-      priority: 'critical'
+      priority: 'critical',
     });
     expect(resolved.todos).toHaveLength(0);
     expect(state.revisionRequests).toHaveLength(1);
@@ -166,7 +191,7 @@ describe('conversation runtime model', () => {
       from: 'boss-backend',
       to: 'boss-architect',
       reason: 'The callback contract needs a formal source-of-truth update.',
-      priority: 'critical'
+      priority: 'critical',
     });
     expect(state.derivedTodos).toHaveLength(0);
     expect(listTodos('test-feat', { cwd: tmpDir })).toHaveLength(0);

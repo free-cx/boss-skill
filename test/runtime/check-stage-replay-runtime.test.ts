@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -27,27 +27,36 @@ describe('runtime check-stage and replay-events CLIs', () => {
   function runRuntimeCommand(name: string, args: string[]) {
     return spawnSync(process.execPath, [BOSS_BIN, 'runtime', name, ...args], {
       cwd: tmpDir,
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
   }
 
   function expectSuccess(result: ReturnType<typeof spawnSync>, label: string) {
-    expect(result.status, `${label} should exit 0\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`).toBe(0);
+    expect(
+      result.status,
+      `${label} should exit 0\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
+    ).toBe(0);
   }
 
   function writeMarkdownArtifact(feature: string, artifact: string): void {
     fs.writeFileSync(
       path.join(tmpDir, '.boss', feature, artifact),
       `# ${artifact}\n\n## 摘要\n- ok\n`,
-      'utf8'
+      'utf8',
     );
   }
 
   it('check-stage returns execution summary and stage JSON through runtime', () => {
     expectSuccess(runRuntimeCommand('init-pipeline', ['test-feat']), 'init-pipeline');
-    expectSuccess(runRuntimeCommand('update-stage', ['test-feat', '1', 'running']), 'stage-running');
+    expectSuccess(
+      runRuntimeCommand('update-stage', ['test-feat', '1', 'running']),
+      'stage-running',
+    );
     writeMarkdownArtifact('test-feat', 'prd.md');
-    expectSuccess(runRuntimeCommand('record-artifact', ['test-feat', 'prd.md', '1']), 'record-artifact');
+    expectSuccess(
+      runRuntimeCommand('record-artifact', ['test-feat', 'prd.md', '1']),
+      'record-artifact',
+    );
 
     const summary = runRuntimeCommand('check-stage', ['test-feat', '--json']);
     expectSuccess(summary, 'check-stage summary');
@@ -70,10 +79,19 @@ describe('runtime check-stage and replay-events CLIs', () => {
 
   it('replay-events returns recent events and snapshot-at-event through runtime', () => {
     expectSuccess(runRuntimeCommand('init-pipeline', ['test-feat']), 'init-pipeline');
-    expectSuccess(runRuntimeCommand('update-stage', ['test-feat', '1', 'running']), 'stage-running');
+    expectSuccess(
+      runRuntimeCommand('update-stage', ['test-feat', '1', 'running']),
+      'stage-running',
+    );
     writeMarkdownArtifact('test-feat', 'prd.md');
-    expectSuccess(runRuntimeCommand('record-artifact', ['test-feat', 'prd.md', '1']), 'record-artifact');
-    expectSuccess(runRuntimeCommand('update-stage', ['test-feat', '1', 'completed']), 'stage-completed');
+    expectSuccess(
+      runRuntimeCommand('record-artifact', ['test-feat', 'prd.md', '1']),
+      'record-artifact',
+    );
+    expectSuccess(
+      runRuntimeCommand('update-stage', ['test-feat', '1', 'completed']),
+      'stage-completed',
+    );
 
     const events = runRuntimeCommand('replay-events', ['test-feat', '--json', '--limit', '2']);
     expectSuccess(events, 'replay-events recent');

@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   initPipeline,
+  recordFeedback,
   updateStage,
-  recordFeedback
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { materializeState } from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
@@ -25,7 +25,7 @@ describe('feedback-loops', () => {
 
   function readExecJson() {
     return JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'), 'utf8'),
     ) as {
       feedbackLoops: { currentRound: number };
       revisionRequests: Array<{
@@ -40,8 +40,11 @@ describe('feedback-loops', () => {
 
   it('records a revision request and increments round', () => {
     recordFeedback('test-feat', {
-      from: 'boss-tech-lead', to: 'boss-architect',
-      artifact: 'architecture.md', reason: '缺少缓存策略', cwd: tmpDir
+      from: 'boss-tech-lead',
+      to: 'boss-architect',
+      artifact: 'architecture.md',
+      reason: '缺少缓存策略',
+      cwd: tmpDir,
     });
 
     const exec = readExecJson();
@@ -55,12 +58,18 @@ describe('feedback-loops', () => {
 
   it('allows second round', () => {
     recordFeedback('test-feat', {
-      from: 'boss-tech-lead', to: 'boss-architect',
-      artifact: 'architecture.md', reason: 'round 1', cwd: tmpDir
+      from: 'boss-tech-lead',
+      to: 'boss-architect',
+      artifact: 'architecture.md',
+      reason: 'round 1',
+      cwd: tmpDir,
     });
     recordFeedback('test-feat', {
-      from: 'boss-qa', to: 'boss-backend',
-      artifact: 'code', reason: 'round 2', cwd: tmpDir
+      from: 'boss-qa',
+      to: 'boss-backend',
+      artifact: 'code',
+      reason: 'round 2',
+      cwd: tmpDir,
     });
 
     const exec = readExecJson();
@@ -70,25 +79,39 @@ describe('feedback-loops', () => {
 
   it('rejects when max rounds reached', () => {
     recordFeedback('test-feat', {
-      from: 'boss-tech-lead', to: 'boss-architect',
-      artifact: 'architecture.md', reason: 'round 1', cwd: tmpDir
+      from: 'boss-tech-lead',
+      to: 'boss-architect',
+      artifact: 'architecture.md',
+      reason: 'round 1',
+      cwd: tmpDir,
     });
     recordFeedback('test-feat', {
-      from: 'boss-qa', to: 'boss-backend',
-      artifact: 'code', reason: 'round 2', cwd: tmpDir
+      from: 'boss-qa',
+      to: 'boss-backend',
+      artifact: 'code',
+      reason: 'round 2',
+      cwd: tmpDir,
     });
 
-    expect(() => recordFeedback('test-feat', {
-      from: 'boss-qa', to: 'boss-frontend',
-      artifact: 'code', reason: 'round 3', cwd: tmpDir
-    })).toThrow(/已达上限/);
+    expect(() =>
+      recordFeedback('test-feat', {
+        from: 'boss-qa',
+        to: 'boss-frontend',
+        artifact: 'code',
+        reason: 'round 3',
+        cwd: tmpDir,
+      }),
+    ).toThrow(/已达上限/);
   });
 
   it('records priority field', () => {
     recordFeedback('test-feat', {
-      from: 'boss-tech-lead', to: 'boss-architect',
-      artifact: 'architecture.md', reason: '安全问题',
-      priority: 'critical', cwd: tmpDir
+      from: 'boss-tech-lead',
+      to: 'boss-architect',
+      artifact: 'architecture.md',
+      reason: '安全问题',
+      priority: 'critical',
+      cwd: tmpDir,
     });
 
     const exec = readExecJson();
@@ -97,8 +120,11 @@ describe('feedback-loops', () => {
 
   it('appends event to events.jsonl', () => {
     recordFeedback('test-feat', {
-      from: 'boss-tech-lead', to: 'boss-architect',
-      artifact: 'architecture.md', reason: 'test', cwd: tmpDir
+      from: 'boss-tech-lead',
+      to: 'boss-architect',
+      artifact: 'architecture.md',
+      reason: 'test',
+      cwd: tmpDir,
     });
 
     const lines = fs
@@ -118,13 +144,19 @@ describe('feedback-loops', () => {
 
   it('rebuilds revision requests from events', () => {
     recordFeedback('test-feat', {
-      from: 'boss-tech-lead', to: 'boss-architect',
-      artifact: 'architecture.md', reason: 'test',
-      priority: 'critical', cwd: tmpDir
+      from: 'boss-tech-lead',
+      to: 'boss-architect',
+      artifact: 'architecture.md',
+      reason: 'test',
+      priority: 'critical',
+      cwd: tmpDir,
     });
     recordFeedback('test-feat', {
-      from: 'boss-qa', to: 'boss-backend',
-      artifact: 'code', reason: 'round 2', cwd: tmpDir
+      from: 'boss-qa',
+      to: 'boss-backend',
+      artifact: 'code',
+      reason: 'round 2',
+      cwd: tmpDir,
     });
 
     // Re-materialize from events to verify rebuild
@@ -138,9 +170,14 @@ describe('feedback-loops', () => {
   });
 
   it('requires all mandatory parameters', () => {
-    expect(() => recordFeedback('test-feat', {
-      from: 'boss-tech-lead', to: 'boss-architect',
-      artifact: 'architecture.md', reason: '', cwd: tmpDir
-    })).toThrow(/缺少 reason 参数/);
+    expect(() =>
+      recordFeedback('test-feat', {
+        from: 'boss-tech-lead',
+        to: 'boss-architect',
+        artifact: 'architecture.md',
+        reason: '',
+        cwd: tmpDir,
+      }),
+    ).toThrow(/缺少 reason 参数/);
   });
 });

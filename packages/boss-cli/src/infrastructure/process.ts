@@ -23,7 +23,7 @@ export function emitProgress(cwd: string, feature: string, event: ProgressEvent)
     timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
     type: event.type,
     feature,
-    data: event.data || {}
+    data: event.data || {},
   });
 
   try {

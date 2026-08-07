@@ -1,24 +1,13 @@
-import * as path from 'node:path';
 import { spawnSync } from 'node:child_process';
-
+import * as path from 'node:path';
+import { packageRootFromImportMeta } from '../infrastructure/paths.js';
 import {
   CliUserError,
   createCliContext,
   describeCommand,
   validatePathInside,
-  writeOutput
+  writeOutput,
 } from './contract.js';
-import { commandDescriptions, runtimeCommandDescriptions, runtimeCommandNames } from './registry.js';
-import {
-  artifactDescription,
-  designDescription,
-  gateDescription,
-  hooksDescription,
-  packsDescription,
-  projectDescription,
-  qaDescription,
-  runtimeDescription
-} from './registry.js';
 import {
   ARTIFACT_USAGE,
   DESIGN_USAGE,
@@ -27,9 +16,21 @@ import {
   PACKS_USAGE,
   PROJECT_USAGE,
   QA_USAGE,
-  showRuntimeHelp
+  showRuntimeHelp,
 } from './help.js';
-import { packageRootFromImportMeta } from '../infrastructure/paths.js';
+import {
+  artifactDescription,
+  commandDescriptions,
+  designDescription,
+  gateDescription,
+  hooksDescription,
+  packsDescription,
+  projectDescription,
+  qaDescription,
+  runtimeCommandDescriptions,
+  runtimeCommandNames,
+  runtimeDescription,
+} from './registry.js';
 
 const PKG_ROOT = packageRootFromImportMeta(import.meta.url, 4);
 
@@ -43,7 +44,7 @@ type CommandModule = {
 
 const runtimeCommands: Record<string, () => Promise<RuntimeModule>> = {
   'agent-cache': () => import('../commands/runtime/agent-cache.js'),
-  'attach': () => import('../commands/runtime/attach.js'),
+  attach: () => import('../commands/runtime/attach.js'),
   'build-memory-summary': () => import('../commands/runtime/build-memory-summary.js'),
   'check-stage': () => import('../commands/runtime/check-stage.js'),
   'evaluate-gates': () => import('../commands/runtime/evaluate-gates.js'),
@@ -51,7 +52,7 @@ const runtimeCommands: Record<string, () => Promise<RuntimeModule>> = {
   'generate-summary': () => import('../commands/runtime/generate-summary.js'),
   'get-ready-artifacts': () => import('../commands/runtime/get-ready-artifacts.js'),
   'init-pipeline': () => import('../commands/runtime/init-pipeline.js'),
-  'launch': () => import('../commands/runtime/launch.js'),
+  launch: () => import('../commands/runtime/launch.js'),
   'inspect-events': () => import('../commands/runtime/inspect-events.js'),
   'inspect-pipeline': () => import('../commands/runtime/inspect-pipeline.js'),
   'inspect-plugins': () => import('../commands/runtime/inspect-plugins.js'),
@@ -61,8 +62,8 @@ const runtimeCommands: Record<string, () => Promise<RuntimeModule>> = {
   'record-feedback': () => import('../commands/runtime/record-feedback.js'),
   'record-user-choice': () => import('../commands/runtime/record-user-choice.js'),
   'open-conversation': () => import('../commands/runtime/open-conversation.js'),
-  'pause': () => import('../commands/runtime/pause.js'),
-  'resume': () => import('../commands/runtime/resume.js'),
+  pause: () => import('../commands/runtime/pause.js'),
+  resume: () => import('../commands/runtime/resume.js'),
   'append-conversation-message': () => import('../commands/runtime/append-conversation-message.js'),
   'resolve-conversation': () => import('../commands/runtime/resolve-conversation.js'),
   'materialize-todo': () => import('../commands/runtime/materialize-todo.js'),
@@ -78,13 +79,13 @@ const runtimeCommands: Record<string, () => Promise<RuntimeModule>> = {
   'update-agent': () => import('../commands/runtime/update-agent.js'),
   'update-stage': () => import('../commands/runtime/update-stage.js'),
   'verify-wave': () => import('../commands/runtime/verify-wave.js'),
-  'verify-requirements': () => import('../commands/runtime/verify-requirements.js')
+  'verify-requirements': () => import('../commands/runtime/verify-requirements.js'),
 };
 
 export function describeGroup(description: typeof runtimeDescription, commands: readonly string[]) {
   return {
     ...describeCommand(description),
-    commands: [...commands]
+    commands: [...commands],
   };
 }
 
@@ -96,7 +97,10 @@ export function describeRegisteredCommand(command: string) {
   return describeCommand(description);
 }
 
-export function writeDescription(data: unknown, context = createCliContext([], { command: 'boss' })): void {
+export function writeDescription(
+  data: unknown,
+  context = createCliContext([], { command: 'boss' }),
+): void {
   writeOutput(data, context, () => `${JSON.stringify(data, null, 2)}\n`);
 }
 
@@ -113,28 +117,8 @@ export function throwUnknownCommand(scope: string, command: string | undefined):
     message: `Unknown command: ${command}`,
     input: { command },
     retryable: false,
-    suggestion: `Run ${scope} --describe to list available commands`
+    suggestion: `Run ${scope} --describe to list available commands`,
   });
-}
-
-function runNodeScript(scriptPath: string, args: string[]): number {
-  const result = spawnSync(process.execPath, [scriptPath, ...args], {
-    cwd: process.cwd(),
-    env: process.env,
-    stdio: 'inherit'
-  });
-
-  if (result.error) {
-    throw new CliUserError({
-      code: 'script_spawn_failed',
-      message: result.error.message,
-      input: { script: scriptPath },
-      retryable: true,
-      suggestion: 'Verify Node can execute the requested hook script'
-    });
-  }
-
-  return result.status ?? 0;
 }
 
 function ensureHookScriptInsideScripts(scriptRelativePath: string): void {
@@ -152,7 +136,7 @@ function ensureHookScriptInsideScripts(scriptRelativePath: string): void {
       message: `Path traversal rejected for hook script: ${scriptRelativePath}`,
       input: { path: scriptRelativePath },
       retryable: false,
-      suggestion: 'Use a script-relative-path inside the scripts directory'
+      suggestion: 'Use a script-relative-path inside the scripts directory',
     });
   }
 }
@@ -165,7 +149,7 @@ function runHookScript(argv: string[], context: ReturnType<typeof createCliConte
       message: 'Usage: boss hooks run <hook-id> <script-relative-path> [profiles-csv]',
       input: { hook, script },
       retryable: false,
-      suggestion: 'Run boss hooks run --describe to verify command parameters'
+      suggestion: 'Run boss hooks run --describe to verify command parameters',
     });
   }
 
@@ -174,7 +158,7 @@ function runHookScript(argv: string[], context: ReturnType<typeof createCliConte
   const result = spawnSync(process.execPath, [scriptPath, ...argv], {
     cwd: process.cwd(),
     env: process.env,
-    stdio: ['inherit', 'pipe', 'pipe']
+    stdio: ['inherit', 'pipe', 'pipe'],
   });
   if (result.error) {
     throw result.error;
@@ -196,9 +180,9 @@ export async function runRuntimeCommand(argv: string[]): Promise<number> {
     writeDescription(
       {
         ...describeGroup(runtimeDescription, runtimeCommandNames),
-        runtime_commands: runtimeCommandNames
+        runtime_commands: runtimeCommandNames,
       },
-      context
+      context,
     );
     return 0;
   }
@@ -209,7 +193,9 @@ export async function runRuntimeCommand(argv: string[]): Promise<number> {
   }
 
   const commandArgv = removeFirstPositional(argv, runtimeCommand);
-  const commandContext = createCliContext(commandArgv, { command: `boss runtime ${runtimeCommand}` });
+  const commandContext = createCliContext(commandArgv, {
+    command: `boss runtime ${runtimeCommand}`,
+  });
   if (commandContext.values.describe) {
     const description = runtimeCommandDescriptions[runtimeCommand];
     if (!description) {

@@ -1,11 +1,11 @@
 import { spawnSync } from 'node:child_process';
-import { describe, expect, it, vi } from 'vitest';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { runCli } from '../helpers/run-cli.js';
+import { describe, expect, it, vi } from 'vitest';
 import { validateUiDesignArtifact } from '../../packages/boss-cli/src/runtime/design/schema.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
+import { runCli } from '../helpers/run-cli.js';
 
 const root = resolve(import.meta.dirname, '..', '..');
 const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
@@ -46,7 +46,7 @@ describe('boss-skill dist bin', () => {
   it('shows the new conversation runtime commands in built help', () => {
     const result = spawnSync(process.execPath, [distEntry, 'runtime', '--help'], {
       cwd: root,
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('open-conversation');
@@ -72,10 +72,17 @@ describe('boss-skill dist bin', () => {
   });
 
   it('forwards help to runtime concrete commands', () => {
-    const result = runCli(['packages/boss-cli/dist/bin/boss.js', 'runtime', 'init-pipeline', '--help']);
+    const result = runCli([
+      'packages/boss-cli/dist/bin/boss.js',
+      'runtime',
+      'init-pipeline',
+      '--help',
+    ]);
 
     expect(result.status).toBe(0);
-    expect(result.stdout + result.stderr).toContain('Usage: boss runtime init-pipeline FEATURE [options]');
+    expect(result.stdout + result.stderr).toContain(
+      'Usage: boss runtime init-pipeline FEATURE [options]',
+    );
     expect(result.stdout + result.stderr).not.toContain('Usage: boss runtime COMMAND');
   });
 
@@ -83,20 +90,29 @@ describe('boss-skill dist bin', () => {
     const result = runCli(['packages/boss-cli/dist/bin/boss.js', 'project', 'init', '--help']);
 
     expect(result.status).toBe(0);
-    expect(result.stdout + result.stderr).toContain('用法: boss project init <feature-name> [options]');
-    expect(result.stdout + result.stderr).not.toContain('Usage: boss project init <feature-name> [--template] [--force]');
+    expect(result.stdout + result.stderr).toContain(
+      '用法: boss project init <feature-name> [options]',
+    );
+    expect(result.stdout + result.stderr).not.toContain(
+      'Usage: boss project init <feature-name> [--template] [--force]',
+    );
   });
 
   it('dist project init writes a valid ui-design.json stub', () => {
     const workspace = mkdtempSync(resolve(tmpdir(), 'boss-project-init-'));
 
     try {
-      const result = runCli(['packages/boss-cli/dist/bin/boss.js', 'project', 'init', 'valid-ui-design', '--json'], {
-        cwd: workspace
-      });
+      const result = runCli(
+        ['packages/boss-cli/dist/bin/boss.js', 'project', 'init', 'valid-ui-design', '--json'],
+        {
+          cwd: workspace,
+        },
+      );
       expect(result.status, result.stderr).toBe(0);
 
-      const uiDesign = JSON.parse(readFileSync(resolve(workspace, '.boss', 'valid-ui-design', 'ui-design.json'), 'utf8'));
+      const uiDesign = JSON.parse(
+        readFileSync(resolve(workspace, '.boss', 'valid-ui-design', 'ui-design.json'), 'utf8'),
+      );
       const validation = validateUiDesignArtifact(uiDesign);
       expect(validation).toEqual({ ok: true, errors: [] });
     } finally {
@@ -182,7 +198,9 @@ describe('boss-skill dist bin', () => {
   it('returns structured errors for unknown root commands in non-tty mode', () => {
     const result = runCli(['packages/boss-cli/dist/bin/boss.js', 'unknown-command']);
     expect(result.status).toBe(1);
-    const payload = JSON.parse(result.stderr) as { error: { code: string; input: Record<string, unknown> } };
+    const payload = JSON.parse(result.stderr) as {
+      error: { code: string; input: Record<string, unknown> };
+    };
     expect(payload.error.code).toBe('unknown_command');
     expect(payload.error.input).toEqual({ command: 'unknown-command' });
   });
@@ -212,9 +230,15 @@ describe('boss-skill dist bin', () => {
       expect(existsSync(resolve(installed, 'hooks', 'claude', 'hooks.json'))).toBe(true);
       expect(existsSync(resolve(installed, 'hooks', 'codex', 'hooks.json'))).toBe(true);
       expect(existsSync(resolve(installed, 'skills', 'brainstorming', 'SKILL.md'))).toBe(true);
-      expect(existsSync(resolve(installed, 'skills', 'pm', 'requirement-penetration', 'SKILL.md'))).toBe(true);
-      expect(existsSync(resolve(installed, 'skills', 'qa', 'test-strategy', 'SKILL.md'))).toBe(true);
-      expect(existsSync(resolve(installed, 'skills', 'shared', 'tech-stack-detection', 'SKILL.md'))).toBe(true);
+      expect(
+        existsSync(resolve(installed, 'skills', 'pm', 'requirement-penetration', 'SKILL.md')),
+      ).toBe(true);
+      expect(existsSync(resolve(installed, 'skills', 'qa', 'test-strategy', 'SKILL.md'))).toBe(
+        true,
+      );
+      expect(
+        existsSync(resolve(installed, 'skills', 'shared', 'tech-stack-detection', 'SKILL.md')),
+      ).toBe(true);
       expect(existsSync(resolve(installed, 'skills', 'README.md'))).toBe(true);
 
       expect(existsSync(resolve(installed, 'package.json'))).toBe(false);
@@ -232,9 +256,7 @@ describe('boss-skill dist bin', () => {
   });
 
   it('does not run main() when the source module is imported', async () => {
-    const writeSpy = vi
-      .spyOn(process.stdout, 'write')
-      .mockImplementation(() => true);
+    const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
 
     vi.resetModules();
     const mod = await import('../../packages/boss-cli/src/bin/boss.js');

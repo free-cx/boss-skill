@@ -1,15 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { materializeState } from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
-import { buildSummaryModel } from '../../packages/boss-cli/src/runtime/report/summary-model.js';
 import { renderHtml } from '../../packages/boss-cli/src/runtime/report/render-html.js';
 import { renderJson } from '../../packages/boss-cli/src/runtime/report/render-json.js';
 import { renderMarkdown } from '../../packages/boss-cli/src/runtime/report/render-markdown.js';
+import { buildSummaryModel } from '../../packages/boss-cli/src/runtime/report/summary-model.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,7 +39,7 @@ describe('runtime report generation', () => {
       updatedAt: '2026-04-12T00:05:00.000Z',
       status: 'running',
       parameters: {
-        pipelinePack: 'api-only'
+        pipelinePack: 'api-only',
       },
       stages: {
         '1': {
@@ -51,7 +51,7 @@ describe('runtime report generation', () => {
           maxRetries: 2,
           failureReason: null,
           artifacts: ['prd.md', 'architecture.md'],
-          gateResults: {}
+          gateResults: {},
         },
         '2': {
           name: 'review',
@@ -62,7 +62,7 @@ describe('runtime report generation', () => {
           maxRetries: 2,
           failureReason: null,
           artifacts: [],
-          gateResults: {}
+          gateResults: {},
         },
         '3': {
           name: 'development',
@@ -77,9 +77,9 @@ describe('runtime report generation', () => {
             gate1: {
               passed: true,
               executedAt: '2026-04-12T00:04:00.000Z',
-              checks: [{ name: 'unit', passed: true, detail: 'ok' }]
-            }
-          }
+              checks: [{ name: 'unit', passed: true, detail: 'ok' }],
+            },
+          },
         },
         '4': {
           name: 'deployment',
@@ -90,8 +90,8 @@ describe('runtime report generation', () => {
           maxRetries: 2,
           failureReason: null,
           artifacts: [],
-          gateResults: {}
-        }
+          gateResults: {},
+        },
       },
       qualityGates: {
         gate0: { status: 'pending', passed: null, checks: [], executedAt: null },
@@ -99,14 +99,14 @@ describe('runtime report generation', () => {
           status: 'completed',
           passed: true,
           checks: [{ name: 'unit', passed: true, detail: 'ok' }],
-          executedAt: '2026-04-12T00:04:00.000Z'
+          executedAt: '2026-04-12T00:04:00.000Z',
         },
         gate2: {
           status: 'completed',
           passed: false,
           checks: [{ name: 'perf', passed: false, detail: 'slow' }],
-          executedAt: '2026-04-12T00:04:30.000Z'
-        }
+          executedAt: '2026-04-12T00:04:30.000Z',
+        },
       },
       metrics: {
         totalDuration: 300,
@@ -117,7 +117,7 @@ describe('runtime report generation', () => {
         agentFailureCount: 1,
         meanRetriesPerStage: 0.25,
         revisionLoopCount: 2,
-        pluginFailureCount: 1
+        pluginFailureCount: 1,
       },
       plugins: [],
       pluginLifecycle: {
@@ -130,9 +130,9 @@ describe('runtime report generation', () => {
             hook: 'gate',
             stage: 3,
             exitCode: 1,
-            timestamp: '2026-04-12T00:04:45.000Z'
-          }
-        ]
+            timestamp: '2026-04-12T00:04:45.000Z',
+          },
+        ],
       },
       conversations: {
         threads: [
@@ -145,11 +145,11 @@ describe('runtime report generation', () => {
             status: 'closed',
             priority: 'high',
             createdAt: '2026-04-12T00:03:30.000Z',
-            updatedAt: '2026-04-12T00:04:40.000Z'
-          }
+            updatedAt: '2026-04-12T00:04:40.000Z',
+          },
         ],
         messages: [],
-        resolutions: []
+        resolutions: [],
       },
       derivedTodos: [
         {
@@ -162,22 +162,26 @@ describe('runtime report generation', () => {
           successCriteria: ['copy updated'],
           impact: { artifacts: ['ui-design.json'], scope: ['checkout loading state'] },
           dispatchHint: { stage: 3, agent: 'boss-frontend' },
-          createdAt: '2026-04-12T00:04:40.000Z'
-        }
+          createdAt: '2026-04-12T00:04:40.000Z',
+        },
       ],
       conversationMetrics: {
         opened: 1,
         resolved: 1,
         todos: 1,
         huddles: 0,
-        unresolved: 0
+        unresolved: 0,
       },
       humanInterventions: [],
       revisionRequests: [],
-      feedbackLoops: { maxRounds: 2, currentRound: 0 }
+      feedbackLoops: { maxRounds: 2, currentRound: 0 },
     };
 
-    fs.writeFileSync(path.join(metaDir, 'execution.json'), JSON.stringify(execution, null, 2), 'utf8');
+    fs.writeFileSync(
+      path.join(metaDir, 'execution.json'),
+      JSON.stringify(execution, null, 2),
+      'utf8',
+    );
   });
 
   afterEach(() => {
@@ -188,7 +192,7 @@ describe('runtime report generation', () => {
   function runRuntimeCommand(name: string, args: string[]) {
     return spawnSync(process.execPath, [BOSS_BIN, 'runtime', name, ...args], {
       cwd: tmpDir,
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
   }
 
@@ -220,21 +224,32 @@ describe('runtime report generation', () => {
   it('record-artifact writes and records html companions for markdown artifacts', () => {
     const prdPath = path.join(tmpDir, '.boss', 'test-feat', 'prd.md');
     const metaDir = path.join(tmpDir, '.boss', 'test-feat', '.meta');
-    const execution = JSON.parse(fs.readFileSync(path.join(metaDir, 'execution.json'), 'utf8')) as unknown;
+    const execution = JSON.parse(
+      fs.readFileSync(path.join(metaDir, 'execution.json'), 'utf8'),
+    ) as unknown;
     fs.writeFileSync(
       path.join(metaDir, 'events.jsonl'),
       `${JSON.stringify({
         id: 1,
         type: 'PipelineInitialized',
         timestamp: '2026-04-12T00:00:00.000Z',
-        data: { initialState: execution }
+        data: { initialState: execution },
       })}\n`,
-      'utf8'
+      'utf8',
     );
     fs.writeFileSync(
       prdPath,
-      ['# 产品需求文档', '', '## 摘要', '- 安全展示 `<script>x</script>`', '', '| 字段 | 说明 |', '|------|------|', '| id | 标识 |'].join('\n'),
-      'utf8'
+      [
+        '# 产品需求文档',
+        '',
+        '## 摘要',
+        '- 安全展示 `<script>x</script>`',
+        '',
+        '| 字段 | 说明 |',
+        '|------|------|',
+        '| id | 标识 |',
+      ].join('\n'),
+      'utf8',
     );
 
     const result = runRuntimeCommand('record-artifact', ['test-feat', 'prd.md', '1']);
@@ -270,7 +285,7 @@ describe('runtime report generation', () => {
       stages: { '1': { artifacts: string[] } };
     };
     execution.stages['1'].artifacts = execution.stages['1'].artifacts.filter(
-      (artifact) => artifact !== 'prd.md' && artifact !== 'prd.html'
+      (artifact) => artifact !== 'prd.md' && artifact !== 'prd.html',
     );
     fs.writeFileSync(executionPath, JSON.stringify(execution, null, 2), 'utf8');
     fs.writeFileSync(
@@ -279,9 +294,9 @@ describe('runtime report generation', () => {
         id: 1,
         type: 'PipelineInitialized',
         timestamp: '2026-04-12T00:00:00.000Z',
-        data: { initialState: execution }
+        data: { initialState: execution },
       })}\n`,
-      'utf8'
+      'utf8',
     );
     fs.rmSync(prdPath, { force: true });
 
@@ -304,7 +319,7 @@ describe('runtime report generation', () => {
       stages: { '1': { artifacts: string[] } };
     };
     execution.stages['1'].artifacts = execution.stages['1'].artifacts.filter(
-      (artifact) => artifact !== 'prd.md' && artifact !== 'prd.html'
+      (artifact) => artifact !== 'prd.md' && artifact !== 'prd.html',
     );
     fs.writeFileSync(executionPath, JSON.stringify(execution, null, 2), 'utf8');
     fs.writeFileSync(
@@ -313,12 +328,14 @@ describe('runtime report generation', () => {
         id: 1,
         type: 'PipelineInitialized',
         timestamp: '2026-04-12T00:00:00.000Z',
-        data: { initialState: execution }
+        data: { initialState: execution },
       })}\n`,
-      'utf8'
+      'utf8',
     );
     fs.writeFileSync(prdPath, '# PRD\n\n## 摘要\n- ok\n', 'utf8');
-    fs.mkdirSync(path.join(tmpDir, '.boss', 'templates', 'artifact.html.template'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.boss', 'templates', 'artifact.html.template'), {
+      recursive: true,
+    });
 
     const result = runRuntimeCommand('record-artifact', ['test-feat', 'prd.md', '1']);
 
@@ -350,7 +367,7 @@ describe('runtime report generation', () => {
       stages: { '1': { artifacts: string[] } };
     };
     execution.stages['1'].artifacts = execution.stages['1'].artifacts.filter(
-      (artifact) => artifact !== '../prd.md' && artifact !== '../prd.html'
+      (artifact) => artifact !== '../prd.md' && artifact !== '../prd.html',
     );
     fs.writeFileSync(executionPath, JSON.stringify(execution, null, 2), 'utf8');
     fs.writeFileSync(
@@ -359,9 +376,9 @@ describe('runtime report generation', () => {
         id: 1,
         type: 'PipelineInitialized',
         timestamp: '2026-04-12T00:00:00.000Z',
-        data: { initialState: execution }
+        data: { initialState: execution },
       })}\n`,
-      'utf8'
+      'utf8',
     );
     fs.writeFileSync(path.join(tmpDir, '.boss', 'prd.md'), '# Escaped PRD\n', 'utf8');
 
@@ -388,9 +405,9 @@ describe('runtime report generation', () => {
         id: 1,
         type: 'PipelineInitialized',
         timestamp: '2026-04-12T00:00:00.000Z',
-        data: { initialState: execution }
+        data: { initialState: execution },
       })}\n`,
-      'utf8'
+      'utf8',
     );
     fs.mkdirSync(path.join(tmpDir, 'escape', 'prd.md'), { recursive: true });
 
@@ -410,7 +427,7 @@ describe('runtime report generation', () => {
     fs.mkdirSync(escapedMetaDir, { recursive: true });
     fs.copyFileSync(
       path.join(tmpDir, '.boss', 'test-feat', '.meta', 'execution.json'),
-      path.join(escapedMetaDir, 'execution.json')
+      path.join(escapedMetaDir, 'execution.json'),
     );
 
     const jsonResult = runRuntimeCommand('generate-summary', ['../escape', '--json']);
@@ -421,7 +438,11 @@ describe('runtime report generation', () => {
     expect(markdownResult.status).not.toBe(0);
     expect(`${markdownResult.stderr}\n${markdownResult.stdout}`).toMatch(/feature|特性|路径/);
 
-    const jsonDryRunResult = runRuntimeCommand('generate-summary', ['../escape', '--dry-run', '--json']);
+    const jsonDryRunResult = runRuntimeCommand('generate-summary', [
+      '../escape',
+      '--dry-run',
+      '--json',
+    ]);
     expect(jsonDryRunResult.status).not.toBe(0);
     expect(`${jsonDryRunResult.stderr}\n${jsonDryRunResult.stdout}`).toMatch(/feature|特性|路径/);
 
@@ -431,13 +452,17 @@ describe('runtime report generation', () => {
   });
 
   it('generate-summary does not leave markdown behind when html rendering fails', () => {
-    fs.mkdirSync(path.join(tmpDir, '.boss', 'templates', 'artifact.html.template'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.boss', 'templates', 'artifact.html.template'), {
+      recursive: true,
+    });
 
     const result = runRuntimeCommand('generate-summary', ['test-feat']);
 
     expect(result.status).not.toBe(0);
     expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'summary-report.md'))).toBe(false);
-    expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'summary-report.html'))).toBe(false);
+    expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'summary-report.html'))).toBe(
+      false,
+    );
   });
 
   it('generate-summary runtime CLI emits markdown via stdout', () => {
@@ -452,7 +477,9 @@ describe('runtime report generation', () => {
     expect(result.stdout).toMatch(/插件失败次数/);
     expect(result.stdout).toMatch(/执行协作/);
     expect(result.stdout).toMatch(/Conversation 打开\/收敛\/落地/);
-    expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'summary-report.html'))).toBe(false);
+    expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'summary-report.html'))).toBe(
+      false,
+    );
   });
 
   it('render-diagnostics runtime CLI emits an html diagnostics page', () => {
@@ -481,7 +508,7 @@ describe('runtime report generation', () => {
       feature: 'test-feat',
       outputPath: '.boss/test-feat/summary-report.md',
       htmlOutputPath: '.boss/test-feat/summary-report.html',
-      format: 'markdown'
+      format: 'markdown',
     });
     const markdownPath = path.join(tmpDir, '.boss', 'test-feat', 'summary-report.md');
     expect(fs.existsSync(markdownPath)).toBe(true);
@@ -501,7 +528,7 @@ describe('runtime report generation', () => {
     expect(jsonStdoutPayload).toEqual({
       feature: 'test-feat',
       outputPath: '.boss/test-feat/summary-report.json',
-      format: 'json'
+      format: 'json',
     });
     const jsonPath = path.join(tmpDir, '.boss', 'test-feat', 'summary-report.json');
     expect(fs.existsSync(jsonPath)).toBe(true);
@@ -527,21 +554,27 @@ describe('runtime report generation', () => {
         {
           type: 'write_file',
           path: '.boss/test-feat/summary-report.md',
-          format: 'markdown'
+          format: 'markdown',
         },
         {
           type: 'write_file',
           path: '.boss/test-feat/summary-report.html',
-          format: 'html'
-        }
+          format: 'html',
+        },
       ],
       risk_tier: 'medium',
-      requires_approval: false
+      requires_approval: false,
     });
     expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'summary-report.md'))).toBe(false);
-    expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'summary-report.html'))).toBe(false);
+    expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'summary-report.html'))).toBe(
+      false,
+    );
 
-    const summaryResult = runRuntimeCommand('generate-summary', ['test-feat', '--dry-run', '--json']);
+    const summaryResult = runRuntimeCommand('generate-summary', [
+      'test-feat',
+      '--dry-run',
+      '--json',
+    ]);
     expect(summaryResult.status).toBe(0);
     expect(summaryResult.stderr).toBe('');
     const summaryPayload = JSON.parse(summaryResult.stdout) as {
@@ -554,44 +587,52 @@ describe('runtime report generation', () => {
         {
           type: 'write_file',
           path: '.boss/test-feat/summary-report.json',
-          format: 'json'
-        }
+          format: 'json',
+        },
       ],
       risk_tier: 'medium',
-      requires_approval: false
+      requires_approval: false,
     });
-    expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'summary-report.json'))).toBe(false);
+    expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'summary-report.json'))).toBe(
+      false,
+    );
 
     const recordMarkdownResult = runRuntimeCommand('record-artifact', [
       'test-feat',
       'prd.md',
       '1',
       '--dry-run',
-      '--json'
+      '--json',
     ]);
     expect(recordMarkdownResult.status).toBe(0);
     expect(recordMarkdownResult.stderr).toBe('');
     const recordMarkdownPayload = JSON.parse(recordMarkdownResult.stdout) as {
-      actions: Array<{ type: string; artifact?: string; path?: string; format?: string; stage?: number }>;
+      actions: Array<{
+        type: string;
+        artifact?: string;
+        path?: string;
+        format?: string;
+        stage?: number;
+      }>;
     };
     expect(recordMarkdownPayload.actions).toEqual([
       {
         type: 'record_artifact',
         feature: 'test-feat',
         artifact: 'prd.md',
-        stage: 1
+        stage: 1,
       },
       {
         type: 'write_file',
         path: '.boss/test-feat/prd.html',
-        format: 'html'
+        format: 'html',
       },
       {
         type: 'record_artifact',
         feature: 'test-feat',
         artifact: 'prd.html',
-        stage: 1
-      }
+        stage: 1,
+      },
     ]);
     expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'prd.html'))).toBe(false);
 
@@ -600,10 +641,12 @@ describe('runtime report generation', () => {
       'prd.md',
       'x',
       '--dry-run',
-      '--json'
+      '--json',
     ]);
     expect(invalidStageResult.status).not.toBe(0);
-    expect(`${invalidStageResult.stderr}\n${invalidStageResult.stdout}`).toMatch(/stage 必须是整数/);
+    expect(`${invalidStageResult.stderr}\n${invalidStageResult.stdout}`).toMatch(
+      /stage 必须是整数/,
+    );
     expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'prd.html'))).toBe(false);
 
     const recordJsonResult = runRuntimeCommand('record-artifact', [
@@ -611,7 +654,7 @@ describe('runtime report generation', () => {
       'ui-design.json',
       '1',
       '--dry-run',
-      '--json'
+      '--json',
     ]);
     expect(recordJsonResult.status).toBe(0);
     expect(recordJsonResult.stderr).toBe('');
@@ -623,11 +666,15 @@ describe('runtime report generation', () => {
         type: 'record_artifact',
         feature: 'test-feat',
         artifact: 'ui-design.json',
-        stage: 1
-      }
+        stage: 1,
+      },
     ]);
 
-    const diagnosticsResult = runRuntimeCommand('render-diagnostics', ['test-feat', '--dry-run', '--json']);
+    const diagnosticsResult = runRuntimeCommand('render-diagnostics', [
+      'test-feat',
+      '--dry-run',
+      '--json',
+    ]);
     expect(diagnosticsResult.status).toBe(0);
     expect(diagnosticsResult.stderr).toBe('');
     const diagnosticsPayload = JSON.parse(diagnosticsResult.stdout) as {
@@ -637,8 +684,8 @@ describe('runtime report generation', () => {
       {
         type: 'write_file',
         path: '.boss/test-feat/diagnostics.html',
-        format: 'html'
-      }
+        format: 'html',
+      },
     ]);
     expect(fs.existsSync(path.join(tmpDir, '.boss', 'test-feat', 'diagnostics.html'))).toBe(false);
   });
@@ -653,40 +700,40 @@ describe('runtime report generation', () => {
         data: {
           initialState: {
             feature: 'test-feat',
-            createdAt: '2026-04-12T00:00:00.000Z'
-          }
-        }
+            createdAt: '2026-04-12T00:00:00.000Z',
+          },
+        },
       },
       {
         id: 2,
         type: 'StageStarted',
         timestamp: '2026-04-12T00:00:10.000Z',
-        data: { stage: 1 }
+        data: { stage: 1 },
       },
       {
         id: 3,
         type: 'AgentStarted',
         timestamp: '2026-04-12T00:00:45.000Z',
-        data: { stage: 1, agent: 'boss-backend' }
+        data: { stage: 1, agent: 'boss-backend' },
       },
       {
         id: 4,
         type: 'AgentFailed',
         timestamp: '2026-04-12T00:01:15.000Z',
-        data: { stage: 1, agent: 'boss-backend', reason: '' }
+        data: { stage: 1, agent: 'boss-backend', reason: '' },
       },
       {
         id: 5,
         type: 'StageFailed',
         timestamp: '2026-04-12T00:02:00.000Z',
-        data: { stage: 1, reason: '' }
-      }
+        data: { stage: 1, reason: '' },
+      },
     ];
 
     fs.writeFileSync(
       path.join(metaDir, 'events.jsonl'),
       `${events.map((event) => JSON.stringify(event)).join('\n')}\n`,
-      'utf8'
+      'utf8',
     );
 
     const materialized = materializeState('test-feat', tmpDir);
@@ -715,7 +762,7 @@ describe('runtime report generation', () => {
       ...model,
       currentStage: { id: 2, name: 'review', status: 'running' },
       recentEvents: [{ type: 'StageStarted', timestamp: '2026-04-12T00:03:00.000Z' }],
-      progressEvents: [{ type: 'stage-start', timestamp: '2026-04-12T00:03:00.000Z' }]
+      progressEvents: [{ type: 'stage-start', timestamp: '2026-04-12T00:03:00.000Z' }],
     });
 
     expect(model.stages[0]).toEqual(
@@ -723,12 +770,12 @@ describe('runtime report generation', () => {
         stage: 1,
         name: 'planning',
         duration: 90,
-        artifacts: ['prd.md', 'architecture.md']
-      })
+        artifacts: ['prd.md', 'architecture.md'],
+      }),
     );
     expect(JSON.parse(json) as { feature: string; pack: { name: string } }).toMatchObject({
       feature: 'test-feat',
-      pack: { name: 'api-only' }
+      pack: { name: 'api-only' },
     });
     expect(json.endsWith('\n')).toBe(true);
     expect(markdown).toMatch(/# 流水线执行报告/);
@@ -743,7 +790,9 @@ describe('runtime report generation', () => {
     expect(markdown).toContain('### Gate 命令与检查项');
     expect(markdown).toContain('## 执行协作');
     expect(markdown).toContain('Fix checkout loading copy');
-    expect(markdown).toContain('| Gate 2 (性能) | ✅ completed | false | 1 | 1 | 2026-04-12T00:04:30.000Z |');
+    expect(markdown).toContain(
+      '| Gate 2 (性能) | ✅ completed | false | 1 | 1 | 2026-04-12T00:04:30.000Z |',
+    );
     expect(markdown).toContain('### 红测转绿证据');
     expect(markdown).toContain('### Contract Matrix 状态');
     expect(markdown).toContain('### 已知失败与遗留风险');

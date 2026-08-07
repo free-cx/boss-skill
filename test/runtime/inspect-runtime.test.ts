@@ -1,16 +1,19 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { emitProgress } from '../../packages/boss-cli/src/infrastructure/process.js';
 import {
-  buildFeatureSummary,
-  writeFeatureMemory
-} from '../../packages/boss-cli/src/runtime/application/memory.js';
-import { openConversation, resolveConversation } from '../../packages/boss-cli/src/runtime/application/conversations.js';
+  openConversation,
+  resolveConversation,
+} from '../../packages/boss-cli/src/runtime/application/conversations.js';
 import { inspectPipeline } from '../../packages/boss-cli/src/runtime/application/inspection.js';
+import {
+  buildFeatureSummary,
+  writeFeatureMemory,
+} from '../../packages/boss-cli/src/runtime/application/memory.js';
 import { initPipeline } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -35,19 +38,22 @@ describe('inspection runtime CLIs', () => {
   function runRuntimeCommand(name: string, args: string[]) {
     return spawnSync(process.execPath, [BOSS_BIN, 'runtime', name, ...args], {
       cwd: tmpDir,
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
   }
 
   function expectSuccess(result: ReturnType<typeof spawnSync>, label: string) {
-    expect(result.status, `${label} should exit 0\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`).toBe(0);
+    expect(
+      result.status,
+      `${label} should exit 0\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
+    ).toBe(0);
   }
 
   function writeMarkdownArtifact(feature: string, artifact: string): void {
     fs.writeFileSync(
       path.join(tmpDir, '.boss', feature, artifact),
       `# ${artifact}\n\n## 摘要\n- ok\n`,
-      'utf8'
+      'utf8',
     );
   }
 
@@ -55,12 +61,24 @@ describe('inspection runtime CLIs', () => {
     fs.writeFileSync(path.join(tmpDir, 'package.json'), '{"name":"api-only-app"}\n', 'utf8');
 
     expectSuccess(runRuntimeCommand('init-pipeline', ['test-feat']), 'init-pipeline');
-    expectSuccess(runRuntimeCommand('register-plugins', ['--register', 'test-feat']), 'register-plugins');
+    expectSuccess(
+      runRuntimeCommand('register-plugins', ['--register', 'test-feat']),
+      'register-plugins',
+    );
     expectSuccess(runRuntimeCommand('update-stage', ['test-feat', '1', 'running']), 'update-stage');
     writeMarkdownArtifact('test-feat', 'prd.md');
-    expectSuccess(runRuntimeCommand('record-artifact', ['test-feat', 'prd.md', '1']), 'record-artifact');
-    expectSuccess(runRuntimeCommand('update-stage', ['test-feat', '1', 'completed']), 'update-stage-complete');
-    expectSuccess(runRuntimeCommand('update-agent', ['test-feat', '2', 'boss-tech-lead', 'running']), 'update-agent');
+    expectSuccess(
+      runRuntimeCommand('record-artifact', ['test-feat', 'prd.md', '1']),
+      'record-artifact',
+    );
+    expectSuccess(
+      runRuntimeCommand('update-stage', ['test-feat', '1', 'completed']),
+      'update-stage-complete',
+    );
+    expectSuccess(
+      runRuntimeCommand('update-agent', ['test-feat', '2', 'boss-tech-lead', 'running']),
+      'update-agent',
+    );
 
     const inspect = runRuntimeCommand('inspect-pipeline', ['test-feat', '--json']);
     expectSuccess(inspect, 'inspect-pipeline');
@@ -85,7 +103,7 @@ describe('inspection runtime CLIs', () => {
     expect(payload.plugins.active.some((plugin) => plugin.name === 'security-audit')).toBe(true);
     expect(payload.readyArtifacts).toContain('architecture.md');
     expect(payload.activeAgents).toEqual([
-      { stage: 2, agent: 'boss-tech-lead', status: 'running' }
+      { stage: 2, agent: 'boss-tech-lead', status: 'running' },
     ]);
     expect(typeof payload.metrics.retryTotal).toBe('number');
     expect(typeof payload.metrics.agentSuccessCount).toBe('number');
@@ -101,10 +119,21 @@ describe('inspection runtime CLIs', () => {
     expectSuccess(runRuntimeCommand('init-pipeline', ['test-feat']), 'init-pipeline');
     expectSuccess(runRuntimeCommand('update-stage', ['test-feat', '1', 'running']), 'update-stage');
     writeMarkdownArtifact('test-feat', 'prd.md');
-    expectSuccess(runRuntimeCommand('record-artifact', ['test-feat', 'prd.md', '1']), 'record-artifact');
-    expectSuccess(runRuntimeCommand('update-stage', ['test-feat', '1', 'completed']), 'update-stage-complete');
+    expectSuccess(
+      runRuntimeCommand('record-artifact', ['test-feat', 'prd.md', '1']),
+      'record-artifact',
+    );
+    expectSuccess(
+      runRuntimeCommand('update-stage', ['test-feat', '1', 'completed']),
+      'update-stage-complete',
+    );
 
-    const inspectRecent = runRuntimeCommand('inspect-events', ['test-feat', '--json', '--limit', '2']);
+    const inspectRecent = runRuntimeCommand('inspect-events', [
+      'test-feat',
+      '--json',
+      '--limit',
+      '2',
+    ]);
     expectSuccess(inspectRecent, 'inspect-events recent');
     const recentPayload = JSON.parse(inspectRecent.stdout) as {
       feature: string;
@@ -119,10 +148,12 @@ describe('inspection runtime CLIs', () => {
       'test-feat',
       '--json',
       '--type',
-      'ArtifactRecorded'
+      'ArtifactRecorded',
     ]);
     expectSuccess(inspectFiltered, 'inspect-events filtered');
-    const filteredPayload = JSON.parse(inspectFiltered.stdout) as { events: Array<{ type: string }> };
+    const filteredPayload = JSON.parse(inspectFiltered.stdout) as {
+      events: Array<{ type: string }>;
+    };
     expect(filteredPayload.events).toHaveLength(2);
     expect(filteredPayload.events.every((event) => event.type === 'ArtifactRecorded')).toBe(true);
   });
@@ -141,19 +172,25 @@ describe('inspection runtime CLIs', () => {
           type: 'reporter',
           hooks: {
             report: 'report.sh',
-            'post-gate': 'post-gate.sh'
+            'post-gate': 'post-gate.sh',
           },
-          stages: [3]
+          stages: [3],
         },
         null,
-        2
+        2,
       ),
-      'utf8'
+      'utf8',
     );
 
     expectSuccess(runRuntimeCommand('init-pipeline', ['test-feat']), 'init-pipeline');
-    expectSuccess(runRuntimeCommand('register-plugins', ['--register', 'test-feat']), 'register-plugins');
-    expectSuccess(runRuntimeCommand('run-plugin-hook', ['post-gate', 'test-feat', '--stage', '3']), 'run-plugin-hook');
+    expectSuccess(
+      runRuntimeCommand('register-plugins', ['--register', 'test-feat']),
+      'register-plugins',
+    );
+    expectSuccess(
+      runRuntimeCommand('run-plugin-hook', ['post-gate', 'test-feat', '--stage', '3']),
+      'run-plugin-hook',
+    );
 
     const inspect = runRuntimeCommand('inspect-plugins', ['test-feat', '--json']);
     expectSuccess(inspect, 'inspect-plugins');
@@ -177,7 +214,10 @@ describe('inspection runtime CLIs', () => {
   it('inspect-progress returns recent structured progress events', () => {
     expectSuccess(runRuntimeCommand('init-pipeline', ['test-feat']), 'init-pipeline');
     emitProgress(tmpDir, 'test-feat', { type: 'stage-start', data: { stage: 1 } });
-    emitProgress(tmpDir, 'test-feat', { type: 'agent-start', data: { stage: 1, agent: 'boss-pm' } });
+    emitProgress(tmpDir, 'test-feat', {
+      type: 'agent-start',
+      data: { stage: 1, agent: 'boss-pm' },
+    });
 
     const inspect = runRuntimeCommand('inspect-progress', ['test-feat', '--json', '--limit', '1']);
     expectSuccess(inspect, 'inspect-progress');
@@ -211,10 +251,10 @@ describe('inspection runtime CLIs', () => {
           lastSeenAt: '2026-04-17T00:00:00Z',
           expiresAt: null,
           decayScore: 10,
-          influence: 'preference'
-        }
+          influence: 'preference',
+        },
       ],
-      { cwd: tmpDir }
+      { cwd: tmpDir },
     );
     buildFeatureSummary('test-feat', { cwd: tmpDir });
 
@@ -225,33 +265,41 @@ describe('inspection runtime CLIs', () => {
   it('inspect-pipeline surfaces conversation metrics and derived todos', () => {
     initPipeline('test-feat', { cwd: tmpDir });
 
-    const opened = openConversation('test-feat', {
-      kind: 'request_change',
-      anchor: { scope: 'src/app/checkout/page.tsx' },
-      initiator: 'boss-qa',
-      participants: ['boss-frontend'],
-      priority: 'high'
-    }, { cwd: tmpDir });
+    const opened = openConversation(
+      'test-feat',
+      {
+        kind: 'request_change',
+        anchor: { scope: 'src/app/checkout/page.tsx' },
+        initiator: 'boss-qa',
+        participants: ['boss-frontend'],
+        priority: 'high',
+      },
+      { cwd: tmpDir },
+    );
 
-    resolveConversation('test-feat', {
-      threadId: opened.threadId,
-      summary: 'Fix checkout loading state copy',
-      decision: 'request change',
-      todos: [
-        {
-          title: 'Update checkout loading copy',
-          owner: 'boss-frontend',
-          type: 'change',
-          successCriteria: ['copy updated']
-        }
-      ]
-    }, { cwd: tmpDir });
+    resolveConversation(
+      'test-feat',
+      {
+        threadId: opened.threadId,
+        summary: 'Fix checkout loading state copy',
+        decision: 'request change',
+        todos: [
+          {
+            title: 'Update checkout loading copy',
+            owner: 'boss-frontend',
+            type: 'change',
+            successCriteria: ['copy updated'],
+          },
+        ],
+      },
+      { cwd: tmpDir },
+    );
 
     const payload = inspectPipeline('test-feat', { cwd: tmpDir });
     expect(payload.conversationMetrics).toMatchObject({
       opened: 1,
       resolved: 1,
-      todos: 1
+      todos: 1,
     });
     expect(payload.derivedTodos[0]?.title).toBe('Update checkout loading copy');
   });

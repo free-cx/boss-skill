@@ -1,13 +1,22 @@
+import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { spawnSync } from 'node:child_process';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { ensureBuilt } from '../helpers/run-cli.js';
 
-const BOSS_BIN = path.resolve(import.meta.dirname, '..', '..', 'packages', 'boss-cli', 'dist', 'bin', 'boss.js');
+const BOSS_BIN = path.resolve(
+  import.meta.dirname,
+  '..',
+  '..',
+  'packages',
+  'boss-cli',
+  'dist',
+  'bin',
+  'boss.js',
+);
 
 let tmpDir: string | null = null;
 
@@ -26,8 +35,16 @@ function createWorkspace(): string {
 
 function preferences(cwd: string) {
   const payload = JSON.parse(
-    fs.readFileSync(path.join(cwd, '.boss', 'demo', '.meta', 'feature-memory.json'), 'utf8')
-  ) as { records: Array<{ influence?: string; category: string; tags: string[]; confidence: number; evidence: unknown[] }> };
+    fs.readFileSync(path.join(cwd, '.boss', 'demo', '.meta', 'feature-memory.json'), 'utf8'),
+  ) as {
+    records: Array<{
+      influence?: string;
+      category: string;
+      tags: string[];
+      confidence: number;
+      evidence: unknown[];
+    }>;
+  };
   return payload.records.filter((r) => r.influence === 'preference');
 }
 
@@ -42,8 +59,17 @@ describe('boss runtime record-user-choice', () => {
   it('emits UserChoiceRecorded into the event stream', () => {
     const cwd = createWorkspace();
     const result = runCli(
-      ['runtime', 'record-user-choice', 'demo', '--choice-type', 'design-variant', '--selected', '方案A', '--json'],
-      cwd
+      [
+        'runtime',
+        'record-user-choice',
+        'demo',
+        '--choice-type',
+        'design-variant',
+        '--selected',
+        '方案A',
+        '--json',
+      ],
+      cwd,
     );
     expect(result.status, result.stderr).toBe(0);
 
@@ -58,7 +84,19 @@ describe('boss runtime record-user-choice', () => {
 
   it('projects the choice into a deterministic preference memory record', () => {
     const cwd = createWorkspace();
-    runCli(['runtime', 'record-user-choice', 'demo', '--choice-type', 'design-variant', '--selected', '方案A', '--json'], cwd);
+    runCli(
+      [
+        'runtime',
+        'record-user-choice',
+        'demo',
+        '--choice-type',
+        'design-variant',
+        '--selected',
+        '方案A',
+        '--json',
+      ],
+      cwd,
+    );
 
     const prefs = preferences(cwd);
     expect(prefs).toHaveLength(1);
@@ -69,8 +107,32 @@ describe('boss runtime record-user-choice', () => {
   it('rebuild is a full replay: repeated choices do not accumulate evidence beyond the event count', () => {
     const cwd = createWorkspace();
     // 两次相同选择 → 每次都触发一次 refreshMemory（全量重放）
-    runCli(['runtime', 'record-user-choice', 'demo', '--choice-type', 'design-variant', '--selected', '方案A', '--json'], cwd);
-    runCli(['runtime', 'record-user-choice', 'demo', '--choice-type', 'design-variant', '--selected', '方案A', '--json'], cwd);
+    runCli(
+      [
+        'runtime',
+        'record-user-choice',
+        'demo',
+        '--choice-type',
+        'design-variant',
+        '--selected',
+        '方案A',
+        '--json',
+      ],
+      cwd,
+    );
+    runCli(
+      [
+        'runtime',
+        'record-user-choice',
+        'demo',
+        '--choice-type',
+        'design-variant',
+        '--selected',
+        '方案A',
+        '--json',
+      ],
+      cwd,
+    );
 
     const prefs = preferences(cwd);
     expect(prefs).toHaveLength(1);
@@ -81,7 +143,10 @@ describe('boss runtime record-user-choice', () => {
 
   it('rejects a missing required flag', () => {
     const cwd = createWorkspace();
-    const result = runCli(['runtime', 'record-user-choice', 'demo', '--selected', '方案A', '--json'], cwd);
+    const result = runCli(
+      ['runtime', 'record-user-choice', 'demo', '--selected', '方案A', '--json'],
+      cwd,
+    );
     expect(result.status).not.toBe(0);
   });
 

@@ -32,7 +32,9 @@ function normalizeHookInput(rawInput) {
   const toolInput = input.tool_input || input.arguments || {};
   const directFilePath = toolInput.file_path || toolInput.path || '';
   const command = toolInput.command || '';
-  const patch = toolInput.patch || (input.tool_name === 'apply_patch' || input.tool === 'apply_patch' ? command : '');
+  const patch =
+    toolInput.patch ||
+    (input.tool_name === 'apply_patch' || input.tool === 'apply_patch' ? command : '');
   const filePaths = directFilePath ? [directFilePath] : extractPatchedFiles(patch);
 
   return {
@@ -46,7 +48,7 @@ function normalizeHookInput(rawInput) {
     command,
     permissionMode: input.permission_mode || '',
     turnId: input.turn_id || '',
-    stopHookActive: input.stop_hook_active
+    stopHookActive: input.stop_hook_active,
   };
 }
 

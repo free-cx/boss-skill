@@ -24,7 +24,11 @@ export function readInstalledVersion(destDir: string): string | undefined {
   }
 }
 
-export function installSkillToPath(skill: DiscoveredSkill, agentId: string, dest: string): InstallOutcome {
+export function installSkillToPath(
+  skill: DiscoveredSkill,
+  agentId: string,
+  dest: string,
+): InstallOutcome {
   try {
     if (fs.existsSync(dest)) {
       fs.rmSync(dest, { recursive: true });
@@ -37,7 +41,7 @@ export function installSkillToPath(skill: DiscoveredSkill, agentId: string, dest
       skill: skill.name,
       path: dest,
       status: 'failed',
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }

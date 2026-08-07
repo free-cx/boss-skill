@@ -4,22 +4,18 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
-import {
-  printRuntimeHelp,
-  requireInputString,
-  writeActionPlan
-} from './agent-command-utils.js';
 import { initPipeline } from '../../runtime/application/pipeline.js';
 import { readExecutionView } from '../../runtime/application/state.js';
+import { printRuntimeHelp, requireInputString, writeActionPlan } from './agent-command-utils.js';
 
 interface LaunchInput {
   feature: string;
@@ -48,7 +44,9 @@ function parseFlatInput(argv: string[]): LaunchInput {
 function resolveInput(argv: string[], context: CliContext): LaunchInput {
   const jsonInput = readJsonInput(context.values.jsonInput);
   if (jsonInput) {
-    return { feature: requireInputString((jsonInput as Record<string, unknown>).feature, 'feature') };
+    return {
+      feature: requireInputString((jsonInput as Record<string, unknown>).feature, 'feature'),
+    };
   }
   return parseFlatInput(argv);
 }
@@ -62,18 +60,21 @@ function toHandle(feature: string, execution: ReturnType<typeof readExecutionVie
     status: execution.status,
     commands: {
       status: `boss status ${feature}`,
-      attach: `boss attach ${feature}`
-    }
+      attach: `boss attach ${feature}`,
+    },
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime launch' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions.launch!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions.launch, null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions.launch, null, 2)}\n`,
     );
     return 0;
   }
@@ -97,18 +98,17 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
     execution = initPipeline(input.feature, { cwd });
   }
 
-  writeOutput(
-    toHandle(input.feature, execution),
-    context,
-    (data) => {
-      const payload = data as ReturnType<typeof toHandle>;
-      return `Pipeline ${payload.feature}: ${payload.handle}\n`;
-    }
-  );
+  writeOutput(toHandle(input.feature, execution), context, (data) => {
+    const payload = data as ReturnType<typeof toHandle>;
+    return `Pipeline ${payload.feature}: ${payload.handle}\n`;
+  });
   return 0;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime launch', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime launch',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

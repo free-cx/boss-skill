@@ -23,23 +23,23 @@ const REQUIRED_QA_EVIDENCE_GROUPS = [
   {
     id: 'verification',
     label: 'verification evidence',
-    headings: [/Verification/i, /自动化测试结果/, /测试工具与方法/]
+    headings: [/Verification/i, /自动化测试结果/, /测试工具与方法/],
   },
   {
     id: 'evidence',
     label: 'evidence summary',
-    headings: [/Evidence(?:\s+Summary)?/i]
+    headings: [/Evidence(?:\s+Summary)?/i],
   },
   {
     id: 'findings',
     label: 'findings or bug summary',
-    headings: [/Findings/i, /发现的\s*Bug/i, /Bug\s*汇总/i, /失败用例详情/]
+    headings: [/Findings/i, /发现的\s*Bug/i, /Bug\s*汇总/i, /失败用例详情/],
   },
   {
     id: 'attack-checks',
     label: 'QA attack checks',
-    headings: [/QA\s+Attack\s+Checks/i]
-  }
+    headings: [/QA\s+Attack\s+Checks/i],
+  },
 ] as const;
 
 function recordedArtifacts(feature: string, cwd: string): Set<string> {
@@ -69,7 +69,7 @@ function containsOpenCriticalFinding(report: string): boolean {
 
 export function runQaAttack(
   feature: string,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): QaAttackResult {
   const findings: QaFinding[] = [];
   const artifacts = recordedArtifacts(feature, cwd);
@@ -80,7 +80,8 @@ export function runQaAttack(
       id: 'qa-report-missing',
       severity: 'critical',
       status: 'open',
-      evidence: 'qa-report.md is not recorded in execution state or is missing from .boss/<feature>/'
+      evidence:
+        'qa-report.md is not recorded in execution state or is missing from .boss/<feature>/',
     });
   } else {
     const report = fs.readFileSync(reportPath, 'utf8');
@@ -90,7 +91,7 @@ export function runQaAttack(
           id: `qa-report-${group.id}-missing`,
           severity: 'high',
           status: 'open',
-          evidence: `qa-report.md is missing ${group.label}`
+          evidence: `qa-report.md is missing ${group.label}`,
         });
       }
     }
@@ -100,7 +101,7 @@ export function runQaAttack(
         id: 'qa-report-open-critical',
         severity: 'critical',
         status: 'open',
-        evidence: 'qa-report.md contains an open critical finding'
+        evidence: 'qa-report.md contains an open critical finding',
       });
     }
   }
@@ -108,6 +109,6 @@ export function runQaAttack(
   return {
     feature,
     status: findings.some((finding) => finding.status === 'open') ? 'failed' : 'passed',
-    findings
+    findings,
   };
 }

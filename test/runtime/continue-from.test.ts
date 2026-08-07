@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  getReadyArtifacts,
   initPipeline,
   skipUpTo,
-  getReadyArtifacts
 } from '../../packages/boss-cli/src/runtime/application/pipeline.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -53,8 +53,9 @@ describe('skipUpTo (continue-from artifact)', () => {
   });
 
   it('throws for invalid artifact name', () => {
-    expect(() => skipUpTo('test-feat', 'nonexistent.md', { cwd: tmpDir }))
-      .toThrow(/DAG 中未定义产物/);
+    expect(() => skipUpTo('test-feat', 'nonexistent.md', { cwd: tmpDir })).toThrow(
+      /DAG 中未定义产物/,
+    );
   });
 
   it('handles already-completed artifacts without duplicating events', () => {
@@ -65,9 +66,12 @@ describe('skipUpTo (continue-from artifact)', () => {
 
     // Check events: should only have 1 ArtifactRecorded for prd.md
     const eventsPath = path.join(tmpDir, '.boss', 'test-feat', '.meta', 'events.jsonl');
-    const events = fs.readFileSync(eventsPath, 'utf8').trim().split('\n')
-      .map(line => JSON.parse(line))
-      .filter(e => e.type === 'ArtifactRecorded' && e.data.artifact === 'prd.md');
+    const events = fs
+      .readFileSync(eventsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line))
+      .filter((e) => e.type === 'ArtifactRecorded' && e.data.artifact === 'prd.md');
     expect(events).toHaveLength(1);
   });
 });

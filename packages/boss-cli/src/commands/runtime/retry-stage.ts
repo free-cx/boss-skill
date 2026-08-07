@@ -4,22 +4,22 @@ import { fileURLToPath } from 'node:url';
 
 import {
   assertConfirmed,
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { retryStage } from '../../runtime/application/pipeline.js';
 import {
   printRuntimeHelp,
   requireInputString,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { retryStage } from '../../runtime/application/pipeline.js';
 
 interface RetryStageInput {
   feature: string;
@@ -53,7 +53,7 @@ function parseFlatInput(argv: string[]): RetryStageInput {
   }
   return {
     feature: requireInputString(feature, 'feature'),
-    stage: requireInputString(stage, 'stage')
+    stage: requireInputString(stage, 'stage'),
   };
 }
 
@@ -63,7 +63,7 @@ function resolveInput(argv: string[], context: CliContext): RetryStageInput {
     const input = jsonInput as Record<string, unknown>;
     return {
       feature: requireInputString(input.feature, 'feature'),
-      stage: requireInputString(input.stage, 'stage')
+      stage: requireInputString(input.stage, 'stage'),
     };
   }
   return parseFlatInput(argv);
@@ -73,17 +73,20 @@ function actionFor(input: RetryStageInput) {
   return {
     type: 'retry_stage',
     feature: input.feature,
-    stage: Number(input.stage)
+    stage: Number(input.stage),
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime retry-stage' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['retry-stage']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['retry-stage'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['retry-stage'], null, 2)}\n`,
     );
     return 0;
   }
@@ -109,10 +112,11 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         feature: input.feature,
         stage: Number(input.stage),
         status: stageState?.status,
-        retryCount: stageState?.retryCount
+        retryCount: stageState?.retryCount,
       },
       context,
-      () => `${JSON.stringify({ feature: input.feature, stage: Number(input.stage), status: stageState?.status, retryCount: stageState?.retryCount }, null, 2)}\n`
+      () =>
+        `${JSON.stringify({ feature: input.feature, stage: Number(input.stage), status: stageState?.status, retryCount: stageState?.retryCount }, null, 2)}\n`,
     );
     return 0;
   } catch (err) {
@@ -121,6 +125,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime retry-stage', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime retry-stage',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -14,7 +14,7 @@ function runBoss(args: string[], cwd: string, input?: string) {
     cwd,
     input,
     encoding: 'utf8',
-    env: { ...process.env, NO_COLOR: '1' }
+    env: { ...process.env, NO_COLOR: '1' },
   });
 }
 
@@ -87,7 +87,7 @@ describe('agent-friendly boss CLI contract', () => {
     const result = runBoss(
       ['project', 'init', '--json-input=-', '--dry-run', '--json'],
       tmpDir,
-      '{"feature":"agent-json-input","template":true}'
+      '{"feature":"agent-json-input","template":true}',
     );
 
     expect(result.status).toBe(0);
@@ -132,7 +132,7 @@ describe('agent-friendly boss CLI contract', () => {
     fs.writeFileSync(
       path.join(tmpDir, 'package.json'),
       JSON.stringify({ dependencies: { tailwindcss: '^4.1.0' } }, null, 2),
-      'utf8'
+      'utf8',
     );
     fs.mkdirSync(path.join(tmpDir, 'app'), { recursive: true });
     const cssPath = path.join(tmpDir, 'app', 'globals.css');
@@ -149,15 +149,21 @@ describe('agent-friendly boss CLI contract', () => {
     const init = runBoss(['runtime', 'init-pipeline', 'events-feature'], tmpDir);
     expect(init.status).toBe(0);
 
-    const running = runBoss(['runtime', 'update-stage', 'events-feature', '1', 'running', '--json'], tmpDir);
+    const running = runBoss(
+      ['runtime', 'update-stage', 'events-feature', '1', 'running', '--json'],
+      tmpDir,
+    );
     expect(running.status).toBe(0);
 
-    const completed = runBoss(['runtime', 'update-stage', 'events-feature', '1', 'completed', '--json'], tmpDir);
+    const completed = runBoss(
+      ['runtime', 'update-stage', 'events-feature', '1', 'completed', '--json'],
+      tmpDir,
+    );
     expect(completed.status).toBe(0);
 
     const result = runBoss(
       ['runtime', 'inspect-events', 'events-feature', '--limit=1', '--fields=events', '--json'],
-      tmpDir
+      tmpDir,
     );
 
     expect(result.status).toBe(0);
@@ -175,7 +181,7 @@ describe('agent-friendly boss CLI contract', () => {
     const result = spawnSync(process.execPath, [BOSS_BIN, 'install', '--dry-run', '--json'], {
       cwd: tmpDir,
       env: { ...process.env, HOME: home },
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
 
     expect(result.status).toBe(0);
@@ -200,7 +206,7 @@ describe('agent-friendly boss CLI contract', () => {
     const install = spawnSync(process.execPath, [BOSS_BIN, 'install'], {
       cwd: tmpDir,
       env: { ...process.env, HOME: home },
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
 
     expect(install.status).toBe(0);
@@ -222,7 +228,7 @@ describe('agent-friendly boss CLI contract', () => {
     const uninstall = spawnSync(process.execPath, [BOSS_BIN, 'uninstall', '--yes'], {
       cwd: tmpDir,
       env: { ...process.env, HOME: home },
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
 
     expect(uninstall.status).toBe(0);
@@ -245,7 +251,10 @@ describe('agent-friendly boss CLI contract', () => {
 
   it('artifact prepare dry-run returns a structured write plan', () => {
     fs.mkdirSync(path.join(tmpDir, '.boss', 'demo'), { recursive: true });
-    const result = runBoss(['artifact', 'prepare', 'demo', 'prd.md', '--dry-run', '--json'], tmpDir);
+    const result = runBoss(
+      ['artifact', 'prepare', 'demo', 'prd.md', '--dry-run', '--json'],
+      tmpDir,
+    );
 
     expect(result.status).toBe(0);
     const payload = JSON.parse(result.stdout) as {
@@ -253,7 +262,7 @@ describe('agent-friendly boss CLI contract', () => {
       risk_tier: string;
     };
     expect(payload.actions).toEqual([
-      expect.objectContaining({ type: 'write_artifact', path: '.boss/demo/prd.md' })
+      expect.objectContaining({ type: 'write_artifact', path: '.boss/demo/prd.md' }),
     ]);
     expect(payload.risk_tier).toBe('medium');
     expect(fs.existsSync(path.join(tmpDir, '.boss', 'demo', 'prd.md'))).toBe(false);
@@ -280,7 +289,10 @@ describe('agent-friendly boss CLI contract', () => {
   });
 
   it('packs detect supports fields and limit', () => {
-    const result = runBoss(['packs', 'detect', '.', '--json', '--fields=detected', '--limit=1'], tmpDir);
+    const result = runBoss(
+      ['packs', 'detect', '.', '--json', '--fields=detected', '--limit=1'],
+      tmpDir,
+    );
 
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toEqual({ detected: 'default' });

@@ -3,24 +3,24 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { recordUserChoice } from '../../runtime/application/pipeline.js';
 import {
   optionalInputString,
   printRuntimeHelp,
   requireInputString,
   requireOptionValue,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { recordUserChoice } from '../../runtime/application/pipeline.js';
 
 interface RecordUserChoiceInput {
   feature: string;
@@ -35,7 +35,7 @@ interface RecordUserChoiceInput {
 function showHelp(): void {
   printRuntimeHelp(
     'record-user-choice',
-    'boss runtime record-user-choice FEATURE --choice-type <type> --selected <value> [options]'
+    'boss runtime record-user-choice FEATURE --choice-type <type> --selected <value> [options]',
   );
 }
 
@@ -100,7 +100,7 @@ function parseFlatInput(argv: string[]): RecordUserChoiceInput {
     options,
     reason,
     agent,
-    stage
+    stage,
   };
 }
 
@@ -113,11 +113,13 @@ function resolveInput(argv: string[], context: CliContext): RecordUserChoiceInpu
       choiceType: requireInputString(input.choiceType, 'choiceType'),
       selected: requireInputString(input.selected, 'selected'),
       options: Array.isArray(input.options)
-        ? input.options.filter((item): item is string => typeof item === 'string' && item.length > 0)
+        ? input.options.filter(
+            (item): item is string => typeof item === 'string' && item.length > 0,
+          )
         : undefined,
       reason: optionalInputString(input.reason),
       agent: optionalInputString(input.agent),
-      stage: typeof input.stage === 'number' ? input.stage : undefined
+      stage: typeof input.stage === 'number' ? input.stage : undefined,
     };
   }
   return parseFlatInput(argv);
@@ -128,20 +130,20 @@ function actionFor(input: RecordUserChoiceInput) {
     type: 'record_user_choice',
     feature: input.feature,
     choice_type: input.choiceType,
-    selected: input.selected
+    selected: input.selected,
   };
 }
 
 export function main(
   argv: string[] = process.argv.slice(2),
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): number {
   const context = createCliContext(argv, { command: 'boss runtime record-user-choice' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['record-user-choice']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['record-user-choice'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['record-user-choice'], null, 2)}\n`,
     );
     return 0;
   }
@@ -165,16 +167,16 @@ export function main(
       reason: input.reason,
       agent: input.agent,
       stage: input.stage,
-      cwd
+      cwd,
     });
     writeOutput(
       {
         feature: input.feature,
         choiceType: input.choiceType,
-        selected: input.selected
+        selected: input.selected,
       },
       context,
-      () => `记录用户选择：${input.choiceType} -> ${input.selected}\n`
+      () => `记录用户选择：${input.choiceType} -> ${input.selected}\n`,
     );
     return 0;
   } catch (err) {
@@ -185,7 +187,7 @@ export function main(
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const context = createCliContext(process.argv.slice(2), {
     command: 'boss runtime record-user-choice',
-    validateOptionValues: false
+    validateOptionValues: false,
   });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

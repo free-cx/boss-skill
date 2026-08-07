@@ -6,7 +6,10 @@ export interface MemoryQueryOptions {
   limit?: number;
 }
 
-function score(record: MemoryQueryRecord, target: Pick<MemoryQueryOptions, 'agent' | 'stage'>): number {
+function score(
+  record: MemoryQueryRecord,
+  target: Pick<MemoryQueryOptions, 'agent' | 'stage'>,
+): number {
   let value = (record.decayScore ?? 0) * 100 + (record.confidence ?? 0) * 10;
   if (record.category && record.category.startsWith('conversation_')) {
     value += 50;
@@ -22,7 +25,7 @@ function score(record: MemoryQueryRecord, target: Pick<MemoryQueryOptions, 'agen
 
 export function queryAgentMemories(
   records: MemoryQueryRecord[],
-  { agent, stage, limit = 3 }: MemoryQueryOptions = {}
+  { agent, stage, limit = 3 }: MemoryQueryOptions = {},
 ): MemoryQueryRecord[] {
   return records
     .filter((record) => {

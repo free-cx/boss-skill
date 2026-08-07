@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..');
 const SRC_ROOT = path.join(REPO_ROOT, 'packages', 'boss-cli', 'src');
@@ -26,7 +26,7 @@ function walkTsFiles(dir: string, result: string[] = []): string[] {
 describe('privacy / network boundary guard', () => {
   const sourceFiles = walkTsFiles(SRC_ROOT).map((file) => ({
     rel: path.relative(REPO_ROOT, file),
-    text: fs.readFileSync(file, 'utf8')
+    text: fs.readFileSync(file, 'utf8'),
   }));
 
   it('does not import any outbound network client', () => {
@@ -39,7 +39,7 @@ describe('privacy / network boundary guard', () => {
       /\bfetch\s*\(/,
       /from\s+['"](?:axios|got|node-fetch|undici)['"]/,
       /\bnet\.connect\s*\(/,
-      /from\s+['"]node:dgram['"]/
+      /from\s+['"]node:dgram['"]/,
     ];
     for (const { rel, text } of sourceFiles) {
       for (const pattern of forbidden) {

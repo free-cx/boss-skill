@@ -46,13 +46,13 @@ describe('wave verification command injection', () => {
       [
         '| Evidence Wave | Scope | Owner Files | Red Tests | Green Gates | Contract Matrix | Stop Condition |',
         '| --- | --- | --- | --- | --- | --- | --- |',
-        `| Wave X | s | \`src/a.ts\` | \`touch ${probe} && exit 1\` | \`true\` | CM | Stop |`
-      ].join('\n')
+        `| Wave X | s | \`src/a.ts\` | \`touch ${probe} && exit 1\` | \`true\` | CM | Stop |`,
+      ].join('\n'),
     );
 
     // Markdown 不再提供命令，因此这里必然因「没有定义 redTests」而抛错
     expect(() => verifyWave(feature, 'wave-x', 'red', { cwd: tmpDir })).toThrow(
-      '没有定义 redTests'
+      '没有定义 redTests',
     );
     expect(fs.existsSync(probe)).toBe(false);
   });
@@ -67,15 +67,13 @@ describe('wave verification command injection', () => {
             id: 'wave-y',
             title: 'Wave Y',
             redTests: [['sh', '-c', `touch ${probe} && exit 1`]],
-            greenGates: [['true']]
-          }
-        ]
-      })
+            greenGates: [['true']],
+          },
+        ],
+      }),
     );
 
-    expect(() => verifyWave(feature, 'wave-y', 'red', { cwd: tmpDir })).toThrow(
-      /shell 元字符/
-    );
+    expect(() => verifyWave(feature, 'wave-y', 'red', { cwd: tmpDir })).toThrow(/shell 元字符/);
     expect(fs.existsSync(probe)).toBe(false);
   });
 
@@ -91,10 +89,10 @@ describe('wave verification command injection', () => {
             id: 'wave-z',
             title: 'Wave Z',
             redTests: [['false']],
-            greenGates: [['touch', probe]]
-          }
-        ]
-      })
+            greenGates: [['touch', probe]],
+          },
+        ],
+      }),
     );
 
     const result = verifyWave(feature, 'wave-z', 'green', { cwd: tmpDir });
@@ -111,10 +109,10 @@ describe('wave verification command injection', () => {
             id: 'wave-missing',
             title: 'Wave Missing',
             redTests: [['definitely-not-a-real-binary-xyz']],
-            greenGates: [['true']]
-          }
-        ]
-      })
+            greenGates: [['true']],
+          },
+        ],
+      }),
     );
 
     const result = verifyWave(feature, 'wave-missing', 'red', { cwd: tmpDir });
@@ -133,8 +131,8 @@ describe('wave verification command injection', () => {
       [
         '| Evidence Wave | Scope | Owner Files | Red Tests | Green Gates | Contract Matrix | Stop Condition |',
         '| --- | --- | --- | --- | --- | --- | --- |',
-        '| Wave Dup | md | `src/md.ts` | `true` | `true` | CM-md | Stop md |'
-      ].join('\n')
+        '| Wave Dup | md | `src/md.ts` | `true` | `true` | CM-md | Stop md |',
+      ].join('\n'),
     );
     fs.writeFileSync(
       path.join(dir, 'waves.json'),
@@ -145,10 +143,10 @@ describe('wave verification command injection', () => {
             title: 'Wave Dup',
             scope: 'structured',
             redTests: [['false']],
-            greenGates: [['true']]
-          }
-        ]
-      })
+            greenGates: [['true']],
+          },
+        ],
+      }),
     );
 
     const result = verifyWave(feature, 'wave-dup', 'full', { cwd: tmpDir });

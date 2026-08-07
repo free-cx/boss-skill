@@ -1,12 +1,17 @@
 import { EVENT_TYPE_VALUES } from '../../packages/boss-cli/src/runtime/domain/event-types.js';
-import { projectState, type RuntimeEvent } from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
+import {
+  projectState,
+  type RuntimeEvent,
+} from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
 
-type HarnessEvent = RuntimeEvent | {
-  id: number;
-  type: string;
-  timestamp: string;
-  data: Record<string, unknown>;
-};
+type HarnessEvent =
+  | RuntimeEvent
+  | {
+      id: number;
+      type: string;
+      timestamp: string;
+      data: Record<string, unknown>;
+    };
 
 function failInvariant(message: string, event?: HarnessEvent, index?: number): never {
   const details = [`Trace invariant failed: ${message}`];
@@ -18,22 +23,40 @@ function failInvariant(message: string, event?: HarnessEvent, index?: number): n
   throw new Error(details.join('\n'));
 }
 
-function assertCondition(condition: boolean, message: string, event?: HarnessEvent, index?: number): void {
+function assertCondition(
+  condition: boolean,
+  message: string,
+  event?: HarnessEvent,
+  index?: number,
+): void {
   if (!condition) {
     failInvariant(message, event, index);
   }
 }
 
 function assertValidTimestamp(event: HarnessEvent, index: number): void {
-  assertCondition(!Number.isNaN(Date.parse(event.timestamp)), `invalid timestamp for ${event.type}`, event, index);
+  assertCondition(
+    !Number.isNaN(Date.parse(event.timestamp)),
+    `invalid timestamp for ${event.type}`,
+    event,
+    index,
+  );
 }
 
 function featureFrom(execution: unknown, events: HarnessEvent[]): string {
-  if (execution && typeof execution === 'object' && typeof (execution as { feature?: unknown }).feature === 'string') {
+  if (
+    execution &&
+    typeof execution === 'object' &&
+    typeof (execution as { feature?: unknown }).feature === 'string'
+  ) {
     return (execution as { feature: string }).feature;
   }
   const initial = events.find((event) => event.type === 'PipelineInitialized')?.data.initialState;
-  if (initial && typeof initial === 'object' && typeof (initial as { feature?: unknown }).feature === 'string') {
+  if (
+    initial &&
+    typeof initial === 'object' &&
+    typeof (initial as { feature?: unknown }).feature === 'string'
+  ) {
     return (initial as { feature: string }).feature;
   }
   return '';
@@ -55,7 +78,12 @@ export function assertTraceInvariants(events: HarnessEvent[], execution: unknown
     }
 
     if (event.type !== 'PipelineInitialized') {
-      assertCondition(sawPipelineInitialized, `${event.type} occurred before PipelineInitialized`, event, index);
+      assertCondition(
+        sawPipelineInitialized,
+        `${event.type} occurred before PipelineInitialized`,
+        event,
+        index,
+      );
     }
 
     if (event.type === 'StageStarted') {
@@ -67,7 +95,7 @@ export function assertTraceInvariants(events: HarnessEvent[], execution: unknown
         startedStages.has(event.data.stage),
         `stage ${String(event.data.stage)} completed before start`,
         event,
-        index
+        index,
       );
     }
 
@@ -80,7 +108,7 @@ export function assertTraceInvariants(events: HarnessEvent[], execution: unknown
         failedStages.has(event.data.stage),
         `stage ${String(event.data.stage)} retried before failure`,
         event,
-        index
+        index,
       );
     }
 
@@ -101,11 +129,11 @@ export function assertTraceInvariants(events: HarnessEvent[], execution: unknown
     const executionJson = JSON.stringify(execution);
     assertCondition(
       replayedJson === executionJson,
-      `projector replay mismatch\nfeature: ${feature}\nreplayed state length: ${replayedJson.length}\nexecution state length: ${executionJson.length}`
+      `projector replay mismatch\nfeature: ${feature}\nreplayed state length: ${replayedJson.length}\nexecution state length: ${executionJson.length}`,
     );
     assertCondition(
       replayedJson === JSON.stringify(projectState(events as RuntimeEvent[], feature)),
-      `projector replay is not idempotent\nfeature: ${feature}`
+      `projector replay is not idempotent\nfeature: ${feature}`,
     );
   }
 }

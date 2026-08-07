@@ -27,11 +27,9 @@ export const EVENT_TYPES = Object.freeze({
   WAVE_VERIFIED: 'WaveVerified',
   REQUIREMENTS_VERIFIED: 'RequirementsVerified',
   WIP_CHECKPOINT_CREATED: 'WipCheckpointCreated',
-  USER_CHOICE_RECORDED: 'UserChoiceRecorded'
+  USER_CHOICE_RECORDED: 'UserChoiceRecorded',
 } as const);
 
 export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
 
-export const EVENT_TYPE_VALUES = Object.freeze(
-  Object.values(EVENT_TYPES) as EventType[]
-);
+export const EVENT_TYPE_VALUES = Object.freeze(Object.values(EVENT_TYPES) as EventType[]);

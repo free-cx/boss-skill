@@ -3,23 +3,23 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { resumeWorkflow } from '../../runtime/application/workflow.js';
 import {
   printRuntimeHelp,
   requireInputString,
   requireOptionValue,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { resumeWorkflow } from '../../runtime/application/workflow.js';
 
 interface ResumeInput {
   feature: string;
@@ -53,7 +53,7 @@ function parseFlatInput(argv: string[]): ResumeInput {
 
   return {
     feature: requireInputString(feature, 'feature'),
-    fromRunId: requireInputString(fromRunId, 'fromRunId')
+    fromRunId: requireInputString(fromRunId, 'fromRunId'),
   };
 }
 
@@ -63,7 +63,7 @@ function resolveInput(argv: string[], context: CliContext): ResumeInput {
     const input = jsonInput as Record<string, unknown>;
     return {
       feature: requireInputString(input.feature, 'feature'),
-      fromRunId: requireInputString(input.fromRunId, 'fromRunId')
+      fromRunId: requireInputString(input.fromRunId, 'fromRunId'),
     };
   }
   return parseFlatInput(argv);
@@ -73,17 +73,20 @@ function actionFor(input: ResumeInput) {
   return {
     type: 'resume_workflow',
     feature: input.feature,
-    from_run: input.fromRunId
+    from_run: input.fromRunId,
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime resume' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions.resume!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions.resume, null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions.resume, null, 2)}\n`,
     );
     return 0;
   }
@@ -102,18 +105,14 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
   try {
     const result = resumeWorkflow(input.feature, {
       cwd,
-      fromRunId: input.fromRunId
+      fromRunId: input.fromRunId,
     });
-    writeOutput(
-      result,
-      context,
-      (data) => {
-        const payload = data as typeof result;
-        const reused = payload.nodes.filter((node) => node.decision === 'reuse').length;
-        const runnable = payload.nodes.filter((node) => node.decision === 'run').length;
-        return `Workflow ${payload.feature}: resume ${payload.fromRunId} (${reused} reuse, ${runnable} run)\n`;
-      }
-    );
+    writeOutput(result, context, (data) => {
+      const payload = data as typeof result;
+      const reused = payload.nodes.filter((node) => node.decision === 'reuse').length;
+      const runnable = payload.nodes.filter((node) => node.decision === 'run').length;
+      return `Workflow ${payload.feature}: resume ${payload.fromRunId} (${reused} reuse, ${runnable} run)\n`;
+    });
     return 0;
   } catch (err) {
     throw toFeatureNotFoundError(err, input.feature);
@@ -121,6 +120,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime resume', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime resume',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

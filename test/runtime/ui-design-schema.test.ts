@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  type UiDesignArtifact,
   validateUiDesignArtifact,
-  type UiDesignArtifact
 } from '../../packages/boss-cli/src/runtime/design/schema.js';
 
 function minimalDesign(overrides: Partial<UiDesignArtifact> = {}): UiDesignArtifact {
@@ -20,19 +20,25 @@ function minimalDesign(overrides: Partial<UiDesignArtifact> = {}): UiDesignArtif
         route: '/checkout',
         viewport: { width: 1440, height: 960 },
         frames: [
-          { id: 'checkout-main', type: 'page', name: 'Checkout Main', layout: 'vertical', children: [] }
+          {
+            id: 'checkout-main',
+            type: 'page',
+            name: 'Checkout Main',
+            layout: 'vertical',
+            children: [],
+          },
         ],
-        states: []
-      }
+        states: [],
+      },
     ],
     components: [],
     prototype: { startPageId: 'checkout', links: [] },
     implementationHints: {
       preferredFramework: 'react',
       requiredComponents: [],
-      accessibilityNotes: []
+      accessibilityNotes: [],
     },
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -42,10 +48,12 @@ describe('ui design artifact validation', () => {
   });
 
   it('rejects invalid mode and empty pages', () => {
-    const result = validateUiDesignArtifact(minimalDesign({
-      mode: 'sketch' as UiDesignArtifact['mode'],
-      pages: []
-    }));
+    const result = validateUiDesignArtifact(
+      minimalDesign({
+        mode: 'sketch' as UiDesignArtifact['mode'],
+        pages: [],
+      }),
+    );
 
     expect(result.ok).toBe(false);
     expect(result.errors).toContain('mode must be wireframe or hifi');
@@ -53,22 +61,28 @@ describe('ui design artifact validation', () => {
   });
 
   it('rejects invalid prototype page references', () => {
-    const result = validateUiDesignArtifact(minimalDesign({
-      prototype: {
-        startPageId: 'missing',
-        links: [{ sourceId: 'checkout-main', targetPageId: 'missing-page' }]
-      }
-    }));
+    const result = validateUiDesignArtifact(
+      minimalDesign({
+        prototype: {
+          startPageId: 'missing',
+          links: [{ sourceId: 'checkout-main', targetPageId: 'missing-page' }],
+        },
+      }),
+    );
 
     expect(result.ok).toBe(false);
     expect(result.errors).toContain('prototype.startPageId must reference an existing page id');
-    expect(result.errors).toContain('prototype.links[0].targetPageId must reference an existing page id');
+    expect(result.errors).toContain(
+      'prototype.links[0].targetPageId must reference an existing page id',
+    );
   });
 
   it('rejects duplicate ids across pages, frames, and components', () => {
-    const result = validateUiDesignArtifact(minimalDesign({
-      components: [{ id: 'checkout-main', name: 'Card', type: 'card' }]
-    }));
+    const result = validateUiDesignArtifact(
+      minimalDesign({
+        components: [{ id: 'checkout-main', name: 'Card', type: 'card' }],
+      }),
+    );
 
     expect(result.ok).toBe(false);
     expect(result.errors).toContain('duplicate id: checkout-main');
@@ -91,7 +105,7 @@ describe('ui design artifact validation', () => {
       pages: 'bad',
       components: 'bad',
       prototype: { startPageId: 'x', links: 'bad' },
-      tokens: { colors: {}, typography: {}, spacing: {}, radius: {} }
+      tokens: { colors: {}, typography: {}, spacing: {}, radius: {} },
     });
 
     expect(result.ok).toBe(false);
@@ -102,13 +116,15 @@ describe('ui design artifact validation', () => {
     const result = validateUiDesignArtifact({
       artifact: 'ui-design',
       mode: 'wireframe',
-      pages: [{ id: 'p', frames: [] }]
+      pages: [{ id: 'p', frames: [] }],
     });
 
     expect(result.ok).toBe(false);
     expect(result.errors).toContain('schemaVersion is required');
     expect(result.errors).toContain('feature is required');
-    expect(result.errors).toContain('tokens must define colors, typography, spacing, and radius objects');
+    expect(result.errors).toContain(
+      'tokens must define colors, typography, spacing, and radius objects',
+    );
     expect(result.errors).toContain('components must be an array');
     expect(result.errors).toContain('prototype.startPageId is required');
     expect(result.errors).toContain('page.name is required');
@@ -129,15 +145,21 @@ describe('ui design artifact validation', () => {
           route: '/checkout',
           viewport: { width: 0, height: -1 },
           frames: [
-            { id: 'checkout-main', type: 'page', name: 'Checkout Main', layout: 'vertical', children: [] }
+            {
+              id: 'checkout-main',
+              type: 'page',
+              name: 'Checkout Main',
+              layout: 'vertical',
+              children: [],
+            },
           ],
-          states: []
-        }
+          states: [],
+        },
       ],
       prototype: {
         startPageId: 'checkout',
-        links: [{ targetPageId: 'checkout' } as never]
-      }
+        links: [{ targetPageId: 'checkout' } as never],
+      },
     });
 
     expect(result.ok).toBe(false);
@@ -157,9 +179,9 @@ describe('ui design artifact validation', () => {
           route: '/checkout',
           viewport: { width: 1440, height: 960 },
           frames: 'bad',
-          states: []
-        }
-      ]
+          states: [],
+        },
+      ],
     });
 
     expect(result.ok).toBe(false);
@@ -181,12 +203,12 @@ describe('ui design artifact validation', () => {
               type: 'page',
               name: 'Checkout Main',
               layout: 'vertical',
-              children: 'bad'
-            }
+              children: 'bad',
+            },
           ],
-          states: []
-        }
-      ]
+          states: [],
+        },
+      ],
     });
 
     expect(result.ok).toBe(false);

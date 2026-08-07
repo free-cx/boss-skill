@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const PROMPTS_DIR = path.resolve(import.meta.dirname, 'prompts');
 const README = path.resolve(import.meta.dirname, 'README.md');
@@ -11,13 +11,15 @@ describe('Boss skill behavior prompt fixtures', () => {
       'boss-natural-trigger.txt',
       'boss-explicit-request.txt',
       'methodology-skill-load.txt',
-      'qa-attack-unverified.txt'
+      'qa-attack-unverified.txt',
     ];
 
     for (const fileName of expected) {
       const content = fs.readFileSync(path.join(PROMPTS_DIR, fileName), 'utf8').trim();
       expect(content.length, `${fileName} should not be empty`).toBeGreaterThan(20);
-      expect(content, `${fileName} should not contain placeholders`).not.toMatch(/\b(TBD|TODO|FIXME)\b/i);
+      expect(content, `${fileName} should not contain placeholders`).not.toMatch(
+        /\b(TBD|TODO|FIXME)\b/i,
+      );
     }
   });
 

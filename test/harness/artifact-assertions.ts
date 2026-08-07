@@ -21,16 +21,22 @@ export function assertScenarioExpectations(result: ScenarioRunResult): void {
     const expected = expectedExitFor(result, command.command);
     expect(
       command.exitCode,
-      `${command.command.join(' ')}\nstdout:\n${command.stdout}\nstderr:\n${command.stderr}`
+      `${command.command.join(' ')}\nstdout:\n${command.stdout}\nstderr:\n${command.stderr}`,
     ).toBe(expected);
   }
 
   for (const artifact of result.scenario.expect.artifacts ?? []) {
-    expect(fs.existsSync(path.join(result.workspace, artifact)), `missing artifact ${artifact}`).toBe(true);
+    expect(
+      fs.existsSync(path.join(result.workspace, artifact)),
+      `missing artifact ${artifact}`,
+    ).toBe(true);
   }
 
   for (const forbidden of result.scenario.expect.forbidPaths ?? []) {
-    expect(fs.existsSync(path.join(result.workspace, forbidden)), `forbidden path exists ${forbidden}`).toBe(false);
+    expect(
+      fs.existsSync(path.join(result.workspace, forbidden)),
+      `forbidden path exists ${forbidden}`,
+    ).toBe(false);
   }
 
   const eventTypes = result.events.map((event) => event.type);

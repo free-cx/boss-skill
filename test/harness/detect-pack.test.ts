@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { detectPipelinePacks } from '../../packages/boss-cli/src/runtime/application/packs.js';
 import { cleanupTempDir } from '../helpers/fixtures.js';
 
@@ -21,10 +21,14 @@ describe('boss packs detect', () => {
   });
 
   function run(projectDir: string, extraArgs: string[] = []) {
-    const result = spawnSync(process.execPath, [BOSS_BIN, 'packs', 'detect', ...extraArgs, projectDir], {
-      encoding: 'utf8',
-      cwd: REPO_ROOT
-    });
+    const result = spawnSync(
+      process.execPath,
+      [BOSS_BIN, 'packs', 'detect', ...extraArgs, projectDir],
+      {
+        encoding: 'utf8',
+        cwd: REPO_ROOT,
+      },
+    );
     expect(result.status, result.stderr).toBe(0);
     const parsed = JSON.parse(result.stdout) as { detected: string; matched: unknown[] };
     return parsed;
@@ -40,7 +44,11 @@ describe('boss packs detect', () => {
   });
 
   it('detects api-only when package.json exists but no frontend dirs', () => {
-    fs.writeFileSync(path.join(tmpDir, 'package.json'), '{"name":"test","dependencies":{}}', 'utf8');
+    fs.writeFileSync(
+      path.join(tmpDir, 'package.json'),
+      '{"name":"test","dependencies":{}}',
+      'utf8',
+    );
     expect(run(tmpDir).detected).toBe('api-only');
   });
 
@@ -50,9 +58,9 @@ describe('boss packs detect', () => {
       JSON.stringify({
         name: 'web-app',
         dependencies: { react: '^19.0.0' },
-        devDependencies: { vite: '^7.0.0' }
+        devDependencies: { vite: '^7.0.0' },
       }),
-      'utf8'
+      'utf8',
     );
     fs.mkdirSync(path.join(tmpDir, 'src'), { recursive: true });
     fs.writeFileSync(path.join(tmpDir, 'vite.config.ts'), 'export default {};\n', 'utf8');
@@ -65,9 +73,9 @@ describe('boss packs detect', () => {
         name: 'web-app',
         evidence: expect.arrayContaining([
           expect.objectContaining({ type: 'fileExists', value: 'package.json', matched: true }),
-          expect.objectContaining({ type: 'packageJsonHas', value: 'react', matched: true })
-        ])
-      })
+          expect.objectContaining({ type: 'packageJsonHas', value: 'react', matched: true }),
+        ]),
+      }),
     );
   });
 
@@ -75,12 +83,12 @@ describe('boss packs detect', () => {
     fs.writeFileSync(
       path.join(tmpDir, 'package.json'),
       JSON.stringify({ name: 'web-app', dependencies: { react: '^19.0.0' } }),
-      'utf8'
+      'utf8',
     );
 
     const result = spawnSync(process.execPath, [BOSS_BIN, 'packs', 'detect', '--json', tmpDir], {
       encoding: 'utf8',
-      cwd: REPO_ROOT
+      cwd: REPO_ROOT,
     });
     expect(result.status, result.stderr).toBe(0);
     const payload = JSON.parse(result.stdout) as {
@@ -91,8 +99,8 @@ describe('boss packs detect', () => {
     expect(payload.detected).toBe('web-app');
     expect(payload.detectedPack.evidence).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ type: 'packageJsonHas', value: 'react', matched: true })
-      ])
+        expect.objectContaining({ type: 'packageJsonHas', value: 'react', matched: true }),
+      ]),
     );
   });
 
@@ -109,9 +117,9 @@ describe('boss packs detect', () => {
         when: { fileExists: ['custom-api.marker'] },
         priority: 99,
         config: { stages: [1], agents: ['boss-pm'], gates: [] },
-        enabled: true
+        enabled: true,
       }),
-      'utf8'
+      'utf8',
     );
     fs.writeFileSync(path.join(tmpDir, 'custom-api.marker'), '', 'utf8');
 

@@ -1,6 +1,6 @@
 import { createCliContext, describeCommand, writeOutput } from '../cli/contract.js';
 import { commandDescriptions } from '../cli/registry.js';
-import { buildBossStatus, type BossStatus } from '../runtime/application/checkpoints.js';
+import { type BossStatus, buildBossStatus } from '../runtime/application/checkpoints.js';
 
 function parseFeatureAndDriver(argv: string[]): { feature: string; driver: string } {
   let feature = '';
@@ -47,7 +47,7 @@ function renderText(status: BossStatus): string {
       `Feature: ${status.feature}`,
       `Driver: ${status.driver.name}`,
       `Next: ${status.readyArtifacts[0] || 'none'}`,
-      ''
+      '',
     ].join('\n');
   }
 
@@ -60,11 +60,14 @@ function renderText(status: BossStatus): string {
     'Required checks:',
     ...(checks.length > 0 ? checks : ['- none']),
     `Continue: ${status.checkpoint.continueCommand}`,
-    ''
+    '',
   ].join('\n');
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss continue' });
   if (context.values.describe) {
     const description = describeCommand(commandDescriptions['boss continue']!);

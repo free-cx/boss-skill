@@ -1,7 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { STAGE_MAP, loadArtifactDag, resolveArtifactDagPath, getReadyArtifacts } from '../lib/boss-utils.js';
+import {
+  getReadyArtifacts,
+  loadArtifactDag,
+  resolveArtifactDagPath,
+  STAGE_MAP,
+} from '../lib/boss-utils.js';
 import { normalizeHookInput } from './lib/normalize-input.js';
 
 function classifyWriteDecision(filePath, cwd) {
@@ -12,8 +17,9 @@ function classifyWriteDecision(filePath, cwd) {
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',
         permissionDecision: 'deny',
-        permissionDecisionReason: 'execution.json 由 runtime 事件流管理，不允许直接编辑。请使用 boss runtime update-stage 或其他 runtime CLI'
-      }
+        permissionDecisionReason:
+          'execution.json 由 runtime 事件流管理，不允许直接编辑。请使用 boss runtime update-stage 或其他 runtime CLI',
+      },
     });
   }
 
@@ -49,7 +55,7 @@ function classifyWriteDecision(filePath, cwd) {
           const dag = dagPath ? loadArtifactDag(dagPath) : null;
           if (dag && dag.artifacts && dag.artifacts[artifact]) {
             const ready = getReadyArtifacts(dag, data, data.parameters || {});
-            const isReady = ready.some(r => r.artifact === artifact);
+            const isReady = ready.some((r) => r.artifact === artifact);
             if (isReady) {
               return '';
             }
@@ -59,8 +65,8 @@ function classifyWriteDecision(filePath, cwd) {
             hookSpecificOutput: {
               hookEventName: 'PreToolUse',
               permissionDecision: 'deny',
-              permissionDecisionReason: `产物 ${artifact} 属于阶段 ${expectedStage}，但该阶段状态为 ${stageStatus}（非 running）。请先通过 boss runtime update-stage 将对应阶段置为 running/retrying，或按产物 DAG 进入可写状态后再写入。`
-            }
+              permissionDecisionReason: `产物 ${artifact} 属于阶段 ${expectedStage}，但该阶段状态为 ${stageStatus}（非 running）。请先通过 boss runtime update-stage 将对应阶段置为 running/retrying，或按产物 DAG 进入可写状态后再写入。`,
+            },
           });
         }
       }
@@ -75,8 +81,9 @@ function askForUnparsedPatch() {
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
       permissionDecision: 'deny',
-      permissionDecisionReason: '[boss-skill] apply_patch payload 未能解析出目标文件。为避免绕过 .boss 产物护栏，请使用标准 apply_patch 文件头后重试。'
-    }
+      permissionDecisionReason:
+        '[boss-skill] apply_patch payload 未能解析出目标文件。为避免绕过 .boss 产物护栏，请使用标准 apply_patch 文件头后重试。',
+    },
   });
 }
 

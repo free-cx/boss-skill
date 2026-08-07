@@ -3,24 +3,24 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  type CliContext,
   consumeCliContractOption,
   createCliContext,
   describeCommand,
   readJsonInput,
   runMain,
   writeOutput,
-  type CliContext
 } from '../../cli/contract.js';
 import { runtimeCommandDescriptions } from '../../cli/registry.js';
+import { runHook } from '../../runtime/application/plugins.js';
 import {
   optionalInputString,
   printRuntimeHelp,
   requireInputString,
   requireOptionValue,
   toFeatureNotFoundError,
-  writeActionPlan
+  writeActionPlan,
 } from './agent-command-utils.js';
-import { runHook } from '../../runtime/application/plugins.js';
 
 interface RunPluginHookInput {
   hook: string;
@@ -56,7 +56,7 @@ function parseFlatInput(argv: string[]): RunPluginHookInput {
   return {
     hook: requireInputString(hook, 'hook'),
     feature: requireInputString(feature, 'feature'),
-    stage
+    stage,
   };
 }
 
@@ -67,7 +67,7 @@ function resolveInput(argv: string[], context: CliContext): RunPluginHookInput {
     return {
       hook: requireInputString(input.hook, 'hook'),
       feature: requireInputString(input.feature, 'feature'),
-      stage: optionalInputString(input.stage) || null
+      stage: optionalInputString(input.stage) || null,
     };
   }
   return parseFlatInput(argv);
@@ -78,17 +78,20 @@ function actionFor(input: RunPluginHookInput) {
     type: 'run_plugin_hook',
     feature: input.feature,
     hook: input.hook,
-    stage: input.stage
+    stage: input.stage,
   };
 }
 
-export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd() }: { cwd?: string } = {}): number {
+export function main(
+  argv: string[] = process.argv.slice(2),
+  { cwd = process.cwd() }: { cwd?: string } = {},
+): number {
   const context = createCliContext(argv, { command: 'boss runtime run-plugin-hook' });
   if (context.values.describe) {
     writeOutput(
       describeCommand(runtimeCommandDescriptions['run-plugin-hook']!),
       context,
-      () => `${JSON.stringify(runtimeCommandDescriptions['run-plugin-hook'], null, 2)}\n`
+      () => `${JSON.stringify(runtimeCommandDescriptions['run-plugin-hook'], null, 2)}\n`,
     );
     return 0;
   }
@@ -107,7 +110,7 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
   try {
     const result = runHook(input.hook, input.feature, {
       cwd,
-      stage: input.stage
+      stage: input.stage,
     });
 
     writeOutput(
@@ -115,10 +118,11 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
         hook: result.hook,
         feature: result.feature,
         stage: result.stage,
-        results: result.results
+        results: result.results,
       },
       context,
-      () => `${JSON.stringify({ hook: result.hook, feature: result.feature, stage: result.stage, results: result.results }, null, 2)}\n`
+      () =>
+        `${JSON.stringify({ hook: result.hook, feature: result.feature, stage: result.stage, results: result.results }, null, 2)}\n`,
     );
     return result.results.some((item) => item.passed === false) ? 1 : 0;
   } catch (err) {
@@ -127,6 +131,9 @@ export function main(argv: string[] = process.argv.slice(2), { cwd = process.cwd
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const context = createCliContext(process.argv.slice(2), { command: 'boss runtime run-plugin-hook', validateOptionValues: false });
+  const context = createCliContext(process.argv.slice(2), {
+    command: 'boss runtime run-plugin-hook',
+    validateOptionValues: false,
+  });
   process.exit(await runMain(() => main(process.argv.slice(2), { cwd: process.cwd() }), context));
 }

@@ -2,36 +2,34 @@ import { describe, expect, it } from 'vitest';
 
 import { extractPreferenceMemories } from '../../packages/boss-cli/src/runtime/memory/preferences.js';
 
-function choiceEvent(
-  id: number,
-  selected: string,
-  extra: Record<string, unknown> = {}
-) {
+function choiceEvent(id: number, selected: string, extra: Record<string, unknown> = {}) {
   return {
     id,
     type: 'UserChoiceRecorded',
     timestamp: `2026-07-30T00:00:0${id}Z`,
-    data: { choiceType: 'design-variant', selected, ...extra }
+    data: { choiceType: 'design-variant', selected, ...extra },
   };
 }
 
 describe('memory/preferences deterministic fold', () => {
   it('ignores non-choice events', () => {
     const records = extractPreferenceMemories('feat', [
-      { id: 1, type: 'StageCompleted', timestamp: '2026-07-30T00:00:01Z', data: {} }
+      { id: 1, type: 'StageCompleted', timestamp: '2026-07-30T00:00:01Z', data: {} },
     ]);
     expect(records).toEqual([]);
   });
 
   it('creates a preference record from a single choice', () => {
-    const [record] = extractPreferenceMemories('feat', [choiceEvent(2, '方案A', { reason: '简洁' })]);
+    const [record] = extractPreferenceMemories('feat', [
+      choiceEvent(2, '方案A', { reason: '简洁' }),
+    ]);
     expect(record).toMatchObject({
       scope: 'feature',
       kind: 'long_term',
       category: 'design-style',
       influence: 'preference',
       confidence: 0.5,
-      decayScore: 5
+      decayScore: 5,
     });
     expect(record!.tags).toEqual(['design-style', '方案A']);
     expect(record!.summary).toContain('方案A');
@@ -42,7 +40,7 @@ describe('memory/preferences deterministic fold', () => {
   it('raises confidence and accumulates evidence when the same choice repeats', () => {
     const records = extractPreferenceMemories('feat', [
       choiceEvent(2, '方案A'),
-      choiceEvent(3, '方案A')
+      choiceEvent(3, '方案A'),
     ]);
     expect(records).toHaveLength(1);
     expect(records[0]!.confidence).toBeCloseTo(0.7);
@@ -63,7 +61,7 @@ describe('memory/preferences deterministic fold', () => {
     const records = extractPreferenceMemories('feat', [
       choiceEvent(2, '方案A'),
       choiceEvent(3, '方案A'),
-      choiceEvent(4, '方案B')
+      choiceEvent(4, '方案B'),
     ]);
     const byTag = Object.fromEntries(records.map((r) => [r.tags[1]!, r]));
     expect(byTag['方案A']!.confidence).toBeCloseTo(0.5);
@@ -81,7 +79,7 @@ describe('memory/preferences deterministic fold', () => {
     const records = extractPreferenceMemories('feat', [
       choiceEvent(2, '方案甲'),
       choiceEvent(3, '方案甲'),
-      choiceEvent(4, '方案乙')
+      choiceEvent(4, '方案乙'),
     ]);
     // 必须是两条独立记录，而非被合并成一条
     expect(records).toHaveLength(2);
@@ -99,7 +97,7 @@ describe('memory/preferences deterministic fold', () => {
   it('generates distinct ids for distinct pure-CJK review decisions', () => {
     const records = extractPreferenceMemories('feat', [
       choiceEvent(2, '通过', { choiceType: 'review-decision' }),
-      choiceEvent(3, '拒绝', { choiceType: 'review-decision' })
+      choiceEvent(3, '拒绝', { choiceType: 'review-decision' }),
     ]);
     expect(records).toHaveLength(2);
     expect(records[0]!.id).not.toBe(records[1]!.id);
@@ -108,7 +106,7 @@ describe('memory/preferences deterministic fold', () => {
   it('does not decrement across different categories', () => {
     const records = extractPreferenceMemories('feat', [
       choiceEvent(2, 'darkmode', { choiceType: 'config-preference' }),
-      choiceEvent(3, '方案A', { choiceType: 'design-variant' })
+      choiceEvent(3, '方案A', { choiceType: 'design-variant' }),
     ]);
     // 两个不同类别，互不削弱，都保持起始 0.5
     for (const record of records) {
@@ -127,7 +125,7 @@ describe('memory/preferences deterministic fold', () => {
     const records = extractPreferenceMemories('feat', [
       choiceEvent(2, 'x', { choiceType: 'review-decision' }),
       choiceEvent(3, 'y', { choiceType: 'gate-override' }),
-      choiceEvent(4, 'z', { choiceType: 'something-else' })
+      choiceEvent(4, 'z', { choiceType: 'something-else' }),
     ]);
     const categories = records.map((r) => r.category).sort();
     expect(categories).toEqual(['general-preference', 'quality-threshold', 'review-preference']);
@@ -135,8 +133,18 @@ describe('memory/preferences deterministic fold', () => {
 
   it('skips malformed choice events missing selected or choiceType', () => {
     const records = extractPreferenceMemories('feat', [
-      { id: 2, type: 'UserChoiceRecorded', timestamp: '2026-07-30T00:00:02Z', data: { choiceType: 'design-variant' } },
-      { id: 3, type: 'UserChoiceRecorded', timestamp: '2026-07-30T00:00:03Z', data: { selected: '方案A' } }
+      {
+        id: 2,
+        type: 'UserChoiceRecorded',
+        timestamp: '2026-07-30T00:00:02Z',
+        data: { choiceType: 'design-variant' },
+      },
+      {
+        id: 3,
+        type: 'UserChoiceRecorded',
+        timestamp: '2026-07-30T00:00:03Z',
+        data: { selected: '方案A' },
+      },
     ]);
     expect(records).toEqual([]);
   });

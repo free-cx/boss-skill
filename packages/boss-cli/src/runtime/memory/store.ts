@@ -110,7 +110,7 @@ function recordKey(record: PersistedMemoryRecord): string {
     record.feature ?? '',
     record.stage ?? '',
     record.agent ?? '',
-    tags
+    tags,
   ].join(':');
 }
 
@@ -118,13 +118,13 @@ function cloneRecord(record: PersistedMemoryRecord): PersistedMemoryRecord {
   return {
     ...record,
     evidence: [...record.evidence],
-    tags: [...record.tags]
+    tags: [...record.tags],
   };
 }
 
 export function mergeRecords(
   existing: PersistedMemoryRecord[],
-  incoming: PersistedMemoryRecord[]
+  incoming: PersistedMemoryRecord[],
 ): PersistedMemoryRecord[] {
   const merged = new Map(existing.map((record) => [recordKey(record), cloneRecord(record)]));
 
@@ -145,7 +145,7 @@ export function mergeRecords(
       confidence: Math.max(current.confidence ?? 0, record.confidence ?? 0),
       lastSeenAt: record.lastSeenAt,
       decayScore: Math.max(current.decayScore ?? 0, record.decayScore ?? 0),
-      evidence: [...currentEvidence, ...incomingEvidence]
+      evidence: [...currentEvidence, ...incomingEvidence],
     });
   }
 
@@ -155,13 +155,13 @@ export function mergeRecords(
 export function saveFeatureMemory(
   feature: string,
   records: PersistedMemoryRecord[],
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): FeatureMemoryPayload {
   const filePath = featureMemoryPath(cwd, feature);
   const current = readJson<FeatureMemoryPayload>(filePath, { feature, records: [] });
   const next = {
     feature,
-    records: mergeRecords(current.records ?? [], records)
+    records: mergeRecords(current.records ?? [], records),
   };
   writeJson(filePath, next);
   return next;
@@ -178,7 +178,7 @@ export function saveFeatureMemory(
 export function replaceFeatureMemory(
   feature: string,
   records: PersistedMemoryRecord[],
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): FeatureMemoryPayload {
   const next = { feature, records };
   writeJson(featureMemoryPath(cwd, feature), next);
@@ -188,7 +188,7 @@ export function replaceFeatureMemory(
 export function saveFeatureSummary(
   feature: string,
   summary: FeatureMemorySummary,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): FeatureMemorySummary {
   writeJson(featureSummaryPath(cwd, feature), summary);
   return summary;
@@ -196,12 +196,12 @@ export function saveFeatureSummary(
 
 export function saveGlobalMemory(
   records: PersistedMemoryRecord[],
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): { records: PersistedMemoryRecord[] } {
   const filePath = globalMemoryPath(cwd);
   const current = readJson<{ records: PersistedMemoryRecord[] }>(filePath, { records: [] });
   const next = {
-    records: mergeRecords(current.records ?? [], records)
+    records: mergeRecords(current.records ?? [], records),
   };
   writeJson(filePath, next);
   return next;
@@ -209,7 +209,7 @@ export function saveGlobalMemory(
 
 export function saveGlobalSummary(
   summary: GlobalMemorySummary,
-  { cwd = process.cwd() }: { cwd?: string } = {}
+  { cwd = process.cwd() }: { cwd?: string } = {},
 ): GlobalMemorySummary {
   writeJson(globalSummaryPath(cwd), summary);
   return summary;
@@ -219,5 +219,5 @@ export const paths = {
   featureMemoryPath,
   featureSummaryPath,
   globalMemoryPath,
-  globalSummaryPath
+  globalSummaryPath,
 };

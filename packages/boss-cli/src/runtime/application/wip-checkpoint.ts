@@ -45,20 +45,28 @@ function isGitRepo(cwd: string): boolean {
 }
 
 function hasChanges(cwd: string): boolean {
-  const result = spawnSync('git', ['status', '--porcelain', '--untracked-files=all', ...CHECKPOINT_PATHSPEC], {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
+  const result = spawnSync(
+    'git',
+    ['status', '--porcelain', '--untracked-files=all', ...CHECKPOINT_PATHSPEC],
+    {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    },
+  );
   return (result.stdout || '').trim().length > 0;
 }
 
 function countChangedFiles(cwd: string): number {
-  const result = spawnSync('git', ['status', '--porcelain', '--untracked-files=all', ...CHECKPOINT_PATHSPEC], {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
+  const result = spawnSync(
+    'git',
+    ['status', '--porcelain', '--untracked-files=all', ...CHECKPOINT_PATHSPEC],
+    {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    },
+  );
   return (result.stdout || '').trim().split('\n').filter(Boolean).length;
 }
 
@@ -73,7 +81,7 @@ function getCurrentBranch(cwd: string): string {
 
 export function createWipCheckpoint(
   feature: string,
-  options: { cwd?: string; strategy?: WipCheckpointConfig['strategy']; stage?: number | null } = {}
+  options: { cwd?: string; strategy?: WipCheckpointConfig['strategy']; stage?: number | null } = {},
 ): WipCheckpointResult {
   const cwd = options.cwd || process.cwd();
   const strategy = options.strategy || DEFAULT_CONFIG.strategy;
@@ -100,11 +108,15 @@ export function createWipCheckpoint(
 
   switch (strategy) {
     case 'stash': {
-      const result = spawnSync('git', ['stash', 'push', '-m', message, '--include-untracked', ...CHECKPOINT_PATHSPEC], {
-        cwd,
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      });
+      const result = spawnSync(
+        'git',
+        ['stash', 'push', '-m', message, '--include-untracked', ...CHECKPOINT_PATHSPEC],
+        {
+          cwd,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'ignore'],
+        },
+      );
       if (result.status !== 0) return noResult;
       // Get the stash ref
       const listResult = spawnSync('git', ['stash', 'list', '--max-count=1'], {
@@ -176,7 +188,7 @@ export function createWipCheckpoint(
 
 export function listWipCheckpoints(
   feature: string,
-  options: { cwd?: string } = {}
+  options: { cwd?: string } = {},
 ): WipCheckpointListItem[] {
   const cwd = options.cwd || process.cwd();
   const checkpointsFile = path.join(cwd, '.boss', feature, '.meta', 'wip-checkpoints.json');
@@ -190,7 +202,7 @@ export function listWipCheckpoints(
 
 export function restoreWipCheckpoint(
   feature: string,
-  options: { cwd?: string; ref?: string } = {}
+  options: { cwd?: string; ref?: string } = {},
 ): { restored: boolean; ref: string; conflicts: string[] } {
   const cwd = options.cwd || process.cwd();
 
@@ -227,7 +239,11 @@ export function restoreWipCheckpoint(
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       if (applyResult.status !== 0) {
-        return { restored: false, ref: target.ref, conflicts: [applyResult.stderr || 'stash apply failed'] };
+        return {
+          restored: false,
+          ref: target.ref,
+          conflicts: [applyResult.stderr || 'stash apply failed'],
+        };
       }
       return { restored: true, ref: target.ref, conflicts: [] };
     }
@@ -239,7 +255,11 @@ export function restoreWipCheckpoint(
     });
     if (result.status !== 0) {
       spawnSync('git', ['cherry-pick', '--abort'], { cwd, stdio: 'ignore' });
-      return { restored: false, ref: target.ref, conflicts: [result.stderr || 'cherry-pick failed'] };
+      return {
+        restored: false,
+        ref: target.ref,
+        conflicts: [result.stderr || 'cherry-pick failed'],
+      };
     }
     return { restored: true, ref: target.ref, conflicts: [] };
   } else if (target.strategy === 'branch') {
@@ -250,7 +270,11 @@ export function restoreWipCheckpoint(
     });
     if (result.status !== 0) {
       spawnSync('git', ['cherry-pick', '--abort'], { cwd, stdio: 'ignore' });
-      return { restored: false, ref: target.ref, conflicts: [result.stderr || 'cherry-pick failed'] };
+      return {
+        restored: false,
+        ref: target.ref,
+        conflicts: [result.stderr || 'cherry-pick failed'],
+      };
     }
     return { restored: true, ref: target.ref, conflicts: [] };
   }

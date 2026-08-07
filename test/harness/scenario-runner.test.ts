@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import path from 'node:path';
-import { loadScenario, runScenario } from './scenario-runner.js';
+import { describe, expect, it } from 'vitest';
 import { assertScenarioExpectations } from './artifact-assertions.js';
+import { loadScenario, runScenario } from './scenario-runner.js';
 import { assertTraceInvariants } from './trace-invariants.js';
 
 const SCENARIOS = path.resolve(import.meta.dirname, 'scenarios');
@@ -41,8 +41,8 @@ describe('Boss harness scenario runner', () => {
     expect(() =>
       assertTraceInvariants(
         [{ id: 1, type: 'StageStarted', timestamp: new Date().toISOString(), data: { stage: 1 } }],
-        {}
-      )
+        {},
+      ),
     ).toThrow(/PipelineInitialized/);
   });
 

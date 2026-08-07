@@ -3,7 +3,19 @@
   "$id": "https://boss-skill.local/schema/execution-schema.json",
   "title": "Boss Execution State",
   "type": "object",
-  "required": ["schemaVersion", "feature", "status", "stages", "qualityGates", "metrics", "plugins", "pluginLifecycle", "conversations", "derivedTodos", "conversationMetrics"],
+  "required": [
+    "schemaVersion",
+    "feature",
+    "status",
+    "stages",
+    "qualityGates",
+    "metrics",
+    "plugins",
+    "pluginLifecycle",
+    "conversations",
+    "derivedTodos",
+    "conversationMetrics"
+  ],
   "properties": {
     "schemaVersion": { "type": "string" },
     "feature": { "type": "string" },
@@ -204,7 +216,16 @@
               "optional": { "type": "boolean" },
               "status": {
                 "type": "string",
-                "enum": ["pending", "ready", "running", "completed", "failed", "skipped", "reused", "blocked"]
+                "enum": [
+                  "pending",
+                  "ready",
+                  "running",
+                  "completed",
+                  "failed",
+                  "skipped",
+                  "reused",
+                  "blocked"
+                ]
               },
               "decision": { "type": "string", "enum": ["reuse", "run", "skip"] },
               "reason": { "type": "string" },

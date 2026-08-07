@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { queryAgentMemories } from '../../packages/boss-cli/src/runtime/memory/query.js';
-import { buildAgentSections, buildStartupSummary } from '../../packages/boss-cli/src/runtime/memory/summarizer.js';
+import {
+  buildAgentSections,
+  buildStartupSummary,
+} from '../../packages/boss-cli/src/runtime/memory/summarizer.js';
 
 describe('memory query runtime', () => {
   it('returns startup summary ordered by decayScore and confidence', () => {
@@ -11,15 +14,15 @@ describe('memory query runtime', () => {
         scope: 'global',
         summary: 'Global success',
         decayScore: 5,
-        confidence: 0.5
+        confidence: 0.5,
       },
       {
         category: 'gate_failure_pattern',
         scope: 'feature',
         summary: 'Feature gate failure',
         decayScore: 10,
-        confidence: 0.9
-      }
+        confidence: 0.9,
+      },
     ]);
 
     expect(summary.map((item) => item.summary)).toEqual(['Feature gate failure', 'Global success']);
@@ -35,7 +38,7 @@ describe('memory query runtime', () => {
           tags: ['gate1'],
           summary: 'Stage 3 risk',
           decayScore: 9,
-          confidence: 0.8
+          confidence: 0.8,
         },
         {
           category: 'agent_failure_pattern',
@@ -44,7 +47,7 @@ describe('memory query runtime', () => {
           tags: ['boss-backend'],
           summary: 'Backend failed',
           decayScore: 8,
-          confidence: 0.9
+          confidence: 0.9,
         },
         {
           category: 'stable_decision',
@@ -53,14 +56,14 @@ describe('memory query runtime', () => {
           tags: ['boss-tech-lead'],
           summary: 'Review stays stable',
           decayScore: 7,
-          confidence: 0.7
-        }
+          confidence: 0.7,
+        },
       ],
       {
         agent: 'boss-backend',
         stage: 3,
-        limit: 2
-      }
+        limit: 2,
+      },
     );
 
     expect(records.map((item) => item.summary)).toEqual(['Backend failed', 'Stage 3 risk']);
@@ -76,7 +79,7 @@ describe('memory query runtime', () => {
           tags: ['boss-backend'],
           summary: 'Backend failed',
           decayScore: 8,
-          confidence: 0.9
+          confidence: 0.9,
         },
         {
           category: 'historical_risk',
@@ -85,17 +88,17 @@ describe('memory query runtime', () => {
           tags: ['gate1'],
           summary: 'Stage 3 risk',
           decayScore: 9,
-          confidence: 0.8
-        }
+          confidence: 0.8,
+        },
       ],
-      [{ name: 'boss-backend', stage: 3 }]
+      [{ name: 'boss-backend', stage: 3 }],
     );
 
     expect(sections).toEqual({
       'boss-backend': [
         { category: 'agent_failure_pattern', summary: 'Backend failed' },
-        { category: 'historical_risk', summary: 'Stage 3 risk' }
-      ]
+        { category: 'historical_risk', summary: 'Stage 3 risk' },
+      ],
     });
   });
 });

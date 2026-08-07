@@ -15,7 +15,7 @@ const SCHEMA_PATH = path.resolve(
   'src',
   'runtime',
   'schema',
-  'event-schema.json'
+  'event-schema.json',
 );
 
 interface EventSchema {
@@ -47,11 +47,15 @@ function validEventFor(type: string, required: string[]): Record<string, unknown
     // 其余用最小非空对象/字符串。这样「完整事件」应当被 readEvents 接受。
     if (field === 'stage' || field === 'exitCode') data[field] = 1;
     else if (field === 'passed' || field === 'verified') data[field] = true;
-    else if (field === 'plugins') data[field] = [{ name: 'p', version: '1.0.0', type: 'gate', manifestPath: 'p/plugin.json' }];
-    else if (field === 'plugin') data[field] = { name: 'p', version: '1.0.0', type: 'gate', manifestPath: 'p/plugin.json' };
+    else if (field === 'plugins')
+      data[field] = [{ name: 'p', version: '1.0.0', type: 'gate', manifestPath: 'p/plugin.json' }];
+    else if (field === 'plugin')
+      data[field] = { name: 'p', version: '1.0.0', type: 'gate', manifestPath: 'p/plugin.json' };
     else if (field === 'initialState') data[field] = {};
-    else if (field === 'thread') data[field] = { id: 't1', kind: 'ask', anchor: { scope: 's' }, initiator: 'boss-pm' };
-    else if (field === 'message') data[field] = { id: 'm1', threadId: 't1', from: 'boss-pm', body: 'x' };
+    else if (field === 'thread')
+      data[field] = { id: 't1', kind: 'ask', anchor: { scope: 's' }, initiator: 'boss-pm' };
+    else if (field === 'message')
+      data[field] = { id: 'm1', threadId: 't1', from: 'boss-pm', body: 'x' };
     else if (field === 'resolution') data[field] = { threadId: 't1', decision: 'resolved' };
     else if (field === 'todo') data[field] = { id: 'todo1', title: 't', owner: 'boss-pm' };
     else if (field === 'phase') data[field] = 'red';
@@ -97,9 +101,9 @@ describe('event schema ⟷ runtime validator bridge (drift guard)', () => {
         delete (broken.data as Record<string, unknown>)[field];
         expect(
           () => writeAndRead(broken),
-          `${type}: 删除 schema 必填字段 "${field}" 后运行时仍接受，schema 与校验已漂移`
+          `${type}: 删除 schema 必填字段 "${field}" 后运行时仍接受，schema 与校验已漂移`,
         ).toThrow();
       }
-    }
+    },
   );
 });

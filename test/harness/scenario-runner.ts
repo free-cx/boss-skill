@@ -1,8 +1,11 @@
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
-import { projectState, type RuntimeEvent } from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
+import {
+  projectState,
+  type RuntimeEvent,
+} from '../../packages/boss-cli/src/runtime/projectors/materialize-state.js';
 import { ensureBuilt } from '../helpers/run-cli.js';
 
 export interface ScenarioCommand {
@@ -98,13 +101,13 @@ export function runScenario(manifestPath: string): ScenarioRunResult {
     const resolved = resolveCommand(command.run);
     const result = spawnSync(resolved[0], resolved.slice(1), {
       cwd: workspace,
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
     return {
       command: command.run,
       exitCode: result.status,
       stdout: result.stdout,
-      stderr: result.stderr
+      stderr: result.stderr,
     };
   });
 
@@ -112,8 +115,8 @@ export function runScenario(manifestPath: string): ScenarioRunResult {
   const executionPath = path.join(workspace, '.boss', scenario.feature, '.meta', 'execution.json');
   const events = readJsonl(eventPath);
   const execution = fs.existsSync(executionPath)
-    ? JSON.parse(fs.readFileSync(executionPath, 'utf8')) as Record<string, unknown>
-    : projectState(events, scenario.feature) as unknown as Record<string, unknown>;
+    ? (JSON.parse(fs.readFileSync(executionPath, 'utf8')) as Record<string, unknown>)
+    : (projectState(events, scenario.feature) as unknown as Record<string, unknown>);
 
   return { scenario, workspace, commands, events, execution };
 }
