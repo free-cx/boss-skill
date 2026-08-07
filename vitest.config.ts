@@ -29,5 +29,17 @@ export default defineConfig({
     restoreMocks: true,
     clearMocks: true,
     testTimeout: 30000,
+    coverage: {
+      provider: 'v8',
+      include: [
+        'packages/boss-cli/src/**/*.ts',
+        'scripts/**/*.js',
+      ],
+      exclude: [
+        'packages/boss-cli/src/bin/**',
+      ],
+      reporter: ['text', 'html', 'json-summary'],
+      reportsDirectory: 'coverage',
+    },
   },
 });

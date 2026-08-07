@@ -28,6 +28,9 @@ packages/*/dist/
 # Biome
 .biome/
 
+# Test coverage
+coverage/
+
 # Boss generated artifacts
 .boss/
 # ...except committed test fixtures, which intentionally ship a .boss workspace

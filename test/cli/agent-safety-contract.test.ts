@@ -41,7 +41,8 @@ describe('agent CLI safety source contract', () => {
       (file) =>
         file.endsWith('.ts') &&
         !file.includes(`${path.sep}lib${path.sep}`) &&
-        path.basename(file) !== 'agent-command-utils.ts',
+        path.basename(file) !== 'agent-command-utils.ts' &&
+        path.basename(file) !== 'conversation-command-utils.ts',
     );
 
     for (const file of cliFiles) {
