@@ -31,6 +31,9 @@ packages/*/dist/
 # Test coverage
 coverage/
 
+# Playwright test results
+test-results/
+
 # Boss generated artifacts
 .boss/
 # ...except committed test fixtures, which intentionally ship a .boss workspace

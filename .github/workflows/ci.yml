@@ -35,6 +35,8 @@ jobs:
         run: npm run typecheck
       - name: Build
         run: npm run build
+      - name: Doctor (version consistency)
+        run: node packages/boss-cli/dist/bin/boss.js doctor --json
       - name: Test
         run: npm test
       - name: Deterministic evals
